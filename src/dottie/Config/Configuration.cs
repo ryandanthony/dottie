@@ -1,7 +1,8 @@
 namespace dottie.Config;
 
-class Configuration
+// ReSharper disable once ClassNeverInstantiated.Global
+internal sealed class Configuration
 {
     public Dictionary<string, LinkSettings> Links { get; set; }
-    public List<AptVersion> AptGet { get; set; }
+    public AptConfiguration Apt { get; set; }
 }

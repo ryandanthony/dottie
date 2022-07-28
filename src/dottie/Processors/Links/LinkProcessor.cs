@@ -1,14 +1,29 @@
+using dottie.Config;
+using Serilog;
+
 namespace dottie.Processors.Links;
 
 public class LinkProcessor : IProcessor
 {
+    private readonly ILogger _logger;
     private readonly List<SymLink> _links;
 
-
-    public LinkProcessor(List<SymLink> links)
+    public LinkProcessor(ILogger logger,
+        string homeDirectory,
+        string dottieDirectory,
+        Dictionary<string, LinkSettings>? links)
     {
-        _links = links;
+        _logger = logger;
+        _links = links == null
+            ? new List<SymLink>()
+            : links.Select(p =>
+                    new SymLink(_logger, homeDirectory,
+                        dottieDirectory,
+                        p.Key,
+                        p.Value.Target))
+                .ToList();
     }
+
     public event EventHandler<ProcessProgress>? Progress;
     public string Name => "Links";
 
@@ -20,9 +35,9 @@ public class LinkProcessor : IProcessor
         {
             position++;
             var result = decimal.Divide(position, total);
-            OnProgress(new ProcessProgress() { CurrentItem = $"Processing {link.LinkName}", TotalPercentComplete = result });
+            OnProgress(new ProcessProgress()
+                { CurrentItem = $"Processing {link.LinkName}", TotalPercentComplete = result });
             await Execute(link);
-            await Task.Delay(TimeSpan.FromSeconds(1));
         }
 
         OnProgress(new ProcessProgress() { CurrentItem = $"Done", TotalPercentComplete = 1 });
@@ -31,7 +46,7 @@ public class LinkProcessor : IProcessor
 
     private async Task Execute(SymLink link)
     {
-        link.Create();
+        await link.Create();
     }
 
     private void OnProgress(ProcessProgress processProgress)

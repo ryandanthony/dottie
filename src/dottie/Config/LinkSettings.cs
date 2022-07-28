@@ -1,7 +1,7 @@
 namespace dottie.Config;
 
+// ReSharper disable once ClassNeverInstantiated.Global
 public class LinkSettings
 {
-    public bool Force { get; set; }
     public string Target { get; set; }
 }

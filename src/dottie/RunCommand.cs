@@ -1,6 +1,8 @@
 using dottie.Config;
 using dottie.Processors;
+using dottie.Processors.AptGet;
 using dottie.Processors.Links;
+using Serilog;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using YamlDotNet.Serialization;
@@ -10,6 +12,12 @@ namespace dottie;
 
 public class RunCommand : AsyncCommand<RunCommand.Settings>
 {
+    private readonly ILogger _logger;
+
+    public RunCommand(ILogger logger)
+    {
+        _logger = logger;
+    }
     public class Settings : CommandSettings
     {
         [CommandArgument(0, "[DottieDirectory]")]
@@ -42,6 +50,7 @@ public class RunCommand : AsyncCommand<RunCommand.Settings>
 
     public override async Task<int> ExecuteAsync(CommandContext context, Settings settings)
     {
+        AnsiConsole.MarkupLine($"Home Directory: [blue]{settings.HomeDirectory}[/]");
         AnsiConsole.MarkupLine($"Dottie Directory: [blue]{settings.DottieDirectory}[/]");
         var dottieFile = Path.Join(settings.DottieDirectory, "dottie.yaml");
         AnsiConsole.MarkupLine($"Dottie File: [blue]{dottieFile}[/]");
@@ -72,26 +81,31 @@ public class RunCommand : AsyncCommand<RunCommand.Settings>
         var deserializer = new DeserializerBuilder()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .Build();
+        Configuration configuration;
+        try
+        {
+            configuration = deserializer.Deserialize<Configuration>(await File.ReadAllTextAsync(dottieFile));
+        }
+        catch (Exception e)
+        {
+            _logger.Error(e, "Unable to deserialize dottie file");
+            return 1;
+        }
 
-        var configuration = deserializer.Deserialize<Configuration>(await File.ReadAllTextAsync(dottieFile));
 
         await AnsiConsole.Progress()
             .StartAsync(async ctx =>
             {
-                var x = new List<IProcessor>()
+                var processors = new List<IProcessor>()
                 {
-                    new LinkProcessor(configuration.Links.Select(p =>
-                            new SymLink(settings.HomeDirectory,
-                                settings.DottieDirectory,
-                                p.Key,
-                                p.Value.Target,
-                                p.Value.Force))
-                        .ToList()),
-                    new DoNothingProcessor()
+                    new LinkProcessor(_logger, settings.HomeDirectory, settings.DottieDirectory, configuration.Links),
+
+                    new AptProcessor(_logger, settings.DottieDirectory, configuration.Apt),
+                    //new DoNothingProcessor()
                 };
-                foreach (var processor in x)
+                foreach (var processor in processors)
                 {
-                    var task = ctx.AddTask($"[green]{processor.Name} - Starting[/]").MaxValue(1).Value(0);
+                     var task = ctx.AddTask($"[green]{processor.Name} - Starting[/]").MaxValue(1).Value(0);
                     task.StartTask();
                     processor.Progress += (sender, progress) =>
                     {
@@ -102,13 +116,7 @@ public class RunCommand : AsyncCommand<RunCommand.Settings>
                     await processor.Run();
                 }
             });
-
-
-
-   
+         
         return 0;
     }
-
-
-
 }

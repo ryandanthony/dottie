@@ -1,7 +1,24 @@
 ﻿using dottie;
+using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console.Cli;
+using Serilog;
+using Serilog.Sinks.Spectre;
 
-var app = new CommandApp();
+
+Log.Logger = args.Contains("--verbose")
+    ? new LoggerConfiguration()
+        .MinimumLevel.Verbose()
+        .WriteTo.Spectre()
+        .CreateLogger()
+    : new LoggerConfiguration()
+        .WriteTo.Spectre()
+        .CreateLogger();
+
+var registrations = new ServiceCollection();
+registrations.AddSingleton<ILogger>(provider => Log.Logger);
+
+var registrar = new dottie.Infrastructure.TypeRegistrar(registrations);
+var app = new CommandApp(registrar);
 app.Configure(config =>
 {
     config.AddCommand<RunCommand>("run")

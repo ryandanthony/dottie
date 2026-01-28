@@ -3,7 +3,8 @@
 **Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
 **Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
 
-**Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
+**Note**: This template is filled in by the `/speckit.plan` workflow. In this repo, see
+`.specify/scripts/powershell/setup-plan.ps1` and `.specify/scripts/powershell/create-new-feature.ps1`.
 
 ## Summary
 
@@ -31,7 +32,15 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- Safety & Explicitness: default to dry-run/preview; no silent overwrites/deletes.
+- Idempotency: re-running converges; non-interactive mode where possible.
+- Security: prefer package managers; avoid unsafe installers; do not leak secrets.
+- Security values: no secrets in repo; fail closed; validate inputs; minimize retention.
+- Compatibility: Ubuntu-first; handle distro-specific behavior explicitly.
+- Observability: actionable errors; verbose logs suitable for bug reports.
+- Decision rules: simplest acceptable approach; clarity-first; measure before optimizing.
+- Guiding principles: simplicity; maintainability; explicitness; composable units; avoid over-abstraction.
+- Testing philosophy: behavior-focused tests; integration tests for workflows; deterministic + isolated.
 
 ## Project Structure
 

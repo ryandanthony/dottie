@@ -1,0 +1,207 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/ryandanthony/dottie/schemas/dottie-config.schema.json",
+  "title": "Dottie Configuration",
+  "description": "Schema for dottie.yaml configuration files",
+  "type": "object",
+  "required": ["profiles"],
+  "additionalProperties": false,
+  "properties": {
+    "profiles": {
+      "type": "object",
+      "description": "Named configuration profiles",
+      "minProperties": 1,
+      "additionalProperties": {
+        "$ref": "#/$defs/profile"
+      }
+    }
+  },
+  "$defs": {
+    "profile": {
+      "type": "object",
+      "description": "A named configuration set containing dotfile mappings and install specifications",
+      "additionalProperties": false,
+      "properties": {
+        "extends": {
+          "type": "string",
+          "description": "Name of another profile to inherit from"
+        },
+        "dotfiles": {
+          "type": "array",
+          "description": "List of dotfile source-to-target mappings",
+          "items": {
+            "$ref": "#/$defs/dotfileEntry"
+          }
+        },
+        "install": {
+          "$ref": "#/$defs/installBlock"
+        }
+      }
+    },
+    "dotfileEntry": {
+      "type": "object",
+      "description": "A mapping from source path to target path",
+      "required": ["source", "target"],
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "type": "string",
+          "description": "Path to source file/directory, relative to repository root",
+          "minLength": 1
+        },
+        "target": {
+          "type": "string",
+          "description": "Destination path (supports ~ for home directory)",
+          "minLength": 1
+        }
+      }
+    },
+    "installBlock": {
+      "type": "object",
+      "description": "Software installation specifications organized by install method",
+      "additionalProperties": false,
+      "properties": {
+        "github": {
+          "type": "array",
+          "description": "Binaries to download from GitHub releases",
+          "items": {
+            "$ref": "#/$defs/githubReleaseItem"
+          }
+        },
+        "apt": {
+          "type": "array",
+          "description": "Package names to install via apt",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "apt-repo": {
+          "type": "array",
+          "description": "Third-party apt repositories to add",
+          "items": {
+            "$ref": "#/$defs/aptRepoItem"
+          }
+        },
+        "scripts": {
+          "type": "array",
+          "description": "Script paths (relative to repo root) to execute",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!/)(?!.*\\.\\./)"
+          }
+        },
+        "fonts": {
+          "type": "array",
+          "description": "Fonts to download and install",
+          "items": {
+            "$ref": "#/$defs/fontItem"
+          }
+        },
+        "snap": {
+          "type": "array",
+          "description": "Snap packages to install",
+          "items": {
+            "$ref": "#/$defs/snapItem"
+          }
+        }
+      }
+    },
+    "githubReleaseItem": {
+      "type": "object",
+      "description": "Specification for downloading a binary from a GitHub release",
+      "required": ["repo", "asset", "binary"],
+      "additionalProperties": false,
+      "properties": {
+        "repo": {
+          "type": "string",
+          "description": "Repository in owner/name format",
+          "pattern": "^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$"
+        },
+        "asset": {
+          "type": "string",
+          "description": "Glob pattern to match release asset filename",
+          "minLength": 1
+        },
+        "binary": {
+          "type": "string",
+          "description": "Name of the binary to extract from the archive",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "description": "Specific version tag (defaults to latest)"
+        }
+      }
+    },
+    "aptRepoItem": {
+      "type": "object",
+      "description": "Specification for adding a third-party apt repository",
+      "required": ["name", "key_url", "repo", "packages"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Identifier name for this repository",
+          "minLength": 1
+        },
+        "key_url": {
+          "type": "string",
+          "description": "URL to the GPG key",
+          "format": "uri"
+        },
+        "repo": {
+          "type": "string",
+          "description": "The apt repository line",
+          "minLength": 1
+        },
+        "packages": {
+          "type": "array",
+          "description": "Packages to install from this repository",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "fontItem": {
+      "type": "object",
+      "description": "Specification for downloading and installing a font",
+      "required": ["name", "url"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Display name of the font",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "description": "URL to download the font archive",
+          "format": "uri"
+        }
+      }
+    },
+    "snapItem": {
+      "type": "object",
+      "description": "Specification for a snap package",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the snap package",
+          "minLength": 1
+        },
+        "classic": {
+          "type": "boolean",
+          "description": "Install with --classic confinement",
+          "default": false
+        }
+      }
+    }
+  }
+}

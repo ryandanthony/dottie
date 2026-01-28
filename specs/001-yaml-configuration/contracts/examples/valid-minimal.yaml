@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=./dottie-config.schema.json
+# Minimal valid configuration - single profile with one dotfile
+
+profiles:
+  default:
+    dotfiles:
+      - source: dotfiles/bashrc
+        target: ~/.bashrc

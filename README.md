@@ -1,3 +1,3 @@
 # dottie
 
-.NET based git dot file tool
+A dotfile manager and software installation tool for Linux (Ubuntu).

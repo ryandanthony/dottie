@@ -3,6 +3,8 @@
 Auto-generated from all feature plans. Last updated: 2026-01-28
 
 ## Active Technologies
+- .NET 10 (C# 13) + GitVersion (semantic versioning), ReportGenerator (coverage), GitHub Actions, Docker (002-ci-build)
+- N/A (CI/CD infrastructure) (002-ci-build)
 
 - .NET 10 (C# 13), Native AOT / trimmed self-contained deployment (001-yaml-configuration)
 
@@ -22,6 +24,7 @@ tests/
 .NET 10 (C# 13), Native AOT / trimmed self-contained deployment: Follow standard conventions
 
 ## Recent Changes
+- 002-ci-build: Added .NET 10 (C# 13) + GitVersion (semantic versioning), ReportGenerator (coverage), GitHub Actions, Docker
 
 - 001-yaml-configuration: Added .NET 10 (C# 13), Native AOT / trimmed self-contained deployment
 

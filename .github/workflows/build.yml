@@ -36,15 +36,15 @@ jobs:
 
       # T025: GitVersion setup and execution
       - name: Install GitVersion
-        uses: gittools/actions/gitversion/setup@v3.2
-        with:
-          versionSpec: '6.x'
+        run: dotnet tool install --global gitversion.tool --version 6.x
 
       - name: Determine Version
         id: gitversion
-        uses: gittools/actions/gitversion/execute@v3.2
-        with:
-          useConfigFile: true
+        run: |
+          VERSION_JSON=$(dotnet-gitversion /output json)
+          echo "semVer=$(echo "$VERSION_JSON" | jq -r '.semVer')" >> $GITHUB_OUTPUT
+          echo "fullSemVer=$(echo "$VERSION_JSON" | jq -r '.fullSemVer')" >> $GITHUB_OUTPUT
+          echo "majorMinorPatch=$(echo "$VERSION_JSON" | jq -r '.majorMinorPatch')" >> $GITHUB_OUTPUT
 
       - name: Display Version
         run: |

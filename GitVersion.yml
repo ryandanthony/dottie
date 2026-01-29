@@ -1,5 +1,6 @@
 mode: Mainline
 next-version: 0.1.0
 tag-prefix: v
+
 major-version-bump-message: '\+semver:\s?(major|breaking)'
 minor-version-bump-message: '\+semver:\s?(minor|feature)'

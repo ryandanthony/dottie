@@ -36,7 +36,7 @@ jobs:
 
       # T025: GitVersion setup and execution
       - name: Install GitVersion
-        run: dotnet tool install --global gitversion.tool --version 6.x
+        run: dotnet tool install --global gitversion.tool
 
       - name: Determine Version
         id: gitversion

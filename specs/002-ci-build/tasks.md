@@ -130,7 +130,7 @@
 - [x] T037 [P] Add repository detection logic to scripts/Set-BranchProtection.ps1 (done in Phase 2)
 - [x] T038 [P] Add WhatIf (dry-run) support to scripts/Set-BranchProtection.ps1 (done in Phase 2)
 - [x] T039 [P] Add error handling and user feedback to scripts/Set-BranchProtection.ps1 (done in Phase 2)
-- [ ] T040 Test branch protection script execution
+- [x] T040 Test branch protection script execution (verified with -WhatIf)
 
 ---
 

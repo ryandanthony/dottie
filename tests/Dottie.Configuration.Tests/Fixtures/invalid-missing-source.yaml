@@ -1,0 +1,6 @@
+# Invalid: Missing source field in dotfile entry
+
+profiles:
+  default:
+    dotfiles:
+      - target: ~/.bashrc

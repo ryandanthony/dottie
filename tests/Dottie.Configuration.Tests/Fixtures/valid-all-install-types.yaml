@@ -1,0 +1,27 @@
+# Valid Configuration with All Install Types
+profiles:
+  default:
+    dotfiles:
+      - source: dotfiles/bashrc
+        target: ~/.bashrc
+    install:
+      apt:
+        - curl
+        - git
+        - vim
+      github:
+        - repo: junegunn/fzf
+          asset: "fzf-*-linux_amd64.tar.gz"
+          binary: fzf
+      snap:
+        - name: code
+          classic: true
+      aptRepo:
+        - name: docker-ce
+          keyUrl: https://download.docker.com/linux/ubuntu/gpg
+          repoLine: "deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable"
+      scripts:
+        - scripts/setup.sh
+      fonts:
+        - name: "JetBrains Mono"
+          url: https://github.com/JetBrains/JetBrainsMono/releases/download/v2.304/JetBrainsMono-2.304.zip

@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Dottie.Cli/Dottie.Cli.csproj" />
+    <Project Path="src/Dottie.Configuration/Dottie.Configuration.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Dottie.Cli.Tests/Dottie.Cli.Tests.csproj" />
+    <Project Path="tests/Dottie.Configuration.Tests/Dottie.Configuration.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,55 @@
+# Test fixture: Profile inheritance with extends keyword
+
+profiles:
+  default:
+    dotfiles:
+      - source: dotfiles/bashrc
+        target: ~/.bashrc
+      - source: dotfiles/vimrc
+        target: ~/.vimrc
+    install:
+      apt:
+        - git
+        - curl
+        - vim
+      github:
+        - repo: junegunn/fzf
+          asset: fzf-*-linux_amd64.tar.gz
+          binary: fzf
+      snap:
+        - name: code
+          classic: true
+
+  work:
+    extends: default
+    dotfiles:
+      - source: dotfiles/work/aws-config
+        target: ~/.aws/config
+    install:
+      apt:
+        - awscli
+        - kubectl
+      github:
+        - repo: junegunn/fzf
+          asset: fzf-*-linux_arm64.tar.gz
+          binary: fzf
+          version: "0.45.0"
+        - repo: derailed/k9s
+          asset: k9s_Linux_amd64.tar.gz
+          binary: k9s
+      snap:
+        - name: slack
+          classic: true
+
+  personal:
+    extends: default
+    dotfiles:
+      - source: dotfiles/personal/gitconfig
+        target: ~/.gitconfig
+    install:
+      apt:
+        - htop
+        - tmux
+      fonts:
+        - name: JetBrains Mono
+          url: https://github.com/JetBrains/JetBrainsMono/releases/download/v2.304/JetBrainsMono-2.304.zip

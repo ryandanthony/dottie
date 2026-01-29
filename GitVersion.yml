@@ -1,6 +1,14 @@
-mode: Mainline
+mode: ContinuousDelivery
 next-version: 0.1.0
 tag-prefix: v
+branches:
+  main:
+    mode: ContinuousDelivery
+    regex: ^main$
+    tag: ''
+    increment: Patch
+    is-mainline: true
+    is-release-branch: true
 
 major-version-bump-message: '\+semver:\s?(major|breaking)'
 minor-version-bump-message: '\+semver:\s?(minor|feature)'

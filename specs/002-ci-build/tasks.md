@@ -19,9 +19,9 @@
 
 **Purpose**: Project initialization and basic CI/CD structure
 
-- [ ] T001 Create .NET SDK version pinning in global.json
-- [ ] T002 [P] Create GitVersion configuration in GitVersion.yml
-- [ ] T003 [P] Create scripts directory structure
+- [x] T001 Create .NET SDK version pinning in global.json
+- [x] T002 [P] Create GitVersion configuration in GitVersion.yml
+- [x] T003 [P] Create scripts directory structure
 
 ---
 
@@ -31,12 +31,12 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T004 Create .github/workflows directory structure
-- [ ] T005 Create base GitHub Actions workflow file in .github/workflows/build.yml with triggers and permissions
-- [ ] T006 [P] Create integration test Dockerfile in tests/integration/Dockerfile (Ubuntu base, injects dottie binary + test scripts)
-- [ ] T006a [P] Create integration test scenario structure in tests/integration/scenarios/
-- [ ] T006b [P] Create integration test validation script in tests/integration/scripts/run-scenarios.sh
-- [ ] T007 [P] Create branch protection script in scripts/Set-BranchProtection.ps1
+- [x] T004 Create .github/workflows directory structure
+- [x] T005 Create base GitHub Actions workflow file in .github/workflows/build.yml with triggers and permissions
+- [x] T006 [P] Create integration test Dockerfile in tests/integration/Dockerfile (Ubuntu base, injects dottie binary + test scripts)
+- [x] T006a [P] Create integration test scenario structure in tests/integration/scenarios/
+- [x] T006b [P] Create integration test validation script in tests/integration/scripts/run-scenarios.sh
+- [x] T007 [P] Create branch protection script in scripts/Set-BranchProtection.ps1
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -50,17 +50,17 @@
 
 ### Implementation for User Story 1
 
-- [ ] T008 [P] [US1] Add checkout step with full history to .github/workflows/build.yml
-- [ ] T009 [P] [US1] Add .NET setup step to .github/workflows/build.yml
-- [ ] T010 [P] [US1] Add NuGet package caching to .github/workflows/build.yml
-- [ ] T011 [US1] Add dependency restore step to .github/workflows/build.yml
-- [ ] T012 [US1] Add build step with version to .github/workflows/build.yml
-- [ ] T013 [US1] Add unit test execution step to .github/workflows/build.yml
-- [ ] T014 [US1] Add integration test execution step to .github/workflows/build.yml (build image, run scenarios, validate outcomes)
-- [ ] T015 [US1] Add coverage collection and report generation to .github/workflows/build.yml
-- [ ] T016 [US1] Add coverage threshold enforcement (80%) to .github/workflows/build.yml
-- [ ] T017 [US1] Add coverage report upload as artifact to .github/workflows/build.yml
-- [ ] T018 [US1] Add coverage comment posting for PRs to .github/workflows/build.yml
+- [x] T008 [P] [US1] Add checkout step with full history to .github/workflows/build.yml
+- [x] T009 [P] [US1] Add .NET setup step to .github/workflows/build.yml
+- [x] T010 [P] [US1] Add NuGet package caching to .github/workflows/build.yml
+- [x] T011 [US1] Add dependency restore step to .github/workflows/build.yml
+- [x] T012 [US1] Add build step with version to .github/workflows/build.yml
+- [x] T013 [US1] Add unit test execution step to .github/workflows/build.yml
+- [x] T014 [US1] Add integration test execution step to .github/workflows/build.yml (build image, run scenarios, validate outcomes)
+- [x] T015 [US1] Add coverage collection and report generation to .github/workflows/build.yml
+- [x] T016 [US1] Add coverage threshold enforcement (80%) to .github/workflows/build.yml
+- [x] T017 [US1] Add coverage report upload as artifact to .github/workflows/build.yml
+- [x] T018 [US1] Add coverage comment posting for PRs to .github/workflows/build.yml
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -74,12 +74,12 @@
 
 ### Implementation for User Story 2
 
-- [ ] T019 [P] [US2] Add linux-x64 publish step to .github/workflows/build.yml
-- [ ] T020 [P] [US2] Add win-x64 publish step to .github/workflows/build.yml
-- [ ] T021 [US2] Add artifact upload step with 7-day retention to .github/workflows/build.yml
-- [ ] T022 [US2] Add conditional tag creation for main branch to .github/workflows/build.yml
-- [ ] T023 [US2] Add GitHub Release creation with binaries to .github/workflows/build.yml
-- [ ] T024 [US2] Configure release notes generation in .github/workflows/build.yml (use generate_release_notes: true in softprops/action-gh-release)
+- [x] T019 [P] [US2] Add linux-x64 publish step to .github/workflows/build.yml (done in T014 integration test build)
+- [x] T020 [P] [US2] Add win-x64 publish step to .github/workflows/build.yml
+- [x] T021 [US2] Add artifact upload step with 7-day retention to .github/workflows/build.yml
+- [x] T022 [US2] Add conditional tag creation for main branch to .github/workflows/build.yml
+- [x] T023 [US2] Add GitHub Release creation with binaries to .github/workflows/build.yml
+- [x] T024 [US2] Configure release notes generation in .github/workflows/build.yml (use generate_release_notes: true in softprops/action-gh-release)
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
@@ -93,12 +93,12 @@
 
 ### Implementation for User Story 3
 
-- [ ] T025 [US3] Add GitVersion setup step to .github/workflows/build.yml
-- [ ] T026 [US3] Configure GitVersion mainline mode in GitVersion.yml
-- [ ] T027 [US3] Configure version bump patterns in GitVersion.yml
-- [ ] T028 [US3] Configure starting version 0.1.0 in GitVersion.yml
-- [ ] T029 [US3] Update build step to use GitVersion output in .github/workflows/build.yml
-- [ ] T030 [US3] Update tag creation to use GitVersion format in .github/workflows/build.yml
+- [x] T025 [US3] Add GitVersion setup step to .github/workflows/build.yml (done in Phase 3)
+- [x] T026 [US3] Configure GitVersion mainline mode in GitVersion.yml (done in Phase 2)
+- [x] T027 [US3] Configure version bump patterns in GitVersion.yml (done in Phase 2)
+- [x] T028 [US3] Configure starting version 0.1.0 in GitVersion.yml (done in Phase 2)
+- [x] T029 [US3] Update build step to use GitVersion output in .github/workflows/build.yml (done in Phase 3)
+- [x] T030 [US3] Update tag creation to use GitVersion format in .github/workflows/build.yml (done in Phase 4 - uses v${{ steps.gitversion.outputs.semVer }})
 
 **Checkpoint**: All user stories should now be independently functional
 
@@ -112,11 +112,11 @@
 
 ### Implementation for User Story 4
 
-- [ ] T031 [US4] Configure coverage collection in unit test step in .github/workflows/build.yml
-- [ ] T032 [US4] Configure coverage collection in integration test step in .github/workflows/build.yml
-- [ ] T033 [US4] Add ReportGenerator step for HTML coverage report in .github/workflows/build.yml
-- [ ] T034 [US4] Add coverage threshold validation step in .github/workflows/build.yml
-- [ ] T035 [US4] Configure PR comment deletion and posting in .github/workflows/build.yml
+- [x] T031 [US4] Configure coverage collection in unit test step in .github/workflows/build.yml (done in Phase 3)
+- [x] T032 [US4] Configure coverage collection in integration test step in .github/workflows/build.yml (N/A - Docker integration tests don't use coverage)
+- [x] T033 [US4] Add ReportGenerator step for HTML coverage report in .github/workflows/build.yml (done in Phase 3)
+- [x] T034 [US4] Add coverage threshold validation step in .github/workflows/build.yml (done in Phase 3)
+- [x] T035 [US4] Configure PR comment deletion and posting in .github/workflows/build.yml (done in Phase 3 with recreate: true)
 
 **Checkpoint**: All user stories should now be independently functional
 
@@ -126,10 +126,10 @@
 
 **Purpose**: Configure repository branch protection rules
 
-- [ ] T036 Implement branch protection API calls in scripts/Set-BranchProtection.ps1
-- [ ] T037 [P] Add repository detection logic to scripts/Set-BranchProtection.ps1
-- [ ] T038 [P] Add WhatIf (dry-run) support to scripts/Set-BranchProtection.ps1
-- [ ] T039 [P] Add error handling and user feedback to scripts/Set-BranchProtection.ps1
+- [x] T036 Implement branch protection API calls in scripts/Set-BranchProtection.ps1 (done in Phase 2)
+- [x] T037 [P] Add repository detection logic to scripts/Set-BranchProtection.ps1 (done in Phase 2)
+- [x] T038 [P] Add WhatIf (dry-run) support to scripts/Set-BranchProtection.ps1 (done in Phase 2)
+- [x] T039 [P] Add error handling and user feedback to scripts/Set-BranchProtection.ps1 (done in Phase 2)
 - [ ] T040 Test branch protection script execution
 
 ---
@@ -138,7 +138,7 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T041 [P] Update quickstart.md with final workflow details
+- [x] T041 [P] Update quickstart.md with final workflow details
 - [ ] T042 [P] Validate all workflow steps work end-to-end
 - [ ] T043 [P] Test failure scenarios (build failure, test failure, coverage failure)
 - [ ] T044 [P] Test version bumping with different commit message patterns

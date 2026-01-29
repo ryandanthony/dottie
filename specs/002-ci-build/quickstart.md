@@ -119,8 +119,12 @@ dotnet publish src/Dottie.Cli -c Release -r win-x64 --self-contained
 ### Running Integration Tests Locally
 
 ```bash
-# Using Docker (same as CI)
-docker compose -f docker-compose.test.yml up --build
+# Build the CLI for Linux first
+dotnet publish src/Dottie.Cli -c Release -r linux-x64 --self-contained -o ./publish/linux-x64
+
+# Build and run the integration test container (from repo root)
+docker build -t dottie-integration-test -f tests/integration/Dockerfile .
+docker run --rm dottie-integration-test
 ```
 
 ## Troubleshooting
@@ -153,3 +157,6 @@ docker compose -f docker-compose.test.yml up --build
 | `global.json` | .NET SDK version pinning |
 | `GitVersion.yml` | Version calculation configuration |
 | `scripts/Set-BranchProtection.ps1` | Branch protection setup |
+| `tests/integration/Dockerfile` | Ubuntu container for integration tests |
+| `tests/integration/scripts/run-scenarios.sh` | Scenario execution script |
+| `tests/integration/scenarios/` | Integration test scenario definitions |

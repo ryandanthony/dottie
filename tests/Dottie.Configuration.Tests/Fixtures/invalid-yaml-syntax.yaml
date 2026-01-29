@@ -1,0 +1,8 @@
+# Invalid: Bad YAML syntax
+
+profiles:
+  default:
+    dotfiles:
+      - source: dotfiles/bashrc
+        target: ~/.bashrc
+      - this is not valid yaml: [

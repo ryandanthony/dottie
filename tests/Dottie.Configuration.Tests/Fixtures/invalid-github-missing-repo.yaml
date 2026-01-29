@@ -1,0 +1,7 @@
+# Invalid GitHub Release - Missing repo field
+profiles:
+  default:
+    install:
+      github:
+        - asset: "*.deb"
+          binary: myapp

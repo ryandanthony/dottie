@@ -1,0 +1,10 @@
+<linker>
+  <!-- Preserve YamlDotNet types used for reflection-based deserialization -->
+  <assembly fullname="YamlDotNet" preserve="all" />
+
+  <!-- Preserve Dottie.Configuration model types for YAML deserialization -->
+  <assembly fullname="Dottie.Configuration">
+    <type fullname="Dottie.Configuration.Models.*" preserve="all" />
+    <type fullname="Dottie.Configuration.Models.InstallBlocks.*" preserve="all" />
+  </assembly>
+</linker>

@@ -1,0 +1,8 @@
+# Test fixture: Profile extends a non-existent profile
+
+profiles:
+  work:
+    extends: nonexistent
+    dotfiles:
+      - source: dotfiles/bashrc
+        target: ~/.bashrc

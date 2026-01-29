@@ -1,0 +1,56 @@
+# dottie Configuration File
+# https://github.com/ryandanthony/dottie
+#
+# This file defines dotfile symlinks and optional software to install.
+# Run 'dottie validate <profile>' to verify your configuration.
+
+profiles:
+  default:
+    # Dotfile symlinks to create
+    dotfiles:
+      - source: dotfiles/.bashrc
+        target: ~/.bashrc
+      - source: dotfiles/.gitconfig
+        target: ~/.gitconfig
+
+    # Optional: Software installation
+    # Uncomment and customize as needed
+    #
+    # install:
+    #   # APT packages (Debian/Ubuntu)
+    #   apt:
+    #     - git
+    #     - curl
+    #     - vim
+    #
+    #   # Shell scripts to run (must be in repo)
+    #   scripts:
+    #     - scripts/setup.sh
+    #
+    #   # GitHub releases (architecture-aware)
+    #   github:
+    #     - repo: owner/repo
+    #       asset: binary-{arch}.tar.gz
+    #       binary: binary
+    #
+    #   # Snap packages
+    #   snaps:
+    #     - name: code
+    #       classic: true
+    #
+    #   # Nerd Fonts
+    #   fonts:
+    #     - url: https://github.com/ryanoasis/nerd-fonts/releases/download/v3.0.0/FiraCode.zip
+    #
+    #   # APT repositories
+    #   apt-repos:
+    #     - name: example-repo
+    #       key-url: https://example.com/key.gpg
+    #       repo-line: "deb https://example.com/apt stable main"
+
+  # Example: Additional profile that extends default
+  # work:
+  #   extends: default
+  #   dotfiles:
+  #     - source: dotfiles/.work-gitconfig
+  #       target: ~/.gitconfig-work

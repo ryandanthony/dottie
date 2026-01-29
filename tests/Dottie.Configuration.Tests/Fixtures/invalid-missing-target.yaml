@@ -1,0 +1,6 @@
+# Invalid: Missing target field in dotfile entry
+
+profiles:
+  default:
+    dotfiles:
+      - source: dotfiles/bashrc

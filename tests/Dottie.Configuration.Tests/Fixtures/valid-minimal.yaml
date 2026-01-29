@@ -1,0 +1,7 @@
+# Minimal valid configuration with a single dotfile
+
+profiles:
+  default:
+    dotfiles:
+      - source: dotfiles/bashrc
+        target: ~/.bashrc

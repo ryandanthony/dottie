@@ -1,16 +1,14 @@
 <!--
 Sync Impact Report
 
-- Version change: 1.3.0 → 1.4.0
+- Version change: 1.5.0 → 1.6.0
 - Modified principles: None
 - Added sections:
-	- Testing Philosophy
+	- Code Standards - MANDATORY (FestinaLente.CodeStandards NuGet package requirement)
 - Removed sections: None
 - Templates requiring updates:
-	- ✅ .specify/templates/plan-template.md
-	- ⚠️ .specify/templates/spec-template.md (no change required)
-  - ⚠️ .specify/templates/tasks-template.md (no change required)
-	- ⚠️ .specify/templates/checklist-template.md (no change required)
+	- ⚠️ .specify/templates/plan-template.md (add code standards package reference)
+	- ✅ .specify/memory/rules.md (already contains full rule documentation)
 - Follow-up TODOs:
 	- TODO(RATIFICATION_DATE): Set the original adoption date for this constitution.
 -->
@@ -122,19 +120,95 @@ The tool MUST be debuggable by users:
 - Avoid unnecessary abstraction; introduce indirection only when it reduces
   real duplication or improves testability.
 
-## Testing Philosophy
+## Test-Driven Development (TDD) - MANDATORY
 
-- Testing is a first-class requirement; it MUST be planned alongside behavior
-  changes, not deferred.
-- Tests MUST validate behavior and contracts rather than internal implementation
-  details.
-- Integration tests SHOULD be the primary mechanism for verifying end-to-end
-  correctness and real workflows.
-- Tests SHOULD reflect realistic workflows and data flows.
-- Tests MUST be deterministic and isolated (no hidden dependencies on network,
-  time, global state, or order).
-- Every test SHOULD increase confidence and reduce ambiguity; remove or rewrite
-  tests that are flaky or unclear.
+**STRICT REQUIREMENT**: Test-Driven Development is NOT OPTIONAL. All production
+code MUST be developed using TDD.
+
+### TDD Workflow (MUST follow in order)
+
+1. **Write test FIRST** - Before writing any production code, create the test
+   file and write the failing test(s). If multiple tests are needed to define
+   the behavior, write all of them before any implementation.
+2. **Red** - Run the test and verify it fails for the right reason. This must
+   not be just a build error; if stubbing is needed to compile, do so, but the
+   test must fail for the expected behavioral reason.
+3. **Green** - Write the MINIMUM production code to make the test pass.
+4. **Refactor** - Improve code quality while keeping all tests green.
+5. **Repeat** - Continue this cycle for each new behavior.
+6. **Verify coverage** - Ensure ≥90% line and ≥80% branch coverage.
+
+### Violations
+
+Writing production code before tests is a VIOLATION of project standards. If
+production code exists without corresponding tests, development MUST STOP and
+tests MUST be written immediately before proceeding.
+
+### Key Principles
+
+- Never write production code without a failing test first.
+- Keep tests simple and focused on behavior, not implementation details.
+- Avoid over-mocking — use real objects when possible; mock only external
+  dependencies.
+- Each test should verify ONE specific behavior.
+- Test names should clearly describe the scenario and expected outcome.
+- Tests are living documentation — they should be readable and maintainable.
+
+### Coverage Requirements
+
+- Minimum 90% line coverage for all production code.
+- Minimum 80% branch coverage for all production code.
+- Coverage MUST be verified in CI pipeline.
+- Any waiver for coverage shortfalls MUST include an expiry issue link.
+
+### Rationale
+
+TDD ensures code is testable by design, reduces defects through immediate
+feedback, provides executable documentation of behavior, enables confident
+refactoring, and prevents over-engineering by focusing on required
+functionality. Tests written first guide simpler, more maintainable
+implementations.
+
+## Code Standards - MANDATORY
+
+**STRICT REQUIREMENT**: All projects MUST reference the FestinaLente.CodeStandards
+NuGet package to enforce consistent code quality and style rules.
+
+### Package Reference
+
+All .NET projects MUST include a reference to:
+
+```
+https://github.com/festina-lente-io/code-standards/pkgs/nuget/FestinaLente.CodeStandards
+```
+
+### Rule Documentation
+
+The complete list of analyzer rules enforced by this package is documented in:
+
+```
+.specify/memory/rules.md
+```
+
+This file contains rule IDs, descriptions, links to detailed documentation, and
+severity levels for all enforced rules.
+
+### Requirements
+
+- **All projects**: MUST reference the FestinaLente.CodeStandards package.
+- **CI builds**: MUST treat analyzer warnings as errors (`TreatWarningsAsErrors`).
+- **Suppressions**: Any rule suppression MUST include a justification comment
+  and be reviewed as part of PR.
+- **Rule updates**: When the package is updated, any new rule violations MUST
+  be addressed before merging.
+
+### Rationale
+
+Consistent code standards across all projects improve readability, reduce
+cognitive load during code review, catch common bugs early through static
+analysis, and ensure the codebase maintains a professional quality standard.
+Centralizing rules in a NuGet package enables consistent enforcement across
+all repositories and simplifies rule updates.
 
 ## Governance
 
@@ -152,4 +226,4 @@ and conventions when there is a conflict.
 - Compliance review expectation: PR authors and reviewers MUST explicitly verify
   compliance with the Core Principles for any user-facing change.
 
-**Version**: 1.4.0 | **Ratified**: TODO(RATIFICATION_DATE): Unknown | **Last Amended**: 2026-01-28
+**Version**: 1.6.0 | **Ratified**: TODO(RATIFICATION_DATE): Unknown | **Last Amended**: 2026-01-28

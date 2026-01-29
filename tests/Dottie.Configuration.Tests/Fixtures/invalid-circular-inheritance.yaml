@@ -1,0 +1,14 @@
+# Test fixture: Circular inheritance (profile A extends B, B extends A)
+
+profiles:
+  alpha:
+    extends: beta
+    dotfiles:
+      - source: dotfiles/alpha
+        target: ~/.alpha
+
+  beta:
+    extends: alpha
+    dotfiles:
+      - source: dotfiles/beta
+        target: ~/.beta

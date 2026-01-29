@@ -1,0 +1,29 @@
+# Test fixture: Multiple profiles for testing profile selection
+
+profiles:
+  default:
+    dotfiles:
+      - source: dotfiles/bashrc
+        target: ~/.bashrc
+      - source: dotfiles/vimrc
+        target: ~/.vimrc
+    install:
+      apt:
+        - git
+        - curl
+
+  work:
+    dotfiles:
+      - source: dotfiles/work/aws-config
+        target: ~/.aws/config
+      - source: dotfiles/work/kubeconfig
+        target: ~/.kube/config
+    install:
+      apt:
+        - awscli
+        - kubectl
+
+  minimal:
+    dotfiles:
+      - source: dotfiles/bashrc
+        target: ~/.bashrc

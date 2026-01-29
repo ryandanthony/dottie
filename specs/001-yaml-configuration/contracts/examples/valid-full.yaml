@@ -1,0 +1,85 @@
+# yaml-language-server: $schema=../dottie-config.schema.json
+# Complete configuration demonstrating all features
+
+profiles:
+  default:
+    dotfiles:
+      - source: dotfiles/bashrc
+        target: ~/.bashrc
+      - source: dotfiles/vimrc
+        target: ~/.vimrc
+      - source: dotfiles/config/nvim
+        target: ~/.config/nvim
+      - source: dotfiles/gitconfig
+        target: ~/.gitconfig
+
+    install:
+      github:
+        - repo: junegunn/fzf
+          asset: fzf-*-linux_amd64.tar.gz
+          binary: fzf
+        - repo: sharkdp/bat
+          asset: bat-*-x86_64-unknown-linux-musl.tar.gz
+          binary: bat
+          version: "0.24.0"
+        - repo: BurntSushi/ripgrep
+          asset: ripgrep-*-x86_64-unknown-linux-musl.tar.gz
+          binary: rg
+
+      apt:
+        - git
+        - curl
+        - htop
+        - tmux
+        - zsh
+
+      apt-repo:
+        - name: docker
+          key_url: https://download.docker.com/linux/ubuntu/gpg
+          repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable"
+          packages:
+            - docker-ce
+            - docker-ce-cli
+            - containerd.io
+
+      scripts:
+        - scripts/install-nvm.sh
+        - scripts/setup-golang.sh
+
+      fonts:
+        - name: JetBrains Mono
+          url: https://github.com/JetBrains/JetBrainsMono/releases/download/v2.304/JetBrainsMono-2.304.zip
+        - name: Fira Code
+          url: https://github.com/tonsky/FiraCode/releases/download/6.2/Fira_Code_v6.2.zip
+
+      snap:
+        - name: code
+          classic: true
+        - name: spotify
+        - name: slack
+          classic: true
+
+  work:
+    extends: default
+    dotfiles:
+      - source: dotfiles/work/aws-config
+        target: ~/.aws/config
+    install:
+      apt:
+        - awscli
+        - kubectl
+        - terraform
+      github:
+        - repo: derailed/k9s
+          asset: k9s_Linux_amd64.tar.gz
+          binary: k9s
+
+  minimal:
+    dotfiles:
+      - source: dotfiles/bashrc
+        target: ~/.bashrc
+    install:
+      apt:
+        - git
+        - vim
+        - curl

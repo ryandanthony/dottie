@@ -1,0 +1,6 @@
+# Invalid Script Path - Contains directory traversal
+profiles:
+  default:
+    install:
+      scripts:
+        - ../../../etc/passwd

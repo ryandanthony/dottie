@@ -1,0 +1,31 @@
+# Full valid configuration with multiple profiles
+
+profiles:
+  default:
+    dotfiles:
+      - source: dotfiles/bashrc
+        target: ~/.bashrc
+      - source: dotfiles/vimrc
+        target: ~/.vimrc
+    install:
+      apt:
+        - git
+        - curl
+        - vim
+      github:
+        - repo: junegunn/fzf
+          asset: fzf-*-linux_amd64.tar.gz
+          binary: fzf
+      snap:
+        - name: code
+          classic: true
+
+  work:
+    extends: default
+    dotfiles:
+      - source: dotfiles/work/gitconfig
+        target: ~/.gitconfig
+    install:
+      apt:
+        - awscli
+        - kubectl

@@ -1,0 +1,14 @@
+<Project>
+  <!-- Test-specific analyzer suppressions -->
+  <PropertyGroup>
+    <!-- CA1707: Allow underscores in test method names (e.g., MethodName_Scenario_ExpectedResult) -->
+    <!-- SA1200: Allow using directives outside namespace in test files for brevity -->
+    <!-- SA1633: Allow non-XML file headers (MIT license comment format) -->
+    <!-- SA0001: Disable XML comment analysis for test projects -->
+    <!-- MA0002: Allow default string comparison in test dictionaries -->
+    <!-- SA1101: Don't require 'this.' prefix in tests -->
+    <!-- SA1309: Allow underscore prefix in test field names -->
+    <!-- SA1208: Don't enforce using directive order in tests -->
+    <NoWarn>$(NoWarn);CA1707;SA1200;SA1633;SA0001;MA0002;SA1101;SA1309;SA1208</NoWarn>
+  </PropertyGroup>
+</Project>

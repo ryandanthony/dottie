@@ -1,0 +1,126 @@
+# Performance test fixture: 50 dotfile entries
+# Used to verify SC-004: Configuration with 50 entries loads in < 2 seconds
+
+profiles:
+  default:
+    dotfiles:
+      - source: dotfiles/file01.conf
+        target: ~/.config/file01.conf
+      - source: dotfiles/file02.conf
+        target: ~/.config/file02.conf
+      - source: dotfiles/file03.conf
+        target: ~/.config/file03.conf
+      - source: dotfiles/file04.conf
+        target: ~/.config/file04.conf
+      - source: dotfiles/file05.conf
+        target: ~/.config/file05.conf
+      - source: dotfiles/file06.conf
+        target: ~/.config/file06.conf
+      - source: dotfiles/file07.conf
+        target: ~/.config/file07.conf
+      - source: dotfiles/file08.conf
+        target: ~/.config/file08.conf
+      - source: dotfiles/file09.conf
+        target: ~/.config/file09.conf
+      - source: dotfiles/file10.conf
+        target: ~/.config/file10.conf
+      - source: dotfiles/file11.conf
+        target: ~/.config/file11.conf
+      - source: dotfiles/file12.conf
+        target: ~/.config/file12.conf
+      - source: dotfiles/file13.conf
+        target: ~/.config/file13.conf
+      - source: dotfiles/file14.conf
+        target: ~/.config/file14.conf
+      - source: dotfiles/file15.conf
+        target: ~/.config/file15.conf
+      - source: dotfiles/file16.conf
+        target: ~/.config/file16.conf
+      - source: dotfiles/file17.conf
+        target: ~/.config/file17.conf
+      - source: dotfiles/file18.conf
+        target: ~/.config/file18.conf
+      - source: dotfiles/file19.conf
+        target: ~/.config/file19.conf
+      - source: dotfiles/file20.conf
+        target: ~/.config/file20.conf
+      - source: dotfiles/file21.conf
+        target: ~/.config/file21.conf
+      - source: dotfiles/file22.conf
+        target: ~/.config/file22.conf
+      - source: dotfiles/file23.conf
+        target: ~/.config/file23.conf
+      - source: dotfiles/file24.conf
+        target: ~/.config/file24.conf
+      - source: dotfiles/file25.conf
+        target: ~/.config/file25.conf
+      - source: dotfiles/file26.conf
+        target: ~/.config/file26.conf
+      - source: dotfiles/file27.conf
+        target: ~/.config/file27.conf
+      - source: dotfiles/file28.conf
+        target: ~/.config/file28.conf
+      - source: dotfiles/file29.conf
+        target: ~/.config/file29.conf
+      - source: dotfiles/file30.conf
+        target: ~/.config/file30.conf
+      - source: dotfiles/file31.conf
+        target: ~/.config/file31.conf
+      - source: dotfiles/file32.conf
+        target: ~/.config/file32.conf
+      - source: dotfiles/file33.conf
+        target: ~/.config/file33.conf
+      - source: dotfiles/file34.conf
+        target: ~/.config/file34.conf
+      - source: dotfiles/file35.conf
+        target: ~/.config/file35.conf
+      - source: dotfiles/file36.conf
+        target: ~/.config/file36.conf
+      - source: dotfiles/file37.conf
+        target: ~/.config/file37.conf
+      - source: dotfiles/file38.conf
+        target: ~/.config/file38.conf
+      - source: dotfiles/file39.conf
+        target: ~/.config/file39.conf
+      - source: dotfiles/file40.conf
+        target: ~/.config/file40.conf
+      - source: dotfiles/file41.conf
+        target: ~/.config/file41.conf
+      - source: dotfiles/file42.conf
+        target: ~/.config/file42.conf
+      - source: dotfiles/file43.conf
+        target: ~/.config/file43.conf
+      - source: dotfiles/file44.conf
+        target: ~/.config/file44.conf
+      - source: dotfiles/file45.conf
+        target: ~/.config/file45.conf
+      - source: dotfiles/file46.conf
+        target: ~/.config/file46.conf
+      - source: dotfiles/file47.conf
+        target: ~/.config/file47.conf
+      - source: dotfiles/file48.conf
+        target: ~/.config/file48.conf
+      - source: dotfiles/file49.conf
+        target: ~/.config/file49.conf
+      - source: dotfiles/file50.conf
+        target: ~/.config/file50.conf
+
+    install:
+      apt:
+        - git
+        - curl
+        - vim
+        - wget
+        - htop
+      scripts:
+        - scripts/setup.sh
+      github:
+        - repo: cli/cli
+          asset: gh_{version}_linux_amd64.tar.gz
+          binary: gh
+        - repo: sharkdp/bat
+          asset: bat-v{version}-x86_64-unknown-linux-musl.tar.gz
+          binary: bat
+        - repo: BurntSushi/ripgrep
+          asset: ripgrep-{version}-x86_64-unknown-linux-musl.tar.gz
+          binary: rg

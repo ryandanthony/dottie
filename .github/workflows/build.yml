@@ -42,12 +42,11 @@ jobs:
         id: gitversion
         run: |
           VERSION_JSON=$(dotnet-gitversion /output json)
-          SEMVER=$(echo "$VERSION_JSON" | grep -o '"SemVer":"[^"]*' | cut -d'"' -f4)
-          FULLSEMVER=$(echo "$VERSION_JSON" | grep -o '"FullSemVer":"[^"]*' | cut -d'"' -f4)
-          MAJORMINOR=$(echo "$VERSION_JSON" | grep -o '"MajorMinorPatch":"[^"]*' | cut -d'"' -f4)
+          echo "Full output: $VERSION_JSON"
+          SEMVER=$(echo "$VERSION_JSON" | grep -oP '"SemVer"\s*:\s*"\K[^"]+')
+          FULLSEMVER=$(echo "$VERSION_JSON" | grep -oP '"FullSemVer"\s*:\s*"\K[^"]+')
           echo "semVer=$SEMVER" >> $GITHUB_OUTPUT
           echo "fullSemVer=$FULLSEMVER" >> $GITHUB_OUTPUT
-          echo "majorMinorPatch=$MAJORMINOR" >> $GITHUB_OUTPUT
 
       - name: Display Version
         run: |

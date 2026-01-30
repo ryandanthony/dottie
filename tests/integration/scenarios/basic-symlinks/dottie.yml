@@ -1,0 +1,14 @@
+version: "1"
+
+profiles:
+  default:
+    description: "Basic symlink test profile"
+
+sources:
+  - path: "."
+    priority: 1000
+
+mappings:
+  - source: "README.md"
+    target: "~/.dottie-test-readme"
+    profile: "default"

@@ -66,16 +66,18 @@ jobs:
       - name: Restore
         run: dotnet restore
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # T012: Build with version
       - name: Build
         run: dotnet build --no-restore --configuration Release /p:Version=${{ steps.gitversion.outputs.semVer }}
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # T013: Run unit tests with coverage
       - name: Unit Tests
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           dotnet test tests/Dottie.Cli.Tests/Dottie.Cli.Tests.csproj \
             --no-build \
@@ -94,7 +96,7 @@ jobs:
       # T014: Integration tests (Docker-based)
       - name: Build Integration Test Image
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # First publish linux-x64 for the container
           dotnet publish src/Dottie.Cli/Dottie.Cli.csproj \
@@ -160,7 +162,7 @@ jobs:
       # T020: Publish win-x64 (linux-x64 already done in T014)
       - name: Publish win-x64
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           dotnet publish src/Dottie.Cli/Dottie.Cli.csproj \
             --configuration Release \

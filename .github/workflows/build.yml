@@ -41,10 +41,19 @@ jobs:
       - name: Determine Version
         id: gitversion
         run: |
-          VERSION_JSON=$(dotnet-gitversion /output json)
-          echo "Full output: $VERSION_JSON"
-          SEMVER=$(echo "$VERSION_JSON" | grep -oP '"SemVer"\s*:\s*"\K[^"]+')
-          FULLSEMVER=$(echo "$VERSION_JSON" | grep -oP '"FullSemVer"\s*:\s*"\K[^"]+')
+          # Get JSON output and filter out INFO/WARN lines
+          VERSION_JSON=$(dotnet-gitversion /output json 2>&1 | grep -v "INFO\|WARN" | tr -d '\n')
+          echo "Version JSON: $VERSION_JSON"
+          
+          # Parse using jq if available, fallback to grep
+          if command -v jq &> /dev/null; then
+            SEMVER=$(echo "$VERSION_JSON" | jq -r '.SemVer')
+            FULLSEMVER=$(echo "$VERSION_JSON" | jq -r '.FullSemVer')
+          else
+            SEMVER=$(echo "$VERSION_JSON" | grep -oP '"SemVer"\s*:\s*"\K[^"]+')
+            FULLSEMVER=$(echo "$VERSION_JSON" | grep -oP '"FullSemVer"\s*:\s*"\K[^"]+')
+          fi
+          
           echo "semVer=$SEMVER" >> $GITHUB_OUTPUT
           echo "fullSemVer=$FULLSEMVER" >> $GITHUB_OUTPUT
 

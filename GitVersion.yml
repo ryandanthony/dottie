@@ -1,0 +1,5 @@
+workflow: GitHubFlow/v1
+tag-prefix: v
+
+major-version-bump-message: '\+semver:\s?(major|breaking)'
+minor-version-bump-message: '\+semver:\s?(minor|feature)'

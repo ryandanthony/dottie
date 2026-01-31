@@ -1,0 +1,198 @@
+name: Build
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+  packages: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # T008: Checkout with full history (needed for GitVersion)
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # T009: Setup .NET SDK (version from global.json)
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+
+      # T010: Cache NuGet packages
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/Directory.Build.props') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      # T025: GitVersion setup and execution
+      - name: Install GitVersion
+        run: dotnet tool install --global gitversion.tool
+
+      - name: Determine Version
+        id: gitversion
+        run: |
+          # Get JSON output and filter out INFO/WARN lines
+          VERSION_JSON=$(dotnet-gitversion /output json 2>&1 | grep -v "INFO\|WARN" | tr -d '\n')
+          echo "Version JSON: $VERSION_JSON"
+
+          # Parse using jq if available, fallback to grep
+          if command -v jq &> /dev/null; then
+            SEMVER=$(echo "$VERSION_JSON" | jq -r '.SemVer')
+            FULLSEMVER=$(echo "$VERSION_JSON" | jq -r '.FullSemVer')
+          else
+            SEMVER=$(echo "$VERSION_JSON" | grep -oP '"SemVer"\s*:\s*"\K[^"]+')
+            FULLSEMVER=$(echo "$VERSION_JSON" | grep -oP '"FullSemVer"\s*:\s*"\K[^"]+')
+          fi
+
+          echo "semVer=$SEMVER" >> $GITHUB_OUTPUT
+          echo "fullSemVer=$FULLSEMVER" >> $GITHUB_OUTPUT
+
+      - name: Display Version
+        run: |
+          echo "SemVer: ${{ steps.gitversion.outputs.semVer }}"
+          echo "FullSemVer: ${{ steps.gitversion.outputs.fullSemVer }}"
+
+      # T011: Configure GitHub Packages NuGet source with credentials
+      - name: Configure NuGet Credentials
+        run: |
+          dotnet nuget update source github \
+            --username github \
+            --password ${{ secrets.GITHUB_TOKEN }} \
+            --store-password-in-clear-text
+
+      - name: Restore
+        run: dotnet restore
+
+      # T012: Build with version
+      - name: Build
+        run: dotnet build --no-restore --configuration Release /p:Version=${{ steps.gitversion.outputs.semVer }}
+
+      # T013: Run unit tests with coverage
+      - name: Unit Tests
+        run: |
+          dotnet test tests/Dottie.Cli.Tests/Dottie.Cli.Tests.csproj \
+            --no-build \
+            --configuration Release \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./TestResults/unit \
+            --logger "trx;LogFileName=unit-tests.trx"
+
+          dotnet test tests/Dottie.Configuration.Tests/Dottie.Configuration.Tests.csproj \
+            --no-build \
+            --configuration Release \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./TestResults/unit \
+            --logger "trx;LogFileName=config-tests.trx"
+
+      # T014: Integration tests (Docker-based)
+      - name: Build Integration Test Image
+        run: |
+          # First publish linux-x64 for the container
+          dotnet publish src/Dottie.Cli/Dottie.Cli.csproj \
+            --configuration Release \
+            --runtime linux-x64 \
+            --self-contained \
+            --output ./publish/linux-x64 \
+            /p:PublishSingleFile=true \
+            /p:Version=${{ steps.gitversion.outputs.semVer }}
+
+          # Build the test container (context is repo root so COPY can access publish/)
+          docker build \
+            -t dottie-integration-test \
+            -f tests/integration/Dockerfile \
+            .
+
+      - name: Run Integration Tests
+        run: |
+          docker run --rm dottie-integration-test
+
+      # T015: Generate coverage report
+      - name: Install ReportGenerator
+        run: dotnet tool install -g dotnet-reportgenerator-globaltool
+
+      - name: Generate Coverage Report
+        run: |
+          reportgenerator \
+            -reports:"./TestResults/unit/**/coverage.cobertura.xml" \
+            -targetdir:"./coverage-report" \
+            -reporttypes:"Html;MarkdownSummaryGithub;Cobertura"
+
+      # T016: Coverage threshold check (80%)
+      - name: Check Coverage Threshold
+        run: |
+          # Parse the combined coverage from the generated report
+          COVERAGE=$(grep -oP '(?<=<coverage line-rate=")[^"]+' ./coverage-report/Cobertura.xml | head -1)
+          COVERAGE_PCT=$(echo "$COVERAGE * 100" | bc -l | xargs printf "%.2f")
+          echo "Line coverage: $COVERAGE_PCT%"
+
+          # Check threshold (80%)
+          if (( $(echo "$COVERAGE < 0.80" | bc -l) )); then
+            echo "::error::Coverage $COVERAGE_PCT% is below the 80% threshold"
+            exit 1
+          fi
+          echo "✓ Coverage $COVERAGE_PCT% meets the 80% threshold"
+
+      # T017: Upload coverage report as artifact
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage-report/
+          retention-days: 7
+
+      # T018: Post coverage comment on PRs
+      - name: Post Coverage Comment
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          recreate: true
+          path: coverage-report/SummaryGithub.md
+
+      # T020: Publish win-x64 (linux-x64 already done in T014)
+      - name: Publish win-x64
+        run: |
+          dotnet publish src/Dottie.Cli/Dottie.Cli.csproj \
+            --configuration Release \
+            --runtime win-x64 \
+            --self-contained \
+            --output ./publish/win-x64 \
+            /p:PublishSingleFile=true \
+            /p:Version=${{ steps.gitversion.outputs.semVer }}
+
+      # T021: Upload build artifacts with 7-day retention
+      - name: Upload linux-x64 Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dottie-linux-x64-${{ steps.gitversion.outputs.semVer }}
+          path: publish/linux-x64/
+          retention-days: 7
+
+      - name: Upload win-x64 Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dottie-win-x64-${{ steps.gitversion.outputs.semVer }}
+          path: publish/win-x64/
+          retention-days: 7
+
+      # T022, T023, T024: Create GitHub Release with binaries (main branch only)
+      - name: Create GitHub Release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.gitversion.outputs.semVer }}
+          name: v${{ steps.gitversion.outputs.semVer }}
+          generate_release_notes: true
+          files: |
+            publish/linux-x64/dottie
+            publish/win-x64/dottie.exe

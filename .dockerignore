@@ -1,0 +1,35 @@
+# Docker ignore file
+# Exclude files not needed for integration test container build
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.idea/
+.vs/
+*.suo
+*.user
+*.sln.DotSettings.user
+
+# Build artifacts (except publish which we need)
+**/bin/
+**/obj/
+
+# Test results (not needed in container)
+TestResults/
+coverage-report/
+
+# Documentation
+*.md
+!tests/integration/**/*.md
+
+# Specs
+specs/
+design-notes/
+
+# GitHub workflows (not needed in container)
+.github/
+
+# Node
+node_modules/

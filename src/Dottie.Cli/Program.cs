@@ -15,6 +15,7 @@ namespace Dottie.Cli;
 public static class Program
 {
     private const string ValidateCommandName = "validate";
+    private const string LinkCommandName = "link";
 
     /// <summary>
     /// Main entry point.
@@ -35,6 +36,13 @@ public static class Program
                 .WithExample(ValidateCommandName)
                 .WithExample(ValidateCommandName, "--profile", "work")
                 .WithExample(ValidateCommandName, "-c", "./my-config.yaml", "-p", "work");
+
+            config.AddCommand<LinkCommand>(LinkCommandName)
+                .WithDescription("Create symbolic links for dotfiles")
+                .WithExample(LinkCommandName)
+                .WithExample(LinkCommandName, "--profile", "work")
+                .WithExample(LinkCommandName, "--force")
+                .WithExample(LinkCommandName, "-c", "./my-config.yaml", "-p", "work", "-f");
         });
 
         return app.Run(args);

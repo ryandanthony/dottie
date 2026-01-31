@@ -1,0 +1,9 @@
+profiles:
+  default:
+    dotfiles:
+      - source: bashrc
+        target: ~/.test-bashrc
+      - source: vimrc
+        target: ~/.test-vimrc
+      - source: config/nvim/init.lua
+        target: ~/.config/test-nvim/init.lua

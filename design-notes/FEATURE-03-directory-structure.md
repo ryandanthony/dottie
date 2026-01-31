@@ -1,8 +1,12 @@
 # FEATURE-03: Directory Structure
 
+> **Note:** This document describes *recommended conventions*, not enforced requirements.
+> The YAML schema accepts any valid relative path for `source` and `scripts` entries.
+> Directory structure guidance belongs in user documentation, not in code validation.
+
 ## Summary
 
-Dottie expects a standard repository layout.
+Dottie recommends (but does not enforce) a standard repository layout.
 
 ## Proposed structure
 

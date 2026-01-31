@@ -1,0 +1,26 @@
+# Example: Dotfiles with Potential Conflicts
+# Purpose: Demonstrates a typical dotfile configuration where target files may already exist
+#
+# Scenario: User has existing .bashrc, .gitconfig, and .config/nvim on their system
+# Expected behavior:
+#   - Without --force: dottie link fails, lists all 3 as conflicts
+#   - With --force: backs up existing files, creates symlinks
+
+profiles:
+  default:
+    dotfiles:
+      # Shell configuration - commonly exists on most systems
+      - source: shell/bashrc
+        target: ~/.bashrc
+
+      # Git configuration - frequently customized per-machine
+      - source: git/gitconfig
+        target: ~/.gitconfig
+
+      # Editor configuration - often already present
+      - source: editors/nvim
+        target: ~/.config/nvim
+
+      # SSH config - sensitive, often has local modifications
+      - source: ssh/config
+        target: ~/.ssh/config

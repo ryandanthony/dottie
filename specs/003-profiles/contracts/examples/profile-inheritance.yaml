@@ -1,0 +1,64 @@
+# Profile Inheritance Example
+# Demonstrates profiles with extends keyword
+
+profiles:
+  # Base profile with common settings for all machines
+  base:
+    dotfiles:
+      - source: dotfiles/bashrc
+        target: ~/.bashrc
+      - source: dotfiles/gitconfig
+        target: ~/.gitconfig
+      - source: dotfiles/vimrc
+        target: ~/.vimrc
+
+    install:
+      apt:
+        - git
+        - curl
+        - htop
+
+  # Minimal profile - extends base, adds nothing
+  minimal:
+    extends: base
+
+  # Full profile - extends base with additional tools
+  full:
+    extends: base
+    dotfiles:
+      - source: dotfiles/config/nvim
+        target: ~/.config/nvim
+      - source: dotfiles/tmux.conf
+        target: ~/.tmux.conf
+
+    install:
+      apt:
+        - tmux
+        - zsh
+        - neovim
+
+      github:
+        - repo: junegunn/fzf
+          asset: fzf-*-linux_amd64.tar.gz
+          binary: fzf
+        - repo: sharkdp/bat
+          asset: bat-*-x86_64-unknown-linux-musl.tar.gz
+          binary: bat
+
+  # Work profile - extends full with work-specific tools
+  work:
+    extends: full
+    dotfiles:
+      - source: dotfiles/work/gitconfig
+        target: ~/.gitconfig  # Overrides base gitconfig
+
+    install:
+      apt:
+        - awscli
+        - kubectl
+
+      snap:
+        - name: code
+          classic: true
+        - name: slack
+          classic: true

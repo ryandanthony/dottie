@@ -1,0 +1,70 @@
+# Deep Inheritance Chain Example
+# Demonstrates multi-level inheritance (A → B → C → D)
+
+profiles:
+  # Level 0: Foundation - minimal essentials
+  foundation:
+    dotfiles:
+      - source: dotfiles/bashrc
+        target: ~/.bashrc
+
+    install:
+      apt:
+        - git
+
+  # Level 1: Developer - adds development basics
+  developer:
+    extends: foundation
+    dotfiles:
+      - source: dotfiles/gitconfig
+        target: ~/.gitconfig
+      - source: dotfiles/vimrc
+        target: ~/.vimrc
+
+    install:
+      apt:
+        - curl
+        - htop
+
+  # Level 2: Full Developer - adds modern tooling
+  full-developer:
+    extends: developer
+    dotfiles:
+      - source: dotfiles/config/nvim
+        target: ~/.config/nvim
+      - source: dotfiles/tmux.conf
+        target: ~/.tmux.conf
+
+    install:
+      apt:
+        - tmux
+        - neovim
+
+      github:
+        - repo: junegunn/fzf
+          asset: fzf-*-linux_amd64.tar.gz
+          binary: fzf
+
+  # Level 3: Power User - extends with specialized tools
+  power-user:
+    extends: full-developer
+    dotfiles:
+      - source: dotfiles/zshrc
+        target: ~/.zshrc
+
+    install:
+      apt:
+        - zsh
+
+      github:
+        - repo: sharkdp/bat
+          asset: bat-*-x86_64-unknown-linux-musl.tar.gz
+          binary: bat
+        - repo: BurntSushi/ripgrep
+          asset: ripgrep-*-x86_64-unknown-linux-musl.tar.gz
+          binary: rg
+
+# Inheritance chain for 'power-user':
+#   foundation → developer → full-developer → power-user
+#
+# Merged result includes ALL dotfiles and packages from the entire chain

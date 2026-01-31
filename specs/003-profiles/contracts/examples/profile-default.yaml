@@ -1,0 +1,32 @@
+# Default Profile Behavior Example
+# Demonstrates explicit vs implicit default profiles
+
+profiles:
+  # Explicit default profile
+  default:
+    dotfiles:
+      - source: dotfiles/bashrc
+        target: ~/.bashrc
+      - source: dotfiles/gitconfig
+        target: ~/.gitconfig
+
+    install:
+      apt:
+        - git
+        - curl
+
+  # Work profile extends default
+  work:
+    extends: default
+    install:
+      apt:
+        - awscli
+        - kubectl
+
+# Usage:
+#   dottie validate              # Uses 'default' profile
+#   dottie validate --profile default  # Explicit - same result
+#   dottie validate --profile work     # Uses 'work' profile
+
+# Note: If 'default' profile is not defined in the YAML,
+# dottie will use an implicit empty default profile.

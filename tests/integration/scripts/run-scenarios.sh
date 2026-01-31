@@ -60,17 +60,17 @@ for scenario_dir in "$SCENARIOS_DIR"/*/; do
                 echo "  Running custom validation..."
                 if bash "$scenario_dir/validate.sh" "$test_dir"; then
                     echo "  ✓ Custom validation passed"
-                    ((PASSED++))
+                    PASSED=$((PASSED + 1))
                 else
                     echo "  ✗ Custom validation failed"
-                    ((FAILED++))
+                    FAILED=$((FAILED + 1))
                 fi
             else
-                ((PASSED++))
+                PASSED=$((PASSED + 1))
             fi
         else
             echo "  ✗ Validation failed"
-            ((FAILED++))
+            FAILED=$((FAILED + 1))
         fi
         
         # Cleanup

@@ -52,26 +52,31 @@ public sealed class ValidateCommand : Command<ValidateCommandSettings>
             return 1;
         }
 
-        // Resolve profile if specified
-        return settings.ProfileName is not null
-            ? ValidateProfile(loadResult.Configuration!, settings.ProfileName)
-            : ListAvailableProfiles(loadResult.Configuration!);
+        // Always validate a profile - use 'default' if not specified
+        // ProfileResolver handles null/empty by returning 'default' profile
+        return ValidateProfile(loadResult.Configuration!, settings.ProfileName);
     }
 
-    private static int ValidateProfile(DottieConfiguration configuration, string profileName)
+    private static int ValidateProfile(DottieConfiguration configuration, string? profileName)
     {
+        // Use 'default' if no profile name is specified
+        var resolvedProfileName = string.IsNullOrEmpty(profileName) ? "default" : profileName;
+
         var resolver = new ProfileResolver(configuration);
-        var resolveResult = resolver.GetProfile(profileName);
+        var resolveResult = resolver.GetProfile(resolvedProfileName);
 
         if (!resolveResult.IsSuccess)
         {
-            WriteProfileNotFoundError(resolveResult.Error!, resolveResult.AvailableProfiles);
+            WriteProfileNotFoundError(
+                resolveResult.Error!,
+                resolveResult.AvailableProfiles,
+                resolver.ListProfilesWithInfo());
             return 1;
         }
 
         // Check for inheritance issues
         var merger = new ProfileMerger(configuration);
-        var mergeResult = merger.Resolve(profileName);
+        var mergeResult = merger.Resolve(resolvedProfileName);
 
         if (!mergeResult.IsSuccess)
         {
@@ -79,20 +84,7 @@ public sealed class ValidateCommand : Command<ValidateCommandSettings>
             return 1;
         }
 
-        WriteProfileValidSuccess(profileName, mergeResult.Profile!);
-        return 0;
-    }
-
-    private static int ListAvailableProfiles(DottieConfiguration configuration)
-    {
-        var resolver = new ProfileResolver(configuration);
-        var profiles = resolver.ListProfiles();
-
-        AnsiConsole.MarkupLine("[green]✓[/] Configuration file is valid.");
-        WriteAvailableProfiles(profiles);
-        AnsiConsole.MarkupLine(string.Empty);
-        AnsiConsole.MarkupLine("[dim]Run 'dottie validate <profile>' to validate a specific profile.[/]");
-
+        WriteProfileValidSuccess(resolvedProfileName, mergeResult.Profile!);
         return 0;
     }
 
@@ -103,18 +95,41 @@ public sealed class ValidateCommand : Command<ValidateCommandSettings>
         return 1;
     }
 
-    private static void WriteProfileNotFoundError(string error, IReadOnlyList<string> availableProfiles)
+    private static void WriteProfileNotFoundError(
+        string error,
+        IReadOnlyList<string> availableProfiles,
+        IReadOnlyList<ProfileInfo> profileInfos)
     {
         AnsiConsole.MarkupLine($"[red]Error:[/] {error}");
-        WriteAvailableProfiles(availableProfiles);
+        WriteAvailableProfiles(availableProfiles, profileInfos);
     }
 
-    private static void WriteAvailableProfiles(IReadOnlyList<string> profiles)
+    private static void WriteAvailableProfiles(IReadOnlyList<string> profiles, IReadOnlyList<ProfileInfo>? profileInfos)
     {
         AnsiConsole.MarkupLine("[yellow]Available profiles:[/]");
-        foreach (var profile in profiles)
+
+        if (profileInfos != null && profileInfos.Count > 0)
         {
-            AnsiConsole.MarkupLine($"  • {profile}");
+            // Build tree structure showing inheritance
+            var tree = new Tree("[yellow]Profiles[/]");
+
+            foreach (var profile in profileInfos)
+            {
+                var label = profile.Extends != null
+                    ? $"[bold]{profile.Name}[/] [dim](extends: {profile.Extends})[/]"
+                    : $"[bold]{profile.Name}[/]";
+                tree.AddNode(label);
+            }
+
+            AnsiConsole.Write(tree);
+        }
+        else
+        {
+            // Simple list fallback
+            foreach (var profile in profiles)
+            {
+                AnsiConsole.MarkupLine($"  • {profile}");
+            }
         }
     }
 

@@ -14,6 +14,8 @@ namespace Dottie.Cli;
 /// </summary>
 public static class Program
 {
+    private const string ValidateCommandName = "validate";
+
     /// <summary>
     /// Main entry point.
     /// </summary>
@@ -28,10 +30,11 @@ public static class Program
             config.SetApplicationName("dottie");
             config.SetApplicationVersion("0.1.0");
 
-            config.AddCommand<ValidateCommand>("validate")
+            config.AddCommand<ValidateCommand>(ValidateCommandName)
                 .WithDescription("Validate the dottie.yaml configuration file")
-                .WithExample("validate", "default")
-                .WithExample("validate", "--config", "./my-config.yaml", "work");
+                .WithExample(ValidateCommandName)
+                .WithExample(ValidateCommandName, "--profile", "work")
+                .WithExample(ValidateCommandName, "-c", "./my-config.yaml", "-p", "work");
         });
 
         return app.Run(args);

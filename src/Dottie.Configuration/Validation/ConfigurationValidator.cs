@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Text.RegularExpressions;
 using Dottie.Configuration.Models;
 
 namespace Dottie.Configuration.Validation;
@@ -11,8 +12,13 @@ namespace Dottie.Configuration.Validation;
 /// <summary>
 /// Orchestrates validation of the entire configuration.
 /// </summary>
-public class ConfigurationValidator
+public partial class ConfigurationValidator
 {
+    /// <summary>
+    /// Pattern for valid profile names: alphanumeric, hyphens, and underscores only.
+    /// </summary>
+    private const string ProfileNamePattern = @"^[a-zA-Z0-9_-]+$";
+
     private readonly ProfileValidator _profileValidator;
 
     /// <summary>
@@ -33,6 +39,21 @@ public class ConfigurationValidator
     }
 
     /// <summary>
+    /// Validates whether a profile name contains only valid characters.
+    /// </summary>
+    /// <param name="profileName">The profile name to validate.</param>
+    /// <returns>True if the name is valid, false otherwise.</returns>
+    public static bool IsValidProfileName(string profileName)
+    {
+        if (string.IsNullOrEmpty(profileName))
+        {
+            return false;
+        }
+
+        return ProfileNameRegex().IsMatch(profileName);
+    }
+
+    /// <summary>
     /// Validates the entire configuration.
     /// </summary>
     /// <param name="configuration">The configuration to validate.</param>
@@ -49,6 +70,9 @@ public class ConfigurationValidator
             errors.Add(new ValidationError("profiles", "Configuration must contain at least one profile"));
             return new ValidationResult { Errors = errors };
         }
+
+        // Validate profile names
+        ValidateProfileNames(configuration, errors);
 
         // Validate each profile
         foreach (var (profileName, profile) in configuration.Profiles)
@@ -74,4 +98,23 @@ public class ConfigurationValidator
 
         return new ValidationResult { Errors = errors };
     }
+
+    /// <summary>
+    /// Validates that all profile names contain only valid characters.
+    /// </summary>
+    /// <param name="configuration">The configuration to validate.</param>
+    /// <param name="errors">The list to add validation errors to.</param>
+    private static void ValidateProfileNames(DottieConfiguration configuration, List<ValidationError> errors)
+    {
+        var invalidNames = configuration.Profiles.Keys
+            .Where(name => !IsValidProfileName(name))
+            .Select(name => new ValidationError(
+                $"profiles.{name}",
+                $"Profile name '{name}' contains invalid characters. Profile names must contain only letters, numbers, hyphens, and underscores."));
+
+        errors.AddRange(invalidNames);
+    }
+
+    [GeneratedRegex(ProfileNamePattern, RegexOptions.None, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex ProfileNameRegex();
 }

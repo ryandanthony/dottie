@@ -305,4 +305,153 @@ public sealed class ProfileMergerTests
         result.Profile.Install.Fonts.Should().HaveCount(1);
         result.Profile.Install.Fonts[0].Name.Should().Be("JetBrains Mono");
     }
+
+    #pragma warning disable SA1124 // Do not use regions
+
+    #region Phase 4: User Story 2 - Multi-level Inheritance Chain Tests
+
+    [Fact]
+    public void Resolve_ThreeLevelChain_MergesInCorrectOrder()
+    {
+        // Arrange - use profile-dedup.yaml which has base → personal → deep-child
+        var fixturePath = Path.Combine(FixturesPath, "profile-dedup.yaml");
+        var loader = new ConfigurationLoader();
+        var loadResult = loader.Load(fixturePath);
+        loadResult.IsSuccess.Should().BeTrue("fixture should load successfully");
+
+        var merger = new ProfileMerger(loadResult.Configuration!);
+
+        // Act
+        var result = merger.Resolve("deep-child");
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Profile.Should().NotBeNull();
+        result.Profile!.Name.Should().Be("deep-child");
+
+        // Inheritance chain should be base → personal → deep-child
+        result.Profile.InheritanceChain.Should().Equal("base", "personal", "deep-child");
+    }
+
+    [Fact]
+    public void Resolve_ChildOverridesParentSetting_ChildWins()
+    {
+        // Arrange
+        var fixturePath = Path.Combine(FixturesPath, "valid-inheritance.yaml");
+        var loader = new ConfigurationLoader();
+        var loadResult = loader.Load(fixturePath);
+        loadResult.IsSuccess.Should().BeTrue("fixture should load successfully");
+
+        var merger = new ProfileMerger(loadResult.Configuration!);
+
+        // Act
+        var result = merger.Resolve("work");
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+
+        // GitHub fzf entry should have child's (work) values, not parent's (default)
+        var fzf = result.Profile!.Install!.Github.Single(g =>
+            string.Equals(g.Repo, "junegunn/fzf", StringComparison.Ordinal));
+
+        // Child overrides - should have arm64 and version 0.45.0
+        fzf.Asset.Should().Be("fzf-*-linux_arm64.tar.gz");
+        fzf.Version.Should().Be("0.45.0");
+    }
+
+    #endregion
+
+    #region Phase 5: User Story 3 - Dotfile Deduplication Tests
+
+    [Fact]
+    public void MergeDotfiles_SameTarget_ChildOverridesParent()
+    {
+        // Arrange - profile-dedup.yaml has base with gitconfig, personal overrides gitconfig
+        var fixturePath = Path.Combine(FixturesPath, "profile-dedup.yaml");
+        var loader = new ConfigurationLoader();
+        var loadResult = loader.Load(fixturePath);
+        loadResult.IsSuccess.Should().BeTrue("fixture should load successfully");
+
+        var merger = new ProfileMerger(loadResult.Configuration!);
+
+        // Act
+        var result = merger.Resolve("personal");
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+
+        // Should have 4 unique dotfiles:
+        // - ~/.bashrc from base
+        // - ~/.gitconfig from personal (overriding base)
+        // - ~/.vimrc from base
+        // - ~/.ssh/config from personal (new)
+        result.Profile!.Dotfiles.Should().HaveCount(4);
+
+        // gitconfig should be personal's version, not base's
+        var gitconfig = result.Profile.Dotfiles.Single(d =>
+            d.Target == "~/.gitconfig");
+        gitconfig.Source.Should().Be("dotfiles/personal/gitconfig");
+    }
+
+    [Fact]
+    public void MergeDotfiles_DifferentTargets_BothIncluded()
+    {
+        // Arrange - profile-dedup.yaml has base with bashrc, personal adds ssh-config
+        var fixturePath = Path.Combine(FixturesPath, "profile-dedup.yaml");
+        var loader = new ConfigurationLoader();
+        var loadResult = loader.Load(fixturePath);
+        loadResult.IsSuccess.Should().BeTrue("fixture should load successfully");
+
+        var merger = new ProfileMerger(loadResult.Configuration!);
+
+        // Act
+        var result = merger.Resolve("personal");
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+
+        // Base's bashrc should still be present
+        result.Profile!.Dotfiles.Should().Contain(d =>
+            d.Target == "~/.bashrc" && d.Source == "dotfiles/bashrc");
+
+        // Personal's ssh-config should be added
+        result.Profile.Dotfiles.Should().Contain(d =>
+            d.Target == "~/.ssh/config" && d.Source == "dotfiles/personal/ssh-config");
+    }
+
+    [Fact]
+    public void MergeDotfiles_ThreeLevelChain_DeepestChildWins()
+    {
+        // Arrange - profile-dedup.yaml: base → personal → deep-child
+        // All three have gitconfig targeting ~/.gitconfig
+        var fixturePath = Path.Combine(FixturesPath, "profile-dedup.yaml");
+        var loader = new ConfigurationLoader();
+        var loadResult = loader.Load(fixturePath);
+        loadResult.IsSuccess.Should().BeTrue("fixture should load successfully");
+
+        var merger = new ProfileMerger(loadResult.Configuration!);
+
+        // Act
+        var result = merger.Resolve("deep-child");
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+
+        // Should have 5 unique dotfiles:
+        // - ~/.bashrc from base
+        // - ~/.gitconfig from deep-child (overriding personal, which overrode base)
+        // - ~/.vimrc from base
+        // - ~/.ssh/config from personal
+        // - ~/.tmux.conf from deep-child
+        result.Profile!.Dotfiles.Should().HaveCount(5);
+
+        // gitconfig should be deep-child's version
+        var gitconfig = result.Profile.Dotfiles.Single(d =>
+            d.Target == "~/.gitconfig");
+        gitconfig.Source.Should().Be("dotfiles/deep/gitconfig");
+    }
+
+    #endregion
+
+    #pragma warning restore SA1124
 }

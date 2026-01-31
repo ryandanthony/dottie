@@ -1,0 +1,36 @@
+# Profile Deduplication Example
+# Demonstrates how child profiles override parent dotfiles by target path
+
+profiles:
+  # Base profile with standard configurations
+  base:
+    dotfiles:
+      - source: dotfiles/bashrc
+        target: ~/.bashrc
+      - source: dotfiles/gitconfig
+        target: ~/.gitconfig
+      - source: dotfiles/vimrc
+        target: ~/.vimrc
+
+    install:
+      apt:
+        - git
+        - curl
+
+  # Personal profile - overrides gitconfig with personal version
+  personal:
+    extends: base
+    dotfiles:
+      # This REPLACES the base gitconfig (same target path)
+      - source: dotfiles/personal/gitconfig
+        target: ~/.gitconfig
+      # This ADDS a new dotfile
+      - source: dotfiles/personal/ssh-config
+        target: ~/.ssh/config
+
+# Resolved 'personal' profile will have:
+#   dotfiles:
+#     - source: dotfiles/bashrc, target: ~/.bashrc          (from base)
+#     - source: dotfiles/personal/gitconfig, target: ~/.gitconfig  (overrides base)
+#     - source: dotfiles/vimrc, target: ~/.vimrc            (from base)
+#     - source: dotfiles/personal/ssh-config, target: ~/.ssh/config (added)

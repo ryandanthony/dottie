@@ -1,0 +1,21 @@
+# Test fixture: Profile with invalid name characters
+# Profile names should only contain alphanumeric, hyphens, and underscores
+
+profiles:
+  # Valid name
+  valid-profile:
+    dotfiles:
+      - source: dotfiles/bashrc
+        target: ~/.bashrc
+
+  # Invalid name - contains spaces
+  "my profile":
+    dotfiles:
+      - source: dotfiles/vimrc
+        target: ~/.vimrc
+
+  # Invalid name - contains special characters
+  "work@home":
+    dotfiles:
+      - source: dotfiles/zshrc
+        target: ~/.zshrc

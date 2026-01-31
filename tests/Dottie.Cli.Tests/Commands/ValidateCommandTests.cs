@@ -34,8 +34,8 @@ public sealed class ValidateCommandTests
             config.AddCommand<ValidateCommand>("validate");
         });
 
-        // Act
-        var result = app.Run(["validate", "-c", configPath, "default"]);
+        // Act - use --profile flag
+        var result = app.Run(["validate", "-c", configPath, "--profile", "default"]);
 
         // Assert
         result.Should().Be(0);
@@ -91,8 +91,8 @@ public sealed class ValidateCommandTests
             config.AddCommand<ValidateCommand>("validate");
         });
 
-        // Act
-        var result = app.Run(["validate", "-c", configPath, "nonexistent"]);
+        // Act - use --profile flag
+        var result = app.Run(["validate", "-c", configPath, "--profile", "nonexistent"]);
 
         // Assert
         result.Should().Be(1);
@@ -110,8 +110,8 @@ public sealed class ValidateCommandTests
             config.AddCommand<ValidateCommand>("validate");
         });
 
-        // Act
-        var result = app.Run(["validate", "-c", configPath, "alpha"]);
+        // Act - use --profile flag
+        var result = app.Run(["validate", "-c", configPath, "--profile", "alpha"]);
 
         // Assert
         result.Should().Be(1);
@@ -129,8 +129,8 @@ public sealed class ValidateCommandTests
             config.AddCommand<ValidateCommand>("validate");
         });
 
-        // Act
-        var result = app.Run(["validate", "-c", configPath, "work"]);
+        // Act - use --profile flag
+        var result = app.Run(["validate", "-c", configPath, "--profile", "work"]);
 
         // Assert
         result.Should().Be(0);
@@ -172,4 +172,88 @@ public sealed class ValidateCommandTests
         // Assert
         result.Should().Be(1);
     }
+
+    #pragma warning disable SA1124 // Do not use regions
+
+    #region Profile Flag Tests (US1)
+
+    [Fact]
+    public void Execute_WithProfileFlag_UsesSpecifiedProfile()
+    {
+        // Arrange
+        var configPath = Path.Combine(FixturesPath, "valid-multiple-profiles.yaml");
+        var app = new CommandApp();
+        app.Configure(config =>
+        {
+            config.PropagateExceptions();
+            config.AddCommand<ValidateCommand>("validate");
+        });
+
+        // Act - use --profile flag instead of positional argument
+        var result = app.Run(["validate", "-c", configPath, "--profile", "work"]);
+
+        // Assert
+        result.Should().Be(0);
+    }
+
+    [Fact]
+    public void Execute_WithProfileFlagShortForm_UsesSpecifiedProfile()
+    {
+        // Arrange
+        var configPath = Path.Combine(FixturesPath, "valid-multiple-profiles.yaml");
+        var app = new CommandApp();
+        app.Configure(config =>
+        {
+            config.PropagateExceptions();
+            config.AddCommand<ValidateCommand>("validate");
+        });
+
+        // Act - use -p short form
+        var result = app.Run(["validate", "-c", configPath, "-p", "work"]);
+
+        // Assert
+        result.Should().Be(0);
+    }
+
+    [Fact]
+    public void Execute_WithoutProfileFlag_UsesDefaultProfile()
+    {
+        // Arrange
+        var configPath = Path.Combine(FixturesPath, "valid-multiple-profiles.yaml");
+        var app = new CommandApp();
+        app.Configure(config =>
+        {
+            config.PropagateExceptions();
+            config.AddCommand<ValidateCommand>("validate");
+        });
+
+        // Act - no profile flag should use "default"
+        var result = app.Run(["validate", "-c", configPath]);
+
+        // Assert
+        result.Should().Be(0);
+    }
+
+    [Fact]
+    public void Execute_WithInvalidProfile_ShowsErrorWithAvailableProfiles()
+    {
+        // Arrange
+        var configPath = Path.Combine(FixturesPath, "valid-multiple-profiles.yaml");
+        var app = new CommandApp();
+        app.Configure(config =>
+        {
+            config.PropagateExceptions();
+            config.AddCommand<ValidateCommand>("validate");
+        });
+
+        // Act
+        var result = app.Run(["validate", "-c", configPath, "--profile", "nonexistent"]);
+
+        // Assert
+        result.Should().Be(1);
+    }
+
+    #endregion
+
+    #pragma warning restore SA1124
 }

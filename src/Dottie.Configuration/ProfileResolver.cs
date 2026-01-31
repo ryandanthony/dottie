@@ -27,22 +27,27 @@ public sealed class ProfileResolver
     /// <summary>
     /// Gets a profile by name.
     /// </summary>
-    /// <param name="profileName">The name of the profile to retrieve, or null if not specified.</param>
+    /// <param name="profileName">The name of the profile to retrieve, or null/empty for default.</param>
     /// <returns>A result containing the profile or an error with available profile names.</returns>
     public ProfileResolveResult GetProfile(string? profileName)
     {
         var availableProfiles = ListProfiles();
 
+        // Use "default" when no profile is specified
         if (string.IsNullOrEmpty(profileName))
         {
-            return ProfileResolveResult.Failure(
-                "No profile specified. Please specify a profile name.",
-                availableProfiles);
+            profileName = "default";
         }
 
         if (_configuration.Profiles.TryGetValue(profileName, out var profile))
         {
             return ProfileResolveResult.Success(profile);
+        }
+
+        // If 'default' was requested but not defined, return implicit empty default
+        if (string.Equals(profileName, "default", StringComparison.Ordinal))
+        {
+            return ProfileResolveResult.Success(new ConfigProfile());
         }
 
         return ProfileResolveResult.Failure(
@@ -58,6 +63,24 @@ public sealed class ProfileResolver
     {
         return _configuration.Profiles.Keys
             .OrderBy(k => k, StringComparer.Ordinal)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Gets detailed information about all available profiles.
+    /// </summary>
+    /// <returns>A collection of profile info sorted alphabetically by name.</returns>
+    public IReadOnlyList<ProfileInfo> ListProfilesWithInfo()
+    {
+        return _configuration.Profiles
+            .OrderBy(p => p.Key, StringComparer.Ordinal)
+            .Select(p => new ProfileInfo
+            {
+                Name = p.Key,
+                Extends = p.Value.Extends,
+                DotfileCount = p.Value.Dotfiles?.Count ?? 0,
+                HasInstallBlock = p.Value.Install != null,
+            })
             .ToList();
     }
 }

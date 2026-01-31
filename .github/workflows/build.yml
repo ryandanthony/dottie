@@ -45,7 +45,7 @@ jobs:
           # Get JSON output and filter out INFO/WARN lines
           VERSION_JSON=$(dotnet-gitversion /output json 2>&1 | grep -v "INFO\|WARN" | tr -d '\n')
           echo "Version JSON: $VERSION_JSON"
-          
+
           # Parse using jq if available, fallback to grep
           if command -v jq &> /dev/null; then
             SEMVER=$(echo "$VERSION_JSON" | jq -r '.SemVer')
@@ -54,7 +54,7 @@ jobs:
             SEMVER=$(echo "$VERSION_JSON" | grep -oP '"SemVer"\s*:\s*"\K[^"]+')
             FULLSEMVER=$(echo "$VERSION_JSON" | grep -oP '"FullSemVer"\s*:\s*"\K[^"]+')
           fi
-          
+
           echo "semVer=$SEMVER" >> $GITHUB_OUTPUT
           echo "fullSemVer=$FULLSEMVER" >> $GITHUB_OUTPUT
 
@@ -87,7 +87,7 @@ jobs:
             --collect:"XPlat Code Coverage" \
             --results-directory ./TestResults/unit \
             --logger "trx;LogFileName=unit-tests.trx"
-          
+
           dotnet test tests/Dottie.Configuration.Tests/Dottie.Configuration.Tests.csproj \
             --no-build \
             --configuration Release \
@@ -106,7 +106,7 @@ jobs:
             --output ./publish/linux-x64 \
             /p:PublishSingleFile=true \
             /p:Version=${{ steps.gitversion.outputs.semVer }}
-          
+
           # Build the test container (context is repo root so COPY can access publish/)
           docker build \
             -t dottie-integration-test \
@@ -135,7 +135,7 @@ jobs:
           COVERAGE=$(grep -oP '(?<=<coverage line-rate=")[^"]+' ./coverage-report/Cobertura.xml | head -1)
           COVERAGE_PCT=$(echo "$COVERAGE * 100" | bc -l | xargs printf "%.2f")
           echo "Line coverage: $COVERAGE_PCT%"
-          
+
           # Check threshold (80%)
           if (( $(echo "$COVERAGE < 0.80" | bc -l) )); then
             echo "::error::Coverage $COVERAGE_PCT% is below the 80% threshold"

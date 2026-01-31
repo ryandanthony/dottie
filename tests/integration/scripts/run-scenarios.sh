@@ -34,27 +34,27 @@ for scenario_dir in "$SCENARIOS_DIR"/*/; do
         echo "------------------------------------------"
         echo "Running scenario: $scenario_name"
         echo "------------------------------------------"
-        
+
         # Check for scenario config
         if [ ! -f "$scenario_dir/dottie.yml" ]; then
             echo "  SKIP: No dottie.yml found"
             continue
         fi
-        
+
         # Create isolated test directory
         test_dir="/tmp/test-$scenario_name"
         rm -rf "$test_dir"
         mkdir -p "$test_dir"
         cd "$test_dir"
-        
+
         # Copy scenario files
         cp -r "$scenario_dir"/* "$test_dir/"
-        
+
         # Run dottie (dry-run first, then apply if validate script exists)
         echo "  Running dottie validate..."
         if dottie validate --config "$test_dir/dottie.yml"; then
             echo "  ✓ Validation passed"
-            
+
             # Run custom validation if exists
             if [ -f "$scenario_dir/validate.sh" ]; then
                 echo "  Running custom validation..."
@@ -72,7 +72,7 @@ for scenario_dir in "$SCENARIOS_DIR"/*/; do
             echo "  ✗ Validation failed"
             FAILED=$((FAILED + 1))
         fi
-        
+
         # Cleanup
         cd /home/testuser
         rm -rf "$test_dir"

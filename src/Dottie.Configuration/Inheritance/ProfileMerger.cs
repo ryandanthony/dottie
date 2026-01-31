@@ -34,6 +34,19 @@ public sealed class ProfileMerger
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(profileName);
 
+        // Handle implicit default profile - when 'default' is requested but not defined
+        if (string.Equals(profileName, "default", StringComparison.Ordinal) &&
+            !_configuration.Profiles.ContainsKey(profileName))
+        {
+            return InheritanceResolveResult.Success(new ResolvedProfile
+            {
+                Name = profileName,
+                Dotfiles = [],
+                Install = null,
+                InheritanceChain = [profileName],
+            });
+        }
+
         if (!_configuration.Profiles.ContainsKey(profileName))
         {
             return InheritanceResolveResult.Failure($"Profile '{profileName}' not found.");
@@ -69,13 +82,29 @@ public sealed class ProfileMerger
     }
 
     /// <summary>
-    /// Merges dotfiles lists by appending child after parent.
+    /// Merges dotfiles lists by target path deduplication.
+    /// Child entries override parent entries with the same target path.
     /// </summary>
+    /// <param name="parent">The parent profile's dotfiles.</param>
+    /// <param name="child">The child profile's dotfiles.</param>
+    /// <returns>A merged list with child entries taking precedence for duplicate targets.</returns>
     internal static List<DotfileEntry> MergeDotfiles(IList<DotfileEntry> parent, IList<DotfileEntry> child)
     {
-        var result = new List<DotfileEntry>(parent);
-        result.AddRange(child);
-        return result;
+        var merged = new Dictionary<string, DotfileEntry>(StringComparer.Ordinal);
+
+        // Add parent entries first
+        foreach (var entry in parent)
+        {
+            merged[entry.Target] = entry;
+        }
+
+        // Child entries override parent entries with same target
+        foreach (var entry in child)
+        {
+            merged[entry.Target] = entry;
+        }
+
+        return merged.Values.ToList();
     }
 
     /// <summary>

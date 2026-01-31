@@ -1,0 +1,41 @@
+# Test fixture: Profile deduplication by target path
+# When child profile defines a dotfile with the same target as parent,
+# child should override parent (not duplicate)
+
+profiles:
+  # Base profile with standard configurations
+  base:
+    dotfiles:
+      - source: dotfiles/bashrc
+        target: ~/.bashrc
+      - source: dotfiles/gitconfig
+        target: ~/.gitconfig
+      - source: dotfiles/vimrc
+        target: ~/.vimrc
+
+    install:
+      apt:
+        - git
+        - curl
+
+  # Personal profile - overrides gitconfig with personal version
+  personal:
+    extends: base
+    dotfiles:
+      # This should REPLACE base gitconfig (same target path)
+      - source: dotfiles/personal/gitconfig
+        target: ~/.gitconfig
+      # This should ADD a new dotfile
+      - source: dotfiles/personal/ssh-config
+        target: ~/.ssh/config
+
+  # Deep child - adds third level of inheritance
+  deep-child:
+    extends: personal
+    dotfiles:
+      # This should REPLACE personal's gitconfig (same target)
+      - source: dotfiles/deep/gitconfig
+        target: ~/.gitconfig
+      # This should ADD a new dotfile
+      - source: dotfiles/deep/tmux.conf
+        target: ~/.tmux.conf

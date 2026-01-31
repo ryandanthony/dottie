@@ -1,0 +1,24 @@
+# Test fixture: Configuration without explicit 'default' profile
+# Should use implicit empty default when 'default' is not defined
+
+profiles:
+  # Work profile - standalone, no default defined
+  work:
+    dotfiles:
+      - source: dotfiles/work/aws-config
+        target: ~/.aws/config
+      - source: dotfiles/work/kubeconfig
+        target: ~/.kube/config
+
+    install:
+      apt:
+        - awscli
+        - kubectl
+
+  # Personal profile - also standalone
+  personal:
+    dotfiles:
+      - source: dotfiles/bashrc
+        target: ~/.bashrc
+      - source: dotfiles/gitconfig
+        target: ~/.gitconfig

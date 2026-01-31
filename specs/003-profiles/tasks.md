@@ -15,10 +15,10 @@
 
 **Purpose**: Create test fixtures and stubs needed for TDD
 
-- [ ] T001 Verify all existing tests pass with `dotnet test`
-- [ ] T002 [P] Create profile-invalid-name.yaml test fixture in tests/Dottie.Configuration.Tests/Fixtures/
-- [ ] T003 [P] Create profile-dedup.yaml test fixture in tests/Dottie.Configuration.Tests/Fixtures/
-- [ ] T004 [P] Create profile-implicit-default.yaml test fixture in tests/Dottie.Configuration.Tests/Fixtures/
+- [X] T001 Verify all existing tests pass with `dotnet test`
+- [X] T002 [P] Create profile-invalid-name.yaml test fixture in tests/Dottie.Configuration.Tests/Fixtures/
+- [X] T003 [P] Create profile-dedup.yaml test fixture in tests/Dottie.Configuration.Tests/Fixtures/
+- [X] T004 [P] Create profile-implicit-default.yaml test fixture in tests/Dottie.Configuration.Tests/Fixtures/
 
 ---
 
@@ -28,8 +28,8 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 Create ProfileInfo record in src/Dottie.Configuration/ProfileInfo.cs
-- [ ] T006 Create ProfileAwareSettings base class in src/Dottie.Cli/Commands/ProfileAwareSettings.cs
+- [X] T005 Create ProfileInfo record in src/Dottie.Configuration/ProfileInfo.cs
+- [X] T006 Create ProfileAwareSettings base class in src/Dottie.Cli/Commands/ProfileAwareSettings.cs
 
 **Checkpoint**: Foundation ready — user story implementation can now begin
 
@@ -43,13 +43,13 @@
 
 ### 3.1 Write Failing Tests (RED)
 
-- [ ] T007 [US1] Write ProfileResolver implicit default tests in tests/Dottie.Configuration.Tests/ProfileResolverTests.cs
+- [X] T007 [US1] Write ProfileResolver implicit default tests in tests/Dottie.Configuration.Tests/ProfileResolverTests.cs
   - Test: GetProfile_NullProfileName_ReturnsDefaultProfile
   - Test: GetProfile_EmptyProfileName_ReturnsDefaultProfile
   - Test: GetProfile_DefaultNotDefined_ReturnsImplicitEmptyDefault
   - **Run tests — verify they FAIL (RED)**
 
-- [ ] T008 [US1] Write ValidateCommand profile flag tests in tests/Dottie.Cli.Tests/Commands/ValidateCommandTests.cs
+- [X] T008 [US1] Write ValidateCommand profile flag tests in tests/Dottie.Cli.Tests/Commands/ValidateCommandTests.cs
   - Test: Execute_WithProfileFlag_UsesSpecifiedProfile
   - Test: Execute_WithoutProfileFlag_UsesDefaultProfile
   - Test: Execute_WithInvalidProfile_ShowsErrorWithAvailableProfiles
@@ -57,19 +57,19 @@
 
 ### 3.2 Implementation (GREEN)
 
-- [ ] T009 [US1] Update ProfileResolver.GetProfile() for implicit default in src/Dottie.Configuration/ProfileResolver.cs
+- [X] T009 [US1] Update ProfileResolver.GetProfile() for implicit default in src/Dottie.Configuration/ProfileResolver.cs
   - **Run ProfileResolverTests — verify they PASS (GREEN)**
 
-- [ ] T010 [US1] Update ValidateCommandSettings to inherit ProfileAwareSettings in src/Dottie.Cli/Commands/ValidateCommandSettings.cs
+- [X] T010 [US1] Update ValidateCommandSettings to inherit ProfileAwareSettings in src/Dottie.Cli/Commands/ValidateCommandSettings.cs
   - Change positional `[profile]` argument to `--profile` option via base class
 
-- [ ] T011 [US1] Update ValidateCommand to use --profile flag in src/Dottie.Cli/Commands/ValidateCommand.cs
+- [X] T011 [US1] Update ValidateCommand to use --profile flag in src/Dottie.Cli/Commands/ValidateCommand.cs
   - Use ProfileResolver with ProfileName from settings
   - **Run ValidateCommandTests — verify they PASS (GREEN)**
 
 ### 3.3 Refactor & Verify Coverage
 
-- [ ] T012 [US1] Refactor US1 code for clarity; verify ≥90% line coverage, ≥80% branch coverage
+- [X] T012 [US1] Refactor US1 code for clarity; verify ≥90% line coverage, ≥80% branch coverage
 
 **Checkpoint**: User Story 1 complete — `--profile` flag works, default fallback works
 
@@ -83,14 +83,14 @@
 
 ### 4.1 Write Failing Tests (RED)
 
-- [ ] T013 [P] [US2] Write ProfileMerger chain validation tests in tests/Dottie.Configuration.Tests/Inheritance/ProfileMergerTests.cs
+- [X] T013 [P] [US2] Write ProfileMerger chain validation tests in tests/Dottie.Configuration.Tests/Inheritance/ProfileMergerTests.cs
   - Test: Resolve_ThreeLevelChain_MergesInCorrectOrder
   - Test: Resolve_ChildOverridesParentSetting_ChildWins
   - **Run tests — verify they FAIL (RED)**
 
 ### 4.2 Implementation (GREEN)
 
-- [ ] T014 [US2] Validate existing ProfileMerger.Resolve() handles multi-level chains in src/Dottie.Configuration/Inheritance/ProfileMerger.cs
+- [X] T014 [US2] Validate existing ProfileMerger.Resolve() handles multi-level chains in src/Dottie.Configuration/Inheritance/ProfileMerger.cs
   - Existing implementation should pass — if not, fix merge order
   - **Run ProfileMergerTests — verify they PASS (GREEN)**
 
@@ -106,7 +106,7 @@
 
 ### 5.1 Write Failing Tests (RED)
 
-- [ ] T015 [US3] Write ProfileMerger deduplication tests in tests/Dottie.Configuration.Tests/Inheritance/ProfileMergerTests.cs
+- [X] T015 [US3] Write ProfileMerger deduplication tests in tests/Dottie.Configuration.Tests/Inheritance/ProfileMergerTests.cs
   - Test: MergeDotfiles_SameTarget_ChildOverridesParent (uses profile-dedup.yaml)
   - Test: MergeDotfiles_DifferentTargets_BothIncluded
   - Test: MergeDotfiles_ThreeLevelChain_DeepestChildWins
@@ -114,13 +114,13 @@
 
 ### 5.2 Implementation (GREEN)
 
-- [ ] T016 [US3] Update ProfileMerger.MergeDotfiles() for target deduplication in src/Dottie.Configuration/Inheritance/ProfileMerger.cs
+- [X] T016 [US3] Update ProfileMerger.MergeDotfiles() for target deduplication in src/Dottie.Configuration/Inheritance/ProfileMerger.cs
   - Change from simple append to dictionary-based merge by Target
   - **Run ProfileMergerTests — verify they PASS (GREEN)**
 
 ### 5.3 Refactor & Verify Coverage
 
-- [ ] T017 [US3] Refactor US3 code for clarity; verify ≥90% line coverage, ≥80% branch coverage
+- [X] T017 [US3] Refactor US3 code for clarity; verify ≥90% line coverage, ≥80% branch coverage
 
 **Checkpoint**: User Story 3 complete — dotfile deduplication works
 
@@ -134,18 +134,18 @@
 
 ### 6.1 Write Failing Tests (RED)
 
-- [ ] T018 [P] [US4] Write ProfileResolver listing tests in tests/Dottie.Configuration.Tests/ProfileResolverTests.cs
+- [X] T018 [P] [US4] Write ProfileResolver listing tests in tests/Dottie.Configuration.Tests/ProfileResolverTests.cs
   - Test: ListProfilesWithInfo_ReturnsProfileInfoWithExtends
   - Test: ListProfilesWithInfo_SortsAlphabetically
   - **Run tests — verify they FAIL (RED)**
 
 ### 6.2 Implementation (GREEN)
 
-- [ ] T019 [US4] Add ListProfilesWithInfo() method to ProfileResolver in src/Dottie.Configuration/ProfileResolver.cs
+- [X] T019 [US4] Add ListProfilesWithInfo() method to ProfileResolver in src/Dottie.Configuration/ProfileResolver.cs
   - Returns IReadOnlyList<ProfileInfo> with Name, Extends, DotfileCount, HasInstallBlock
   - **Run ProfileResolverTests — verify they PASS (GREEN)**
 
-- [ ] T020 [US4] Update ValidateCommand to show inheritance tree in src/Dottie.Cli/Commands/ValidateCommand.cs
+- [X] T020 [US4] Update ValidateCommand to show inheritance tree in src/Dottie.Cli/Commands/ValidateCommand.cs
   - Use Spectre.Console.Tree for visualization when listing profiles
   - Show extends relationship for each profile
 
@@ -159,7 +159,7 @@
 
 ### 7.1 Write Failing Tests (RED)
 
-- [ ] T021 [P] Write ProfileNameValidator tests in tests/Dottie.Configuration.Tests/Validation/ProfileNameValidatorTests.cs
+- [X] T021 [P] Write ProfileNameValidator tests in tests/Dottie.Configuration.Tests/Validation/ProfileNameValidatorTests.cs
   - Test: Validate_ValidName_ReturnsSuccess (alphanumeric, hyphens, underscores)
   - Test: Validate_NameWithSpaces_ReturnsError
   - Test: Validate_NameWithSpecialChars_ReturnsError (uses profile-invalid-name.yaml)
@@ -167,7 +167,7 @@
 
 ### 7.2 Implementation (GREEN)
 
-- [ ] T022 Add profile name validation to ConfigurationValidator in src/Dottie.Configuration/Validation/ConfigurationValidator.cs
+- [X] T022 Add profile name validation to ConfigurationValidator in src/Dottie.Configuration/Validation/ConfigurationValidator.cs
   - Add ValidateProfileNames() method with regex pattern `^[a-zA-Z0-9_-]+$`
   - Call from Validate() method
   - **Run ProfileNameValidatorTests — verify they PASS (GREEN)**
@@ -178,10 +178,10 @@
 
 **Purpose**: Final cleanup and verification
 
-- [ ] T023 [P] Run all tests and verify ≥90% line coverage, ≥80% branch coverage
-- [ ] T024 [P] Update CLI help text for --profile flag
-- [ ] T025 Run quickstart.md validation steps
-- [ ] T026 Manual smoke test: validate --profile flag on real config
+- [X] T023 [P] Run all tests and verify ≥90% line coverage, ≥80% branch coverage
+- [X] T024 [P] Update CLI help text for --profile flag
+- [X] T025 Run quickstart.md validation steps
+- [X] T026 Manual smoke test: validate --profile flag on real config
 
 ---
 

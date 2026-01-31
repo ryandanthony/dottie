@@ -1,0 +1,41 @@
+# Example: Force Backup Scenario
+# Purpose: Demonstrates expected backup naming when using --force flag
+#
+# Scenario: Running `dottie link --force` on 2026-01-30 at 14:30:22
+#
+# Given:
+#   ~/.bashrc exists (regular file)
+#   ~/.config/nvim exists (directory)
+#   ~/.gitconfig exists (symlink → /old/dotfiles/gitconfig)
+#
+# Expected backups:
+#   ~/.bashrc.backup.20260130-143022
+#   ~/.config/nvim.backup.20260130-143022
+#   ~/.gitconfig.backup.20260130-143022
+#
+# Expected symlinks after operation:
+#   ~/.bashrc → /repo/shell/bashrc
+#   ~/.config/nvim → /repo/editors/nvim
+#   ~/.gitconfig → /repo/git/gitconfig
+#
+# Note: If backup names collide (same second), suffix is appended:
+#   ~/.bashrc.backup.20260130-143022.1
+
+profiles:
+  default:
+    dotfiles:
+      - source: shell/bashrc
+        target: ~/.bashrc
+
+      - source: editors/nvim
+        target: ~/.config/nvim
+
+      - source: git/gitconfig
+        target: ~/.gitconfig
+
+  # Profile demonstrating already-linked scenario
+  minimal:
+    dotfiles:
+      # If this is already a symlink to the correct source, it's skipped (no conflict)
+      - source: shell/bashrc
+        target: ~/.bashrc

@@ -1,0 +1,3 @@
+" Placeholder vimrc for testing
+set number
+set relativenumber

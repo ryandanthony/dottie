@@ -1,0 +1,2 @@
+# Placeholder bashrc for testing
+export TEST_VAR="from dottie dotfiles"

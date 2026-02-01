@@ -144,6 +144,10 @@
 
 ---
 
+## Fixes
+
+- Fixed backup file pattern in conflict-handling integration test validation script to match new `.dottie-backup-` naming convention
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

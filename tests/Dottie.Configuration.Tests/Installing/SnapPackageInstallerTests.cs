@@ -7,28 +7,28 @@ using FluentAssertions;
 namespace Dottie.Configuration.Tests.Installing;
 
 /// <summary>
-/// Tests for <see cref="AptPackageInstaller"/>.
+/// Tests for <see cref="SnapPackageInstaller"/>.
 /// </summary>
-public class AptPackageInstallerTests
+public class SnapPackageInstallerTests
 {
-    private readonly AptPackageInstaller _installer = new();
+    private readonly SnapPackageInstaller _installer = new();
 
     [Fact]
-    public void SourceType_ReturnsAptPackage()
+    public void SourceType_ReturnsSnapPackage()
     {
         // Act
         var result = _installer.SourceType;
 
         // Assert
-        result.Should().Be(InstallSourceType.AptPackage);
+        result.Should().Be(InstallSourceType.SnapPackage);
     }
 
     [Fact]
-    public async Task InstallAsync_WithEmptyPackageList_ReturnsEmptyResults()
+    public async Task InstallAsync_WithEmptySnapList_ReturnsEmptyResults()
     {
         // Arrange
         var installBlock = new InstallBlock();
-        var context = new InstallContext { RepoRoot = "/repo" };
+        var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
         // Act
         var results = await _installer.InstallAsync(installBlock, context, CancellationToken.None);
@@ -42,7 +42,7 @@ public class AptPackageInstallerTests
     {
         // Arrange
         var installBlock = new InstallBlock();
-        var context = new InstallContext { RepoRoot = "/repo" };
+        var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
         // Act
         var action = async () => await _installer.InstallAsync(installBlock, context, CancellationToken.None);
@@ -57,9 +57,12 @@ public class AptPackageInstallerTests
         // Arrange
         var installBlock = new InstallBlock
         {
-            Apt = new List<string> { "git", "curl" }
+            Snaps = new List<SnapItem>
+            {
+                new() { Name = "blender", Classic = false }
+            }
         };
-        var context = new InstallContext { RepoRoot = "/repo", DryRun = true };
+        var context = new InstallContext { RepoRoot = "/repo", HasSudo = true, DryRun = true };
 
         // Act
         var results = await _installer.InstallAsync(installBlock, context, CancellationToken.None);
@@ -74,7 +77,10 @@ public class AptPackageInstallerTests
         // Arrange
         var installBlock = new InstallBlock
         {
-            Apt = new List<string> { "git", "curl" }
+            Snaps = new List<SnapItem>
+            {
+                new() { Name = "blender", Classic = false }
+            }
         };
         var context = new InstallContext
         {
@@ -87,19 +93,15 @@ public class AptPackageInstallerTests
 
         // Assert
         results.Should().NotBeEmpty();
-        results.Should().AllSatisfy(r => r.Status.Should().Be(InstallStatus.Warning));
+        results.First().Status.Should().Be(InstallStatus.Warning);
     }
 
     [Fact]
-    public async Task InstallAsync_WithEmptyPackageList_ReturnsEmptyResults_WhenAptIsEmptyList()
+    public async Task InstallAsync_WithNoSnaps_ReturnsEmptyResults()
     {
         // Arrange
-        var installBlock = new InstallBlock { Apt = new List<string>() };
-        var context = new InstallContext
-        {
-            RepoRoot = "/repo",
-            HasSudo = true
-        };
+        var installBlock = new InstallBlock { Snaps = new List<SnapItem>() };
+        var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
         // Act
         var results = await _installer.InstallAsync(installBlock, context, CancellationToken.None);

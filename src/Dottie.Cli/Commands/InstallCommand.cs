@@ -48,8 +48,8 @@ public sealed class InstallCommand : AsyncCommand<InstallCommandSettings>
             }
 
             var profileName = settings.ProfileName ?? "default";
-            var profile = loadResult.Configuration?.Profiles?.ContainsKey(profileName) == true 
-                ? loadResult.Configuration.Profiles[profileName] 
+            var profile = loadResult.Configuration?.Profiles?.ContainsKey(profileName) == true
+                ? loadResult.Configuration.Profiles[profileName]
                 : null;
 
             if (profile?.Install is null)
@@ -75,11 +75,15 @@ public sealed class InstallCommand : AsyncCommand<InstallCommandSettings>
             var installers = new List<IInstallSource>
             {
                 new GithubReleaseInstaller(),
-                new AptPackageInstaller()
+                new AptPackageInstaller(),
+                new AptRepoInstaller(),
+                new ScriptRunner(),
+                new FontInstaller(),
+                new SnapPackageInstaller()
             };
-            
+
             var results = new List<InstallResult>();
-            
+
             // Call each installer with the install block
             foreach (var installer in installers)
             {
@@ -89,6 +93,10 @@ public sealed class InstallCommand : AsyncCommand<InstallCommandSettings>
                     {
                         InstallSourceType.GithubRelease => await ((GithubReleaseInstaller)installer).InstallAsync(profile.Install, context_info),
                         InstallSourceType.AptPackage => await ((AptPackageInstaller)installer).InstallAsync(profile.Install, context_info),
+                        InstallSourceType.AptRepo => await ((AptRepoInstaller)installer).InstallAsync(profile.Install, context_info),
+                        InstallSourceType.Script => await ((ScriptRunner)installer).InstallAsync(profile.Install, context_info),
+                        InstallSourceType.Font => await ((FontInstaller)installer).InstallAsync(profile.Install, context_info),
+                        InstallSourceType.SnapPackage => await ((SnapPackageInstaller)installer).InstallAsync(profile.Install, context_info),
                         _ => Enumerable.Empty<InstallResult>()
                     };
                     results.AddRange(installerResults);
@@ -98,7 +106,7 @@ public sealed class InstallCommand : AsyncCommand<InstallCommandSettings>
                     results.Add(InstallResult.Failed("unknown", InstallSourceType.GithubRelease, $"Installer error: {ex.Message}"));
                 }
             }
-            
+
             if (!results.Any())
             {
                 AnsiConsole.MarkupLine("[yellow]ℹ[/] No tools configured to install.");
@@ -107,7 +115,7 @@ public sealed class InstallCommand : AsyncCommand<InstallCommandSettings>
 
             var renderer2 = new InstallProgressRenderer();
             renderer2.RenderSummary(results);
-            
+
             // Check if any failed
             if (results.Any(r => r.Status == InstallStatus.Failed))
             {

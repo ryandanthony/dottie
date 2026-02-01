@@ -1,0 +1,13 @@
+# Integration test configuration for private APT repository installation
+# Tests the APT repository installer functionality with GPG key verification
+
+profiles:
+  default:
+    install:
+      aptRepos:
+        # Using a well-known repository with public GPG key
+        - name: docker
+          repo: "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/docker.gpg] https://download.docker.com/linux/ubuntu focal stable"
+          keyUrl: "https://download.docker.com/linux/ubuntu/gpg"
+          packages:
+            - docker-ce-cli

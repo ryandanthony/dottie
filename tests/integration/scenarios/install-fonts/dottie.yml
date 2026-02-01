@@ -1,0 +1,11 @@
+# Integration test configuration for font installation
+# Tests downloading and installing fonts from URLs
+
+profiles:
+  default:
+    install:
+      fonts:
+        # Using a simple, small font archive for testing
+        # This is Liberation Sans from Google Fonts
+        - name: "Liberation"
+          url: "https://github.com/liberationfonts/liberation-fonts/releases/download/2.1.5/LiberationFonts-TTF-2.1.5.tar.gz"

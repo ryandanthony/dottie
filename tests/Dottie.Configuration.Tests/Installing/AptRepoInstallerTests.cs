@@ -7,24 +7,24 @@ using FluentAssertions;
 namespace Dottie.Configuration.Tests.Installing;
 
 /// <summary>
-/// Tests for <see cref="AptPackageInstaller"/>.
+/// Tests for <see cref="AptRepoInstaller"/>.
 /// </summary>
-public class AptPackageInstallerTests
+public class AptRepoInstallerTests
 {
-    private readonly AptPackageInstaller _installer = new();
+    private readonly AptRepoInstaller _installer = new();
 
     [Fact]
-    public void SourceType_ReturnsAptPackage()
+    public void SourceType_ReturnsAptRepo()
     {
         // Act
         var result = _installer.SourceType;
 
         // Assert
-        result.Should().Be(InstallSourceType.AptPackage);
+        result.Should().Be(InstallSourceType.AptRepo);
     }
 
     [Fact]
-    public async Task InstallAsync_WithEmptyPackageList_ReturnsEmptyResults()
+    public async Task InstallAsync_WithEmptyRepoList_ReturnsEmptyResults()
     {
         // Arrange
         var installBlock = new InstallBlock();
@@ -57,7 +57,16 @@ public class AptPackageInstallerTests
         // Arrange
         var installBlock = new InstallBlock
         {
-            Apt = new List<string> { "git", "curl" }
+            AptRepos = new List<AptRepoItem>
+            {
+                new AptRepoItem
+                {
+                    Name = "vscode",
+                    Repo = "deb [arch=amd64,arm64] https://packages.microsoft.com/repos/vscode stable main",
+                    KeyUrl = "https://packages.microsoft.com/keys/microsoft.asc",
+                    Packages = new List<string> { "code" }
+                }
+            }
         };
         var context = new InstallContext { RepoRoot = "/repo", DryRun = true };
 
@@ -74,7 +83,16 @@ public class AptPackageInstallerTests
         // Arrange
         var installBlock = new InstallBlock
         {
-            Apt = new List<string> { "git", "curl" }
+            AptRepos = new List<AptRepoItem>
+            {
+                new AptRepoItem
+                {
+                    Name = "vscode",
+                    Repo = "deb [arch=amd64,arm64] https://packages.microsoft.com/repos/vscode stable main",
+                    KeyUrl = "https://packages.microsoft.com/keys/microsoft.asc",
+                    Packages = new List<string> { "code" }
+                }
+            }
         };
         var context = new InstallContext
         {
@@ -91,10 +109,10 @@ public class AptPackageInstallerTests
     }
 
     [Fact]
-    public async Task InstallAsync_WithEmptyPackageList_ReturnsEmptyResults_WhenAptIsEmptyList()
+    public async Task InstallAsync_WithEmptyRepoList_ReturnsEmptyResults_WhenAptReposIsEmptyList()
     {
         // Arrange
-        var installBlock = new InstallBlock { Apt = new List<string>() };
+        var installBlock = new InstallBlock { AptRepos = new List<AptRepoItem>() };
         var context = new InstallContext
         {
             RepoRoot = "/repo",

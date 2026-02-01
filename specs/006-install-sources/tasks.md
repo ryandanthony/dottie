@@ -127,18 +127,18 @@ then implementation. Integration tests validate end-to-end workflows.
 
 ### Unit Tests (Write FIRST - must FAIL before implementation)
 
-- [ ] T037 [P] [US3] Create AptRepoInstallerTests.cs at tests/Dottie.Configuration.Tests/Installing/AptRepoInstallerTests.cs
+- [x] T037 [P] [US3] Create AptRepoInstallerTests.cs at tests/Dottie.Configuration.Tests/Installing/AptRepoInstallerTests.cs
 
 ### Implementation
 
-- [ ] T038 [US3] Implement AptRepoInstaller in src/Dottie.Configuration/Installing/AptRepoInstaller.cs
-- [ ] T039 [US3] Update InstallOrchestrator to include AptRepoInstaller in src/Dottie.Configuration/Installing/InstallOrchestrator.cs
+- [x] T038 [US3] Implement AptRepoInstaller in src/Dottie.Configuration/Installing/AptRepoInstaller.cs
+- [x] T039 [US3] Update InstallOrchestrator to include AptRepoInstaller in src/Dottie.Configuration/Installing/InstallOrchestrator.cs
 
 ### Integration Test
 
-- [ ] T040 [US3] Create install-apt-repo scenario at tests/integration/scenarios/install-apt-repo/
-- [ ] T041 [US3] Create dottie.yml config for private APT repo test
-- [ ] T042 [US3] Create validate.sh to verify repo setup and package installation
+- [x] T040 [US3] Create install-apt-repo scenario at tests/integration/scenarios/install-apt-repo/
+- [x] T041 [US3] Create dottie.yml config for private APT repo test
+- [x] T042 [US3] Create validate.sh to verify repo setup and package installation
 
 **Checkpoint**: User Story 3 complete - Private APT repo installation works independently
 
@@ -152,19 +152,19 @@ then implementation. Integration tests validate end-to-end workflows.
 
 ### Unit Tests (Write FIRST - must FAIL before implementation)
 
-- [ ] T043 [P] [US4] Create ScriptRunnerTests.cs at tests/Dottie.Configuration.Tests/Installing/ScriptRunnerTests.cs
+- [x] T043 [P] [US4] Create ScriptRunnerTests.cs at tests/Dottie.Configuration.Tests/Installing/ScriptRunnerTests.cs
 
 ### Implementation
 
-- [ ] T044 [US4] Implement ScriptRunner in src/Dottie.Configuration/Installing/ScriptRunner.cs
-- [ ] T045 [US4] Update InstallOrchestrator to include ScriptRunner in src/Dottie.Configuration/Installing/InstallOrchestrator.cs
+- [x] T044 [US4] Implement ScriptRunner in src/Dottie.Configuration/Installing/ScriptRunner.cs
+- [x] T045 [US4] Update InstallOrchestrator to include ScriptRunner in src/Dottie.Configuration/Installing/InstallOrchestrator.cs
 
 ### Integration Test
 
-- [ ] T046 [US4] Create install-scripts scenario at tests/integration/scenarios/install-scripts/
-- [ ] T047 [US4] Create dottie.yml config with script reference
-- [ ] T048 [US4] Create test script at tests/integration/scenarios/install-scripts/scripts/test-script.sh
-- [ ] T049 [US4] Create validate.sh to verify script execution
+- [x] T046 [US4] Create install-scripts scenario at tests/integration/scenarios/install-scripts/
+- [x] T047 [US4] Create dottie.yml config with script reference
+- [x] T048 [US4] Create test script at tests/integration/scenarios/install-scripts/scripts/test-script.sh
+- [x] T049 [US4] Create validate.sh to verify script execution
 
 **Checkpoint**: User Story 4 complete - Script execution works independently
 
@@ -178,18 +178,18 @@ then implementation. Integration tests validate end-to-end workflows.
 
 ### Unit Tests (Write FIRST - must FAIL before implementation)
 
-- [ ] T050 [P] [US5] Create FontInstallerTests.cs at tests/Dottie.Configuration.Tests/Installing/FontInstallerTests.cs
+- [x] T050 [P] [US5] Create FontInstallerTests.cs at tests/Dottie.Configuration.Tests/Installing/FontInstallerTests.cs
 
 ### Implementation
 
-- [ ] T051 [US5] Implement FontInstaller in src/Dottie.Configuration/Installing/FontInstaller.cs
-- [ ] T052 [US5] Update InstallOrchestrator to include FontInstaller in src/Dottie.Configuration/Installing/InstallOrchestrator.cs
+- [x] T051 [US5] Implement FontInstaller in src/Dottie.Configuration/Installing/FontInstaller.cs
+- [x] T052 [US5] Update InstallOrchestrator to include FontInstaller in src/Dottie.Configuration/Installing/InstallOrchestrator.cs
 
 ### Integration Test
 
-- [ ] T053 [US5] Create install-fonts scenario at tests/integration/scenarios/install-fonts/
-- [ ] T054 [US5] Create dottie.yml config for font installation test
-- [ ] T055 [US5] Create validate.sh to verify font files and fc-cache
+- [x] T053 [US5] Create install-fonts scenario at tests/integration/scenarios/install-fonts/
+- [x] T054 [US5] Create dottie.yml config for font installation test
+- [x] T055 [US5] Create validate.sh to verify font files and fc-cache
 
 **Checkpoint**: User Story 5 complete - Font installation works independently
 
@@ -203,18 +203,18 @@ then implementation. Integration tests validate end-to-end workflows.
 
 ### Unit Tests (Write FIRST - must FAIL before implementation)
 
-- [ ] T056 [P] [US6] Create SnapPackageInstallerTests.cs at tests/Dottie.Configuration.Tests/Installing/SnapPackageInstallerTests.cs
+- [x] T056 [P] [US6] Create SnapPackageInstallerTests.cs at tests/Dottie.Configuration.Tests/Installing/SnapPackageInstallerTests.cs
 
 ### Implementation
 
-- [ ] T057 [US6] Implement SnapPackageInstaller in src/Dottie.Configuration/Installing/SnapPackageInstaller.cs
-- [ ] T058 [US6] Update InstallOrchestrator to include SnapPackageInstaller in src/Dottie.Configuration/Installing/InstallOrchestrator.cs
+- [x] T057 [US6] Implement SnapPackageInstaller in src/Dottie.Configuration/Installing/SnapPackageInstaller.cs
+- [x] T058 [US6] Update InstallOrchestrator to include SnapPackageInstaller in src/Dottie.Configuration/Installing/InstallOrchestrator.cs
 
 ### Integration Test
 
-- [ ] T059 [US6] Create install-snap scenario at tests/integration/scenarios/install-snap/
-- [ ] T060 [US6] Create dottie.yml config for snap installation test
-- [ ] T061 [US6] Create validate.sh to verify snap package installed
+- [x] T059 [US6] Create install-snap scenario at tests/integration/scenarios/install-snap/
+- [x] T060 [US6] Create dottie.yml config for snap installation test
+- [x] T061 [US6] Create validate.sh to verify snap package installed
 
 **Checkpoint**: User Story 6 complete - Snap installation works independently
 

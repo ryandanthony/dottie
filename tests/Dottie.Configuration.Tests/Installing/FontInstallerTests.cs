@@ -7,28 +7,28 @@ using FluentAssertions;
 namespace Dottie.Configuration.Tests.Installing;
 
 /// <summary>
-/// Tests for <see cref="AptPackageInstaller"/>.
+/// Tests for <see cref="FontInstaller"/>.
 /// </summary>
-public class AptPackageInstallerTests
+public class FontInstallerTests
 {
-    private readonly AptPackageInstaller _installer = new();
+    private readonly FontInstaller _installer = new();
 
     [Fact]
-    public void SourceType_ReturnsAptPackage()
+    public void SourceType_ReturnsFont()
     {
         // Act
         var result = _installer.SourceType;
 
         // Assert
-        result.Should().Be(InstallSourceType.AptPackage);
+        result.Should().Be(InstallSourceType.Font);
     }
 
     [Fact]
-    public async Task InstallAsync_WithEmptyPackageList_ReturnsEmptyResults()
+    public async Task InstallAsync_WithEmptyFontList_ReturnsEmptyResults()
     {
         // Arrange
         var installBlock = new InstallBlock();
-        var context = new InstallContext { RepoRoot = "/repo" };
+        var context = new InstallContext { RepoRoot = "/repo", FontDirectory = "/root/.local/share/fonts" };
 
         // Act
         var results = await _installer.InstallAsync(installBlock, context, CancellationToken.None);
@@ -42,7 +42,7 @@ public class AptPackageInstallerTests
     {
         // Arrange
         var installBlock = new InstallBlock();
-        var context = new InstallContext { RepoRoot = "/repo" };
+        var context = new InstallContext { RepoRoot = "/repo", FontDirectory = "/root/.local/share/fonts" };
 
         // Act
         var action = async () => await _installer.InstallAsync(installBlock, context, CancellationToken.None);
@@ -57,9 +57,17 @@ public class AptPackageInstallerTests
         // Arrange
         var installBlock = new InstallBlock
         {
-            Apt = new List<string> { "git", "curl" }
+            Fonts = new List<FontItem>
+            {
+                new() { Name = "Ubuntu", Url = "https://example.com/font.zip" }
+            }
         };
-        var context = new InstallContext { RepoRoot = "/repo", DryRun = true };
+        var context = new InstallContext
+        {
+            RepoRoot = "/repo",
+            FontDirectory = "/root/.local/share/fonts",
+            DryRun = true
+        };
 
         // Act
         var results = await _installer.InstallAsync(installBlock, context, CancellationToken.None);
@@ -69,36 +77,35 @@ public class AptPackageInstallerTests
     }
 
     [Fact]
-    public async Task InstallAsync_WithoutSudo_ReturnsWarningResults()
+    public async Task InstallAsync_WithoutFonts_SkipsInstallation()
     {
         // Arrange
         var installBlock = new InstallBlock
         {
-            Apt = new List<string> { "git", "curl" }
+            Fonts = new List<FontItem>()
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            HasSudo = false
+            FontDirectory = "/root/.local/share/fonts"
         };
 
         // Act
         var results = await _installer.InstallAsync(installBlock, context, CancellationToken.None);
 
         // Assert
-        results.Should().NotBeEmpty();
-        results.Should().AllSatisfy(r => r.Status.Should().Be(InstallStatus.Warning));
+        results.Should().BeEmpty();
     }
 
     [Fact]
-    public async Task InstallAsync_WithEmptyPackageList_ReturnsEmptyResults_WhenAptIsEmptyList()
+    public async Task InstallAsync_WithNoFonts_ReturnsEmptyResults()
     {
         // Arrange
-        var installBlock = new InstallBlock { Apt = new List<string>() };
+        var installBlock = new InstallBlock { Fonts = new List<FontItem>() };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            HasSudo = true
+            FontDirectory = "/root/.local/share/fonts"
         };
 
         // Act

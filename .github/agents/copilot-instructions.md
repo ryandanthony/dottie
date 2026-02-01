@@ -36,4 +36,44 @@ tests/
 
 
 <!-- MANUAL ADDITIONS START -->
+
+## Testing
+
+### Unit Tests
+Run all unit tests:
+```bash
+dotnet test Dottie.slnx
+```
+
+### Integration Tests
+Integration tests run in Docker for cross-platform consistency. The script is located at `tests/run-integration-tests.ps1`.
+
+**Full integration test run (build + Docker image + test):**
+```powershell
+cd tests
+./run-integration-tests.ps1
+```
+
+**Faster iterations (skip dotnet publish):**
+```powershell
+./run-integration-tests.ps1 -NoBuild
+```
+
+**Just run tests (skip both build and Docker image build):**
+```powershell
+./run-integration-tests.ps1 -NoBuild -NoImageBuild
+```
+
+**What the script does:**
+1. **Step 1:** Publishes the Dottie CLI for Linux (`publish/linux-x64/dottie`)
+2. **Step 2:** Builds Docker test image from `tests/integration/Dockerfile`
+3. **Step 3:** Runs all integration test scenarios inside the container
+
+Integration test scenarios are located in `tests/integration/scenarios/`. Each scenario has:
+- `dottie.yml` - Configuration file for testing
+- `validate.sh` - Validation script that runs inside Docker
+- `README.md` - Documentation of the test scenario
+
+Example: `tests/integration/scenarios/install-github-release/` tests GitHub release binary installation.
+
 <!-- MANUAL ADDITIONS END -->

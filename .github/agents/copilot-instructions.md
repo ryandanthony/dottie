@@ -10,6 +10,7 @@ Auto-generated from all feature plans. Last updated: 2026-01-28
 - Filesystem only (dotfiles and backups) (004-conflict-handling)
 - C# / .NET 10.0 + Spectre.Console 0.50.0, Spectre.Console.Cli 0.50.0, YamlDotNet 16.3.0 (005-cli-link)
 - Filesystem (symlinks, backups) (005-cli-link)
+- Filesystem (`~/bin/` for binaries, `~/.local/share/fonts/` for fonts) (006-install-sources)
 
 - .NET 10 (C# 13), Native AOT / trimmed self-contained deployment (001-yaml-configuration)
 
@@ -29,9 +30,9 @@ tests/
 .NET 10 (C# 13), Native AOT / trimmed self-contained deployment: Follow standard conventions
 
 ## Recent Changes
+- 006-install-sources: Added C# / .NET 10.0 + Spectre.Console 0.50.0, Spectre.Console.Cli 0.50.0, YamlDotNet 16.3.0
 - 005-cli-link: Added C# / .NET 10.0 + Spectre.Console 0.50.0, Spectre.Console.Cli 0.50.0, YamlDotNet 16.3.0
 - 004-conflict-handling: Added .NET 10 (C# 13), Native AOT / trimmed self-contained deployment
-- 003-profiles: Added [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION] + [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]
 
 
 <!-- MANUAL ADDITIONS START -->

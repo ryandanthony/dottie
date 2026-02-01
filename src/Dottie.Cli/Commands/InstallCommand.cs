@@ -71,13 +71,37 @@ public sealed class InstallCommand : AsyncCommand<InstallCommandSettings>
                 AnsiConsole.MarkupLine("[yellow]Dry Run Mode:[/] Previewing installation without making changes");
             }
 
-            // Run GitHub release installer (MVP - only GitHub releases for now)
-            var installer = new GithubReleaseInstaller();
-            var results = await installer.InstallAsync(profile.Install, context_info);
+            // Create orchestrator with all available installers
+            var installers = new List<IInstallSource>
+            {
+                new GithubReleaseInstaller(),
+                new AptPackageInstaller()
+            };
+            
+            var results = new List<InstallResult>();
+            
+            // Call each installer with the install block
+            foreach (var installer in installers)
+            {
+                try
+                {
+                    IEnumerable<InstallResult> installerResults = installer.SourceType switch
+                    {
+                        InstallSourceType.GithubRelease => await ((GithubReleaseInstaller)installer).InstallAsync(profile.Install, context_info),
+                        InstallSourceType.AptPackage => await ((AptPackageInstaller)installer).InstallAsync(profile.Install, context_info),
+                        _ => Enumerable.Empty<InstallResult>()
+                    };
+                    results.AddRange(installerResults);
+                }
+                catch (Exception ex)
+                {
+                    results.Add(InstallResult.Failed("unknown", InstallSourceType.GithubRelease, $"Installer error: {ex.Message}"));
+                }
+            }
             
             if (!results.Any())
             {
-                AnsiConsole.MarkupLine("[yellow]ℹ[/] No GitHub releases configured to install.");
+                AnsiConsole.MarkupLine("[yellow]ℹ[/] No tools configured to install.");
                 return 0;
             }
 

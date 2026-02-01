@@ -102,18 +102,18 @@ then implementation. Integration tests validate end-to-end workflows.
 
 ### Unit Tests (Write FIRST - must FAIL before implementation)
 
-- [ ] T031 [P] [US2] Create AptPackageInstallerTests.cs at tests/Dottie.Configuration.Tests/Installing/AptPackageInstallerTests.cs
+- [x] T031 [P] [US2] Create AptPackageInstallerTests.cs at tests/Dottie.Configuration.Tests/Installing/AptPackageInstallerTests.cs
 
 ### Implementation
 
-- [ ] T032 [US2] Implement AptPackageInstaller in src/Dottie.Configuration/Installing/AptPackageInstaller.cs
-- [ ] T033 [US2] Update InstallOrchestrator to include AptPackageInstaller in src/Dottie.Configuration/Installing/InstallOrchestrator.cs
+- [x] T032 [US2] Implement AptPackageInstaller in src/Dottie.Configuration/Installing/AptPackageInstaller.cs
+- [x] T033 [US2] Update InstallOrchestrator to include AptPackageInstaller in src/Dottie.Configuration/Installing/InstallOrchestrator.cs
 
 ### Integration Test
 
-- [ ] T034 [US2] Create install-apt-packages scenario at tests/integration/scenarios/install-apt-packages/
-- [ ] T035 [US2] Create dottie.yml config for APT package test
-- [ ] T036 [US2] Create validate.sh to verify package installation
+- [x] T034 [US2] Create install-apt-packages scenario at tests/integration/scenarios/install-apt-packages/
+- [x] T035 [US2] Create dottie.yml config for APT package test
+- [x] T036 [US2] Create validate.sh to verify package installation
 
 **Checkpoint**: User Story 2 complete - APT package installation works independently
 

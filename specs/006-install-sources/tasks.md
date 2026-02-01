@@ -69,26 +69,26 @@ then implementation. Integration tests validate end-to-end workflows.
 
 ### Unit Tests (Write FIRST - must FAIL before implementation)
 
-- [ ] T017 [P] [US1] Create GithubReleaseInstallerTests.cs at tests/Dottie.Configuration.Tests/Installing/GithubReleaseInstallerTests.cs
-- [ ] T018 [P] [US1] Create InstallOrchestratorTests.cs at tests/Dottie.Configuration.Tests/Installing/InstallOrchestratorTests.cs
-- [ ] T019 [P] [US1] Create InstallCommandTests.cs at tests/Dottie.Cli.Tests/Commands/InstallCommandTests.cs
-- [ ] T020 [P] [US1] Create InstallCommandSettingsTests.cs at tests/Dottie.Cli.Tests/Commands/InstallCommandSettingsTests.cs
-- [ ] T021 [P] [US1] Create InstallProgressRendererTests.cs at tests/Dottie.Cli.Tests/Output/InstallProgressRendererTests.cs
+- [x] T017 [P] [US1] Create GithubReleaseInstallerTests.cs at tests/Dottie.Configuration.Tests/Installing/GithubReleaseInstallerTests.cs
+- [x] T018 [P] [US1] Create InstallOrchestratorTests.cs at tests/Dottie.Configuration.Tests/Installing/InstallOrchestratorTests.cs
+- [x] T019 [P] [US1] Create InstallCommandTests.cs at tests/Dottie.Cli.Tests/Commands/InstallCommandTests.cs
+- [x] T020 [P] [US1] Create InstallCommandSettingsTests.cs at tests/Dottie.Cli.Tests/Commands/InstallCommandSettingsTests.cs
+- [x] T021 [P] [US1] Create InstallProgressRendererTests.cs at tests/Dottie.Cli.Tests/Output/InstallProgressRendererTests.cs
 
 ### Implementation
 
-- [ ] T022 [US1] Implement GithubReleaseInstaller in src/Dottie.Configuration/Installing/GithubReleaseInstaller.cs
-- [ ] T023 [US1] Implement InstallOrchestrator (GitHub only) in src/Dottie.Configuration/Installing/InstallOrchestrator.cs
-- [ ] T024 [US1] Create InstallCommandSettings in src/Dottie.Cli/Commands/InstallCommandSettings.cs
-- [ ] T025 [US1] Implement InstallCommand in src/Dottie.Cli/Commands/InstallCommand.cs
-- [ ] T026 [US1] Create InstallProgressRenderer in src/Dottie.Cli/Output/InstallProgressRenderer.cs
-- [ ] T027 [US1] Register InstallCommand in src/Dottie.Cli/Program.cs
+- [x] T022 [US1] Implement GithubReleaseInstaller in src/Dottie.Configuration/Installing/GithubReleaseInstaller.cs
+- [x] T023 [US1] Implement InstallOrchestrator (GitHub only) in src/Dottie.Configuration/Installing/InstallOrchestrator.cs
+- [x] T024 [US1] Create InstallCommandSettings in src/Dottie.Cli/Commands/InstallCommandSettings.cs
+- [x] T025 [US1] Implement InstallCommand in src/Dottie.Cli/Commands/InstallCommand.cs
+- [x] T026 [US1] Create InstallProgressRenderer in src/Dottie.Cli/Output/InstallProgressRenderer.cs
+- [x] T027 [US1] Register InstallCommand in src/Dottie.Cli/Program.cs
 
 ### Integration Test
 
-- [ ] T028 [US1] Create install-github-release scenario at tests/integration/scenarios/install-github-release/
-- [ ] T029 [US1] Create dottie.yml config for GitHub release test
-- [ ] T030 [US1] Create validate.sh to verify binary installation
+- [x] T028 [US1] Create install-github-release scenario at tests/integration/scenarios/install-github-release/
+- [x] T029 [US1] Create dottie.yml config for GitHub release test
+- [x] T030 [US1] Create validate.sh to verify binary installation
 
 **Checkpoint**: User Story 1 complete - GitHub release installation works independently
 

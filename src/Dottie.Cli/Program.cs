@@ -16,6 +16,7 @@ public static class Program
 {
     private const string ValidateCommandName = "validate";
     private const string LinkCommandName = "link";
+    private const string InstallCommandName = "install";
 
     /// <summary>
     /// Main entry point.
@@ -43,6 +44,13 @@ public static class Program
                 .WithExample(LinkCommandName, "--profile", "work")
                 .WithExample(LinkCommandName, "--force")
                 .WithExample(LinkCommandName, "-c", "./my-config.yaml", "-p", "work", "-f");
+
+            config.AddCommand<InstallCommand>(InstallCommandName)
+                .WithDescription("Install software from configured sources")
+                .WithExample(InstallCommandName)
+                .WithExample(InstallCommandName, "--profile", "work")
+                .WithExample(InstallCommandName, "--dry-run")
+                .WithExample(InstallCommandName, "-c", "./my-config.yaml", "-p", "work", "--dry-run");
         });
 
         return app.Run(args);

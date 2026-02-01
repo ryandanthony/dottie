@@ -3,6 +3,10 @@
 using Dottie.Configuration.Installing.Utilities;
 using Dottie.Configuration.Models.InstallBlocks;
 using System.Diagnostics;
+using System.Net.Http.Json;
+using System.Runtime.InteropServices;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 namespace Dottie.Configuration.Installing;
 
@@ -13,6 +17,8 @@ namespace Dottie.Configuration.Installing;
 public class GithubReleaseInstaller : IInstallSource
 {
     private readonly HttpDownloader _downloader;
+    private readonly ArchiveExtractor _extractor;
+    private readonly HttpClient _httpClient;
 
     /// <inheritdoc/>
     public InstallSourceType SourceType => InstallSourceType.GithubRelease;
@@ -24,6 +30,21 @@ public class GithubReleaseInstaller : IInstallSource
     public GithubReleaseInstaller(HttpDownloader? downloader = null)
     {
         _downloader = downloader ?? new HttpDownloader();
+        _extractor = new ArchiveExtractor();
+        _httpClient = new HttpClient
+        {
+            DefaultRequestHeaders =
+            {
+                { "User-Agent", "dottie-dotfiles/1.0" }
+            }
+        };
+
+        // Add GitHub token if available
+        var token = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
+        if (!string.IsNullOrEmpty(token))
+        {
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        }
     }
 
     /// <inheritdoc/>
@@ -43,9 +64,240 @@ public class GithubReleaseInstaller : IInstallSource
             return results; // Skip if no sudo and bin directory not writable
         }
 
-        // In the real implementation, this would load releases from config
-        // For now, return empty to allow tests to pass
+        // This would be called with the InstallBlock from the config
+        // For MVP, we return empty to allow the orchestrator to work
         return results;
+    }
+
+    /// <summary>
+    /// Installs GitHub release items from the provided install block.
+    /// </summary>
+    /// <param name="installBlock">The install block containing GitHub release specifications.</param>
+    /// <param name="context">The installation context with paths and configuration.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Installation results for each item.</returns>
+    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, CancellationToken cancellationToken = default)
+    {
+        if (installBlock == null)
+        {
+            throw new ArgumentNullException(nameof(installBlock));
+        }
+
+        if (context == null)
+        {
+            throw new ArgumentNullException(nameof(context));
+        }
+
+        var results = new List<InstallResult>();
+
+        if (installBlock.Github == null || installBlock.Github.Count == 0)
+        {
+            return results;
+        }
+
+        foreach (var item in installBlock.Github)
+        {
+            try
+            {
+                var result = await InstallGithubReleaseItemAsync(item, context, cancellationToken);
+                results.Add(result);
+            }
+            catch (Exception ex)
+            {
+                results.Add(InstallResult.Failed(item.Binary, SourceType, $"Failed to install from {item.Repo}: {ex.Message}"));
+            }
+        }
+
+        return results;
+    }
+
+    private async Task<InstallResult> InstallGithubReleaseItemAsync(GithubReleaseItem item, InstallContext context, CancellationToken cancellationToken)
+    {
+        if (context.DryRun)
+        {
+            // In dry-run mode, just validate the release exists
+            var releaseUrl = string.IsNullOrEmpty(item.Version)
+                ? $"https://api.github.com/repos/{item.Repo}/releases/latest"
+                : $"https://api.github.com/repos/{item.Repo}/releases/tags/{item.Version}";
+
+            try
+            {
+                var response = await _httpClient.GetAsync(releaseUrl, cancellationToken);
+                if (response.IsSuccessStatusCode)
+                {
+                    return InstallResult.Success(item.Binary, SourceType, null, $"GitHub release {item.Repo}@{item.Version ?? "latest"} would be installed");
+                }
+                else
+                {
+                    return InstallResult.Failed(item.Binary, SourceType, $"GitHub release not found: {item.Repo}@{item.Version ?? "latest"}");
+                }
+            }
+            catch (Exception ex)
+            {
+                return InstallResult.Failed(item.Binary, SourceType, $"Failed to verify GitHub release {item.Repo}: {ex.Message}");
+            }
+        }
+
+        // Get the release from GitHub API
+        var release = await GetGithubReleaseAsync(item, cancellationToken);
+        if (release == null)
+        {
+            return InstallResult.Failed(item.Binary, SourceType, $"GitHub release not found: {item.Repo}@{item.Version ?? "latest"}");
+        }
+
+        // Find the matching asset
+        var matchingAsset = FindMatchingAsset(release, item.Asset);
+        if (matchingAsset == null)
+        {
+            return InstallResult.Failed(item.Binary, SourceType, $"No asset matching pattern '{item.Asset}' in release {item.Repo}@{item.Version ?? "latest"}");
+        }
+
+        // Download the asset
+        byte[] assetData;
+        try
+        {
+            assetData = await _downloader.DownloadAsync(matchingAsset.BrowserDownloadUrl, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            return InstallResult.Failed(item.Binary, SourceType, $"Failed to download {matchingAsset.Name}: {ex.Message}");
+        }
+
+        // Extract if needed and copy to bin directory
+        try
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), $"dottie-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(tempDir);
+
+            try
+            {
+                // Determine if archive needs extraction
+                var assetPath = Path.Combine(tempDir, matchingAsset.Name);
+                await File.WriteAllBytesAsync(assetPath, assetData, cancellationToken);
+
+                string? binaryPath;
+                if (matchingAsset.Name.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase) ||
+                    matchingAsset.Name.EndsWith(".tgz", StringComparison.OrdinalIgnoreCase) ||
+                    matchingAsset.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Extract archive
+                    var extractDir = Path.Combine(tempDir, "extracted");
+                    _extractor.Extract(assetPath, extractDir);
+                    binaryPath = FindBinaryInDirectory(extractDir, item.Binary);
+                }
+                else
+                {
+                    // Binary is not archived
+                    binaryPath = assetPath;
+                }
+
+                if (binaryPath == null || !File.Exists(binaryPath))
+                {
+                    return InstallResult.Failed(item.Binary, SourceType, $"Binary '{item.Binary}' not found in release asset");
+                }
+
+                // Copy to bin directory
+                var destPath = Path.Combine(context.BinDirectory, item.Binary);
+                File.Copy(binaryPath, destPath, overwrite: true);
+
+                // Make executable on Unix-like systems
+                if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    var process = new Process
+                    {
+                        StartInfo = new ProcessStartInfo
+                        {
+                            FileName = "chmod",
+                            Arguments = $"+x \"{destPath}\"",
+                            UseShellExecute = false,
+                            RedirectStandardOutput = true
+                        }
+                    };
+                    process.Start();
+                    await process.WaitForExitAsync(cancellationToken);
+                }
+
+                return InstallResult.Success(item.Binary, SourceType, destPath, $"from {item.Repo}");
+            }
+            finally
+            {
+                // Clean up temp directory
+                try
+                {
+                    Directory.Delete(tempDir, recursive: true);
+                }
+                catch
+                {
+                    // Ignore cleanup errors
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            return InstallResult.Failed(item.Binary, SourceType, $"Failed to install: {ex.Message}");
+        }
+    }
+
+    private async Task<GithubRelease?> GetGithubReleaseAsync(GithubReleaseItem item, CancellationToken cancellationToken)
+    {
+        var url = string.IsNullOrEmpty(item.Version)
+            ? $"https://api.github.com/repos/{item.Repo}/releases/latest"
+            : $"https://api.github.com/repos/{item.Repo}/releases/tags/{item.Version}";
+
+        try
+        {
+            var response = await _httpClient.GetAsync(url, cancellationToken);
+            if (response.IsSuccessStatusCode)
+            {
+#pragma warning disable IL2026
+                return await response.Content.ReadFromJsonAsync<GithubRelease>(cancellationToken: cancellationToken);
+#pragma warning restore IL2026
+            }
+
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private GithubAsset? FindMatchingAsset(GithubRelease release, string pattern)
+    {
+        if (release.Assets == null || release.Assets.Count == 0)
+        {
+            return null;
+        }
+
+        // Convert glob pattern to regex
+        var regexPattern = "^" + Regex.Escape(pattern)
+            .Replace("\\*", ".*")
+            .Replace("\\?", ".") + "$";
+
+        var regex = new Regex(regexPattern, RegexOptions.IgnoreCase);
+
+        return release.Assets.FirstOrDefault(a => regex.IsMatch(a.Name));
+    }
+
+    private string? FindBinaryInDirectory(string directory, string binaryName)
+    {
+        var files = Directory.GetFiles(directory, binaryName, SearchOption.AllDirectories);
+        if (files.Length > 0)
+        {
+            return files[0];
+        }
+
+        // On Windows, also try with .exe extension
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            files = Directory.GetFiles(directory, binaryName + ".exe", SearchOption.AllDirectories);
+            if (files.Length > 0)
+            {
+                return files[0];
+            }
+        }
+
+        return null;
     }
 
     private static bool IsUserBinWritable(InstallContext context)
@@ -68,4 +320,21 @@ public class GithubReleaseInstaller : IInstallSource
             return false;
         }
     }
+
+    // GitHub API response models
+    private class GithubRelease
+    {
+        [JsonPropertyName("assets")]
+        public List<GithubAsset>? Assets { get; set; }
+    }
+
+    private class GithubAsset
+    {
+        [JsonPropertyName("name")]
+        public required string Name { get; set; }
+
+        [JsonPropertyName("browser_download_url")]
+        public required string BrowserDownloadUrl { get; set; }
+    }
 }
+

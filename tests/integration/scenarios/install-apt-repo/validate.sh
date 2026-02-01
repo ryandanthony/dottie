@@ -10,8 +10,8 @@ if [ -z "$TEST_DIR" ]; then
     exit 1
 fi
 
-EXPECTED_REPO_NAME="docker"
-EXPECTED_PACKAGE="docker-ce-cli"
+EXPECTED_REPO_NAME="universe"
+EXPECTED_PACKAGE="sqlite3"
 
 echo "  Validating private APT repository installation in $TEST_DIR"
 

@@ -5,9 +5,10 @@ profiles:
   default:
     install:
       aptRepos:
-        # Using a well-known repository with public GPG key
-        - name: docker
-          repo: "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/docker.gpg] https://download.docker.com/linux/ubuntu focal stable"
-          keyUrl: "https://download.docker.com/linux/ubuntu/gpg"
+        # Using universe repository - includes sqlite3 which we can test
+        # Using Ubuntu's main repository signing key (embedded, should work)
+        - name: universe
+          repo: "deb [trusted=yes] http://archive.ubuntu.com/ubuntu jammy universe"
+          key_url: "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xF6ECB3762474EDA9D21B7022871920D1991BC93C"
           packages:
-            - docker-ce-cli
+            - sqlite3

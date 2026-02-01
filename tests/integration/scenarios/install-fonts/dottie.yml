@@ -5,7 +5,7 @@ profiles:
   default:
     install:
       fonts:
-        # Using a simple, small font archive for testing
-        # This is Liberation Sans from Google Fonts
-        - name: "Liberation"
-          url: "https://github.com/liberationfonts/liberation-fonts/releases/download/2.1.5/LiberationFonts-TTF-2.1.5.tar.gz"
+        # Using fonts from a well-known archive.org mirror
+        # This is a direct .ttf file that doesn't require extraction
+        - name: "JetBrains"
+          url: "https://github.com/JetBrains/JetBrainsMono/releases/download/v2.304/JetBrainsMono-2.304.zip"

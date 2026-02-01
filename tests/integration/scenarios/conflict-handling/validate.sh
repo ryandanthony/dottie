@@ -53,8 +53,8 @@ if ! dottie link -c "$TEST_DIR/dottie.yml" --force; then
 fi
 echo "    PASS: dottie link --force succeeded"
 
-# Verify backups were created
-if ! ls "$BASHRC_TARGET.backup."* 1> /dev/null 2>&1; then
+# Verify backups were created (new format: .dottie-backup-YYYYMMDD-HHMMSS)
+if ! ls "$BASHRC_TARGET.dottie-backup-"* 1> /dev/null 2>&1; then
     echo "ERROR: Backup file was not created for bashrc"
     exit 1
 fi
@@ -77,8 +77,8 @@ fi
 echo "    PASS: Re-running link works (skips already linked)"
 
 # Cleanup
-rm -f "$BASHRC_TARGET" "$BASHRC_TARGET.backup."*
-rm -f "$VIMRC_TARGET" "$VIMRC_TARGET.backup."*
+rm -f "$BASHRC_TARGET" "$BASHRC_TARGET.dottie-backup-"*
+rm -f "$VIMRC_TARGET" "$VIMRC_TARGET.dottie-backup-"*
 rm -rf "$HOME/.config/test-nvim"
 
 echo "  All conflict-handling tests passed!"

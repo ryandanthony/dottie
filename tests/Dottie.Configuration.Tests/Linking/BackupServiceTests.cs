@@ -55,7 +55,7 @@ public sealed class BackupServiceTests : IDisposable
         result.IsSuccess.Should().BeTrue();
         result.OriginalPath.Should().Be(filePath);
         result.BackupPath.Should().NotBeNull();
-        result.BackupPath.Should().MatchRegex(@"test\.txt\.backup\.\d{8}-\d{6}$");
+        result.BackupPath.Should().MatchRegex(@"test\.txt\.dottie-backup-\d{8}-\d{6}$");
         File.Exists(result.BackupPath).Should().BeTrue();
         File.Exists(filePath).Should().BeFalse(); // Original moved
     }
@@ -76,7 +76,7 @@ public sealed class BackupServiceTests : IDisposable
         result.IsSuccess.Should().BeTrue();
         result.OriginalPath.Should().Be(dirPath);
         result.BackupPath.Should().NotBeNull();
-        result.BackupPath.Should().MatchRegex(@"testdir\.backup\.\d{8}-\d{6}$");
+        result.BackupPath.Should().MatchRegex(@"testdir\.dottie-backup-\d{8}-\d{6}$");
         Directory.Exists(result.BackupPath).Should().BeTrue();
         Directory.Exists(dirPath).Should().BeFalse(); // Original moved
     }
@@ -136,5 +136,44 @@ public sealed class BackupServiceTests : IDisposable
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.Error.Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public void Backup_WhenFileExists_CreatesBackupWithDottieBackupNamingConvention()
+    {
+        // Arrange
+        var filePath = Path.Combine(_testDir, "naming-test.txt");
+        File.WriteAllText(filePath, "test content");
+        var service = new BackupService();
+
+        // Act
+        var result = service.Backup(filePath);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.BackupPath.Should().NotBeNull();
+
+        // Should use .dottie-backup-YYYYMMDD-HHMMSS format per spec FR-022
+        result.BackupPath.Should().MatchRegex(@"naming-test\.txt\.dottie-backup-\d{8}-\d{6}$");
+    }
+
+    [Fact]
+    public void Backup_WhenDirectoryExists_CreatesBackupWithDottieBackupNamingConvention()
+    {
+        // Arrange
+        var dirPath = Path.Combine(_testDir, "naming-test-dir");
+        Directory.CreateDirectory(dirPath);
+        File.WriteAllText(Path.Combine(dirPath, "file.txt"), "content");
+        var service = new BackupService();
+
+        // Act
+        var result = service.Backup(dirPath);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.BackupPath.Should().NotBeNull();
+
+        // Should use .dottie-backup-YYYYMMDD-HHMMSS format per spec FR-022
+        result.BackupPath.Should().MatchRegex(@"naming-test-dir\.dottie-backup-\d{8}-\d{6}$");
     }
 }

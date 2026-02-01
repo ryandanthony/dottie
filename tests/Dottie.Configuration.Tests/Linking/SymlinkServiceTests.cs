@@ -211,4 +211,48 @@ public sealed class SymlinkServiceTests : IDisposable
         // Assert
         result.Should().BeFalse();
     }
+
+    [Fact]
+    public void LastError_InitiallyNull()
+    {
+        // Arrange
+        var service = new SymlinkService();
+
+        // Assert
+        service.LastError.Should().BeNull();
+    }
+
+    [Fact]
+    public void CreateSymlink_WhenFails_PopulatesLastError()
+    {
+        // Arrange
+        var linkPath = Path.Combine(_testDir, "link.txt");
+
+        // Use invalid target path
+        var invalidTargetPath = Path.Combine(_testDir, "nonexistent-source.txt");
+        var service = new SymlinkService();
+
+        // Act
+        var result = service.CreateSymlink(linkPath, invalidTargetPath);
+
+        // Assert - symlink creation might succeed or fail depending on OS
+        // What's important is LastError gets populated on failure
+        if (!result)
+        {
+            service.LastError.Should().NotBeNullOrEmpty();
+        }
+    }
+
+    [Fact]
+    public void GetWindowsSymlinkErrorMessage_ReturnsGuidanceMessage()
+    {
+        // Arrange & Act
+        var message = SymlinkService.GetWindowsSymlinkErrorMessage();
+
+        // Assert - per spec FR-021
+        message.Should().Contain("Unable to create symbolic link");
+        message.Should().Contain("insufficient permissions");
+        message.Should().Contain("Administrator");
+        message.Should().Contain("Developer Mode");
+    }
 }

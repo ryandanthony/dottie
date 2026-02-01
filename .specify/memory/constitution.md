@@ -169,6 +169,36 @@ refactoring, and prevents over-engineering by focusing on required
 functionality. Tests written first guide simpler, more maintainable
 implementations.
 
+## Test Execution Before Commit - MANDATORY
+
+**STRICT REQUIREMENT**: All local commits MUST pass both unit tests and integration
+tests before being pushed to the repository.
+
+### Verification Checklist
+
+Before committing changes, developers MUST verify:
+
+1. **Unit Tests**: Run `dotnet test` and confirm all unit tests pass
+2. **Integration Tests**: Run `.\tests\run-integration-tests.ps1` and confirm all
+   integration tests pass
+3. **Build**: Ensure the project builds with `dotnet build --warnaserror` (no
+   analyzer warnings)
+4. **Coverage**: Verify no test failures or coverage regressions
+
+### Commitment
+
+- Developers are responsible for running these checks locally before pushing
+- Broken builds and test failures MUST NOT be pushed to any shared branch
+- If a commit reaches main with failing tests, it MUST be reverted immediately
+- GitHub Actions CI/CD will enforce this via branch protection rules on main
+
+### Rationale
+
+Running tests locally catches issues early, provides immediate feedback during
+development, prevents broken code from reaching shared branches, and reduces
+CI pipeline failures. This practice protects code quality, enables other
+developers to work efficiently, and maintains a stable main branch.
+
 ## Code Standards - MANDATORY
 
 **STRICT REQUIREMENT**: All projects MUST reference the FestinaLente.CodeStandards

@@ -12,6 +12,26 @@ namespace Dottie.Configuration.Linking;
 public sealed class SymlinkService
 {
     /// <summary>
+    /// Gets the error message from the last failed operation.
+    /// </summary>
+    public string? LastError { get; private set; }
+
+    /// <summary>
+    /// Gets the Windows-specific symlink permission error message.
+    /// </summary>
+    /// <returns>A user-friendly error message with remediation steps.</returns>
+    public static string GetWindowsSymlinkErrorMessage()
+    {
+        return """
+            Error: Unable to create symbolic link - insufficient permissions.
+
+            On Windows, symbolic links require either:
+              • Run dottie as Administrator, OR
+              • Enable Developer Mode in Windows Settings > Update & Security > For developers
+            """;
+    }
+
+    /// <summary>
     /// Creates a symbolic link.
     /// </summary>
     /// <param name="linkPath">The path where the symlink will be created.</param>
@@ -21,6 +41,8 @@ public sealed class SymlinkService
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(linkPath);
         ArgumentException.ThrowIfNullOrWhiteSpace(targetPath);
+
+        LastError = null;
 
         try
         {
@@ -43,8 +65,23 @@ public sealed class SymlinkService
 
             return true;
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (UnauthorizedAccessException ex)
         {
+            // Check if this is a Windows symlink permission error
+            if (OperatingSystem.IsWindows())
+            {
+                LastError = GetWindowsSymlinkErrorMessage();
+            }
+            else
+            {
+                LastError = $"Permission denied: {ex.Message}";
+            }
+
+            return false;
+        }
+        catch (IOException ex)
+        {
+            LastError = ex.Message;
             return false;
         }
     }

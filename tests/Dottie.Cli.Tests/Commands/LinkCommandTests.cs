@@ -290,4 +290,114 @@ profiles:
         // Assert - returns 1 because source files don't exist, but flag was accepted
         result.Should().BeOneOf(0, 1);
     }
+
+    [Fact]
+    public void Execute_WithDryRunFlag_AcceptsFlag()
+    {
+        // Arrange
+        var configPath = Path.Combine(FixturesPath, "valid-minimal.yaml");
+        var app = new CommandApp();
+        app.Configure(config =>
+        {
+            config.PropagateExceptions();
+            config.AddCommand<LinkCommand>("link");
+        });
+
+        // Act - test --dry-run flag
+        var result = app.Run(["link", "-c", configPath, "--dry-run"]);
+
+        // Assert - should succeed (dry-run always succeeds if config is valid)
+        result.Should().Be(0);
+    }
+
+    [Fact]
+    public void Execute_WithDryRunFlagShortForm_AcceptsFlag()
+    {
+        // Arrange
+        var configPath = Path.Combine(FixturesPath, "valid-minimal.yaml");
+        var app = new CommandApp();
+        app.Configure(config =>
+        {
+            config.PropagateExceptions();
+            config.AddCommand<LinkCommand>("link");
+        });
+
+        // Act - test short form -d
+        var result = app.Run(["link", "-c", configPath, "-d"]);
+
+        // Assert - should succeed (dry-run always succeeds if config is valid)
+        result.Should().Be(0);
+    }
+
+    [Fact]
+    public void Execute_WithDryRunAndForce_ReturnsError()
+    {
+        // Arrange
+        var configPath = Path.Combine(FixturesPath, "valid-minimal.yaml");
+        var app = new CommandApp();
+        app.Configure(config =>
+        {
+            // Don't propagate exceptions - we want to see the validation error as exit code
+            config.AddCommand<LinkCommand>("link");
+        });
+
+        // Act - test mutually exclusive flags
+        var result = app.Run(["link", "-c", configPath, "--dry-run", "--force"]);
+
+        // Assert - validation fails, returns non-zero (Spectre.Console returns -1 for validation errors)
+        result.Should().NotBe(0);
+    }
+
+    [Fact]
+    public void Execute_WithDryRun_DoesNotCreateSymlinks()
+    {
+        // Arrange
+        var configContent = @"
+profiles:
+  default:
+    dotfiles:
+      - source: test-dry-run.txt
+        target: ~/test-dry-run-target.txt
+";
+        var configPath = Path.Combine(_tempDirectory, "dottie.yaml");
+        File.WriteAllText(configPath, configContent);
+
+        // Create source file in temp directory (simulating repo root)
+        var sourceFile = Path.Combine(_tempDirectory, "test-dry-run.txt");
+        File.WriteAllText(sourceFile, "source content");
+
+        // Target path
+        var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var targetPath = Path.Combine(homeDir, "test-dry-run-target.txt");
+
+        // Make sure target doesn't exist before test
+        if (File.Exists(targetPath))
+        {
+            File.Delete(targetPath);
+        }
+
+        try
+        {
+            var app = new CommandApp();
+            app.Configure(config =>
+            {
+                config.PropagateExceptions();
+                config.AddCommand<LinkCommand>("link");
+            });
+
+            // Act - run with --dry-run
+            var result = app.Run(["link", "-c", configPath, "--dry-run"]);
+
+            // Assert - should succeed and NOT create the symlink
+            result.Should().Be(0);
+            File.Exists(targetPath).Should().BeFalse("dry-run should not create symlinks");
+        }
+        finally
+        {
+            if (File.Exists(targetPath))
+            {
+                File.Delete(targetPath);
+            }
+        }
+    }
 }

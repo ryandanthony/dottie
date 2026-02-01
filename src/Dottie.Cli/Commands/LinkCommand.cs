@@ -37,6 +37,11 @@ public sealed class LinkCommand : Command<LinkCommandSettings>
             return exitCode;
         }
 
+        if (settings.DryRun)
+        {
+            return ExecuteDryRun(profile, repoRoot);
+        }
+
         return ExecuteLinking(profile, repoRoot, settings.Force);
     }
 
@@ -104,12 +109,46 @@ public sealed class LinkCommand : Command<LinkCommandSettings>
         return mergeResult.Profile;
     }
 
+    private static int ExecuteDryRun(ResolvedProfile profile, string repoRoot)
+    {
+        var conflictDetector = new ConflictDetector();
+        var dotfiles = profile.Dotfiles.ToList().AsReadOnly();
+        var conflictResult = conflictDetector.DetectConflicts(dotfiles, repoRoot);
+
+        ConflictFormatter.WriteDryRunPreview(
+            conflictResult.SafeEntries.Select(e => e).ToList(),
+            conflictResult.AlreadyLinked.Select(e => e).ToList(),
+            conflictResult.Conflicts.ToList(),
+            repoRoot);
+
+        return 0;
+    }
+
     private static int ExecuteLinking(ResolvedProfile profile, string repoRoot, bool force)
     {
-        var orchestrator = new LinkingOrchestrator();
-        var result = orchestrator.ExecuteLink(profile, repoRoot, force);
+        LinkExecutionResult? result = null;
+        var dotfileCount = profile.Dotfiles.Count;
 
-        if (result.IsBlocked)
+        AnsiConsole.Progress()
+            .AutoClear(true)
+            .HideCompleted(false)
+            .Columns(
+                new TaskDescriptionColumn(),
+                new ProgressBarColumn(),
+                new PercentageColumn(),
+                new SpinnerColumn())
+            .Start(ctx =>
+            {
+                var task = ctx.AddTask("[green]Linking dotfiles[/]", maxValue: dotfileCount);
+
+                var orchestrator = new LinkingOrchestrator();
+                result = orchestrator.ExecuteLink(profile, repoRoot, force);
+
+                // Update progress to 100% once linking is complete
+                task.Value = dotfileCount;
+            });
+
+        if (result!.IsBlocked)
         {
             ConflictFormatter.WriteConflicts(result.ConflictResult!.Conflicts.ToList());
             return 1;

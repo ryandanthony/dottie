@@ -1,0 +1,2 @@
+# bashrc test file
+alias ll='ls -la'

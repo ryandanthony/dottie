@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using Dottie.Configuration.Linking;
+using Dottie.Configuration.Models;
 using Spectre.Console;
 
 namespace Dottie.Cli.Output;
@@ -14,6 +15,61 @@ namespace Dottie.Cli.Output;
 /// </summary>
 public static class ConflictFormatter
 {
+    /// <summary>
+    /// Writes dry-run preview output to the console.
+    /// </summary>
+    /// <param name="safeEntries">Entries that would be linked.</param>
+    /// <param name="alreadyLinked">Entries that are already correctly linked.</param>
+    /// <param name="conflicts">Entries that have conflicts.</param>
+    /// <param name="repoRoot">The repository root path for displaying relative paths.</param>
+    public static void WriteDryRunPreview(
+        IReadOnlyList<DotfileEntry> safeEntries,
+        IReadOnlyList<DotfileEntry> alreadyLinked,
+        IReadOnlyList<Conflict> conflicts,
+        string repoRoot)
+    {
+        AnsiConsole.MarkupLine("[yellow]Dry run - no changes will be made.[/]");
+        AnsiConsole.WriteLine();
+
+        if (safeEntries.Count > 0)
+        {
+            AnsiConsole.MarkupLine($"[green]Would create {safeEntries.Count} symlink(s):[/]");
+            foreach (var entry in safeEntries)
+            {
+                AnsiConsole.MarkupLine($"  [dim]•[/] {Markup.Escape(entry.Source)} → {Markup.Escape(entry.Target)}");
+            }
+
+            AnsiConsole.WriteLine();
+        }
+
+        if (alreadyLinked.Count > 0)
+        {
+            AnsiConsole.MarkupLine($"[dim]Would skip {alreadyLinked.Count} file(s) (already linked):[/]");
+            foreach (var entry in alreadyLinked)
+            {
+                AnsiConsole.MarkupLine($"  [dim]•[/] {Markup.Escape(entry.Target)}");
+            }
+
+            AnsiConsole.WriteLine();
+        }
+
+        if (conflicts.Count > 0)
+        {
+            AnsiConsole.MarkupLine($"[yellow]Conflicts detected (use --force to resolve):[/]");
+            foreach (var conflict in conflicts)
+            {
+                var typeLabel = conflict.Type switch
+                {
+                    ConflictType.File => "existing file",
+                    ConflictType.Directory => "existing directory",
+                    ConflictType.MismatchedSymlink => "mismatched symlink",
+                    _ => "unknown",
+                };
+                AnsiConsole.MarkupLine($"  [yellow]•[/] {Markup.Escape(conflict.TargetPath)} [dim]({typeLabel})[/]");
+            }
+        }
+    }
+
     /// <summary>
     /// Writes conflicts to the console.
     /// </summary>

@@ -65,6 +65,7 @@ public sealed class BackupService
     private static string GenerateBackupPath(string originalPath, DateTimeOffset timestamp)
     {
         // Format: yyyyMMdd-HHmmss (e.g., 20260130-143022)
+        // Per spec FR-022: Use .dottie-backup-YYYYMMDD-HHMMSS naming convention
         var year = timestamp.Year.ToString("D4", CultureInfo.InvariantCulture);
         var month = timestamp.Month.ToString("D2", CultureInfo.InvariantCulture);
         var day = timestamp.Day.ToString("D2", CultureInfo.InvariantCulture);
@@ -72,7 +73,7 @@ public sealed class BackupService
         var minute = timestamp.Minute.ToString("D2", CultureInfo.InvariantCulture);
         var second = timestamp.Second.ToString("D2", CultureInfo.InvariantCulture);
         var timestampStr = $"{year}{month}{day}-{hour}{minute}{second}";
-        var basePath = $"{originalPath}.backup.{timestampStr}";
+        var basePath = $"{originalPath}.dottie-backup-{timestampStr}";
 
         if (!Path.Exists(basePath))
         {

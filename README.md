@@ -91,6 +91,8 @@ profiles:
 
 ## CLI Commands
 
+### Validate Configuration
+
 ```bash
 # Validate configuration file
 dottie validate <profile>
@@ -100,6 +102,66 @@ dottie validate <profile> -c /path/to/dottie.yaml
 
 # Validate without specifying profile (lists available profiles)
 dottie validate
+```
+
+### Link Dotfiles
+
+Create symbolic links from your repository to their target locations.
+
+```bash
+# Link dotfiles using default profile
+dottie link
+
+# Link dotfiles using a specific profile
+dottie link --profile work
+dottie link -p work
+
+# Preview changes without creating symlinks (dry-run)
+dottie link --dry-run
+dottie link -d
+
+# Force linking - backup existing files and overwrite
+dottie link --force
+dottie link -f
+
+# Use custom config path
+dottie link --config /path/to/dottie.yaml
+dottie link -c /path/to/dottie.yaml
+```
+
+**Options:**
+
+| Option | Short | Description |
+|--------|-------|-------------|
+| `--profile` | `-p` | Profile to use (default: "default") |
+| `--config` | `-c` | Path to configuration file |
+| `--dry-run` | `-d` | Preview changes without creating symlinks |
+| `--force` | `-f` | Backup existing files and overwrite conflicts |
+
+**Note:** `--dry-run` and `--force` are mutually exclusive.
+
+**Output Examples:**
+
+```bash
+# Normal operation
+✓ Created 5 symlink(s).
+Skipped 2 file(s) (already linked).
+
+# With conflicts (no --force)
+Error: Conflicting files detected. Use --force to backup and overwrite.
+Conflicts:
+  • ~/.bashrc (file)
+  • ~/.config/nvim (symlink → /other/path)
+Found 2 conflict(s).
+
+# Dry-run preview
+Dry run - no changes will be made.
+Would create 3 symlink(s):
+  • dotfiles/bashrc → ~/.bashrc
+  • dotfiles/vimrc → ~/.vimrc
+  • dotfiles/gitconfig → ~/.gitconfig
+Would skip 1 file(s) (already linked):
+  • ~/.zshrc
 ```
 
 ## Building from Source

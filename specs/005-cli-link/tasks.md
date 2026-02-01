@@ -19,8 +19,8 @@
 
 **Purpose**: Verify existing implementation and prepare for enhancements
 
-- [ ] T001 Verify existing tests pass with `dotnet test`
-- [ ] T002 [P] Create test file tests/Dottie.Cli.Tests/Commands/LinkCommandSettingsTests.cs with basic structure
+- [X] T001 Verify existing tests pass with `dotnet test`
+- [X] T002 [P] Create test file tests/Dottie.Cli.Tests/Commands/LinkCommandSettingsTests.cs with basic structure
 
 ---
 
@@ -32,14 +32,14 @@
 
 ### Tests for Foundational
 
-- [ ] T003 [P] Write test for backup naming convention (.dottie-backup-YYYYMMDD-HHMMSS) in tests/Dottie.Configuration.Tests/Linking/BackupServiceTests.cs
-- [ ] T004 [P] Write test for Windows symlink error message in tests/Dottie.Configuration.Tests/Linking/SymlinkServiceTests.cs
+- [X] T003 [P] Write test for backup naming convention (.dottie-backup-YYYYMMDD-HHMMSS) in tests/Dottie.Configuration.Tests/Linking/BackupServiceTests.cs
+- [X] T004 [P] Write test for Windows symlink error message in tests/Dottie.Configuration.Tests/Linking/SymlinkServiceTests.cs
 
 ### Implementation for Foundational
 
-- [ ] T005 Update BackupService.GenerateBackupPath() to use `.dottie-backup-YYYYMMDD-HHMMSS` format in src/Dottie.Configuration/Linking/BackupService.cs
-- [ ] T006 Add LastError property and Windows-specific error message to SymlinkService in src/Dottie.Configuration/Linking/SymlinkService.cs
-- [ ] T007 Update LinkResult to store detailed error messages from SymlinkService in src/Dottie.Configuration/Linking/LinkResult.cs
+- [X] T005 Update BackupService.GenerateBackupPath() to use `.dottie-backup-YYYYMMDD-HHMMSS` format in src/Dottie.Configuration/Linking/BackupService.cs
+- [X] T006 Add LastError property and Windows-specific error message to SymlinkService in src/Dottie.Configuration/Linking/SymlinkService.cs
+- [X] T007 Update LinkResult to store detailed error messages from SymlinkService in src/Dottie.Configuration/Linking/LinkResult.cs
 
 **Checkpoint**: Foundation ready - backup naming and error handling updated
 
@@ -53,15 +53,15 @@
 
 ### Tests for User Story 1
 
-- [ ] T008 [P] [US1] Write test for progress bar display during linking in tests/Dottie.Cli.Tests/Commands/LinkCommandTests.cs
-- [ ] T009 [P] [US1] Write test for summary output (linked/skipped/failed counts) in tests/Dottie.Cli.Tests/Commands/LinkCommandTests.cs
+- [X] T008 [P] [US1] Write test for progress bar display during linking in tests/Dottie.Cli.Tests/Commands/LinkCommandTests.cs
+- [X] T009 [P] [US1] Write test for summary output (linked/skipped/failed counts) in tests/Dottie.Cli.Tests/Commands/LinkCommandTests.cs
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] Add progress bar wrapper method using Spectre.Console.Progress() in src/Dottie.Cli/Commands/LinkCommand.cs
-- [ ] T011 [US1] Refactor ExecuteLinking to use progress bar and return detailed counts in src/Dottie.Cli/Commands/LinkCommand.cs
-- [ ] T012 [US1] Add WriteSummary method to ConflictFormatter for final output in src/Dottie.Cli/Output/ConflictFormatter.cs
-- [ ] T013 [US1] Update Program.cs examples to show progress bar behavior in src/Dottie.Cli/Program.cs
+- [X] T010 [US1] Add progress bar wrapper method using Spectre.Console.Progress() in src/Dottie.Cli/Commands/LinkCommand.cs
+- [X] T011 [US1] Refactor ExecuteLinking to use progress bar and return detailed counts in src/Dottie.Cli/Commands/LinkCommand.cs
+- [X] T012 [US1] Add WriteSummary method to ConflictFormatter for final output in src/Dottie.Cli/Output/ConflictFormatter.cs
+- [X] T013 [US1] Update Program.cs examples to show progress bar behavior in src/Dottie.Cli/Program.cs
 
 **Checkpoint**: User Story 1 complete - basic linking with progress bar and summary
 
@@ -75,13 +75,13 @@
 
 ### Tests for User Story 2
 
-- [ ] T014 [P] [US2] Write test for default profile usage when no --profile specified in tests/Dottie.Cli.Tests/Commands/LinkCommandTests.cs
-- [ ] T015 [P] [US2] Write test for error message when profile not found in tests/Dottie.Cli.Tests/Commands/LinkCommandTests.cs
+- [X] T014 [P] [US2] Write test for default profile usage when no --profile specified in tests/Dottie.Cli.Tests/Commands/LinkCommandTests.cs
+- [X] T015 [P] [US2] Write test for error message when profile not found in tests/Dottie.Cli.Tests/Commands/LinkCommandTests.cs
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] Verify existing profile handling in LinkCommand matches spec in src/Dottie.Cli/Commands/LinkCommand.cs
-- [ ] T017 [US2] Ensure profile error messages are clear and actionable in src/Dottie.Cli/Commands/LinkCommand.cs
+- [X] T016 [US2] Verify existing profile handling in LinkCommand matches spec in src/Dottie.Cli/Commands/LinkCommand.cs
+- [X] T017 [US2] Ensure profile error messages are clear and actionable in src/Dottie.Cli/Commands/LinkCommand.cs
 
 **Checkpoint**: User Story 2 complete - profile-specific linking verified
 
@@ -95,18 +95,18 @@
 
 ### Tests for User Story 3
 
-- [ ] T018 [P] [US3] Write test for DryRun flag parsing in tests/Dottie.Cli.Tests/Commands/LinkCommandSettingsTests.cs
-- [ ] T019 [P] [US3] Write test that dry-run makes no filesystem changes in tests/Dottie.Cli.Tests/Commands/LinkCommandTests.cs
-- [ ] T020 [P] [US3] Write test for dry-run preview output format in tests/Dottie.Cli.Tests/Commands/LinkCommandTests.cs
-- [ ] T021 [P] [US3] Write test for mutually exclusive --dry-run and --force flags in tests/Dottie.Cli.Tests/Commands/LinkCommandSettingsTests.cs
+- [X] T018 [P] [US3] Write test for DryRun flag parsing in tests/Dottie.Cli.Tests/Commands/LinkCommandSettingsTests.cs
+- [X] T019 [P] [US3] Write test that dry-run makes no filesystem changes in tests/Dottie.Cli.Tests/Commands/LinkCommandTests.cs
+- [X] T020 [P] [US3] Write test for dry-run preview output format in tests/Dottie.Cli.Tests/Commands/LinkCommandTests.cs
+- [X] T021 [P] [US3] Write test for mutually exclusive --dry-run and --force flags in tests/Dottie.Cli.Tests/Commands/LinkCommandSettingsTests.cs
 
 ### Implementation for User Story 3
 
-- [ ] T022 [US3] Add DryRun property with CommandOption attribute to LinkCommandSettings in src/Dottie.Cli/Commands/LinkCommandSettings.cs
-- [ ] T023 [US3] Implement Validate() method for mutually exclusive flags in src/Dottie.Cli/Commands/LinkCommandSettings.cs
-- [ ] T024 [US3] Add WriteDryRunPreview method to ConflictFormatter in src/Dottie.Cli/Output/ConflictFormatter.cs
-- [ ] T025 [US3] Add dry-run branch in LinkCommand.Execute() that shows preview without executing in src/Dottie.Cli/Commands/LinkCommand.cs
-- [ ] T026 [US3] Update Program.cs examples to include --dry-run in src/Dottie.Cli/Program.cs
+- [X] T022 [US3] Add DryRun property with CommandOption attribute to LinkCommandSettings in src/Dottie.Cli/Commands/LinkCommandSettings.cs
+- [X] T023 [US3] Implement Validate() method for mutually exclusive flags in src/Dottie.Cli/Commands/LinkCommandSettings.cs
+- [X] T024 [US3] Add WriteDryRunPreview method to ConflictFormatter in src/Dottie.Cli/Output/ConflictFormatter.cs
+- [X] T025 [US3] Add dry-run branch in LinkCommand.Execute() that shows preview without executing in src/Dottie.Cli/Commands/LinkCommand.cs
+- [X] T026 [US3] Update Program.cs examples to include --dry-run in src/Dottie.Cli/Program.cs
 
 **Checkpoint**: User Story 3 complete - dry-run preview mode working
 
@@ -120,13 +120,13 @@
 
 ### Tests for User Story 4
 
-- [ ] T027 [P] [US4] Write test for backup creation with new naming format in tests/Dottie.Configuration.Tests/Linking/BackupServiceTests.cs
-- [ ] T028 [P] [US4] Write test for backup output display in tests/Dottie.Cli.Tests/Commands/LinkCommandTests.cs
+- [X] T027 [P] [US4] Write test for backup creation with new naming format in tests/Dottie.Configuration.Tests/Linking/BackupServiceTests.cs
+- [X] T028 [P] [US4] Write test for backup output display in tests/Dottie.Cli.Tests/Commands/LinkCommandTests.cs
 
 ### Implementation for User Story 4
 
-- [ ] T029 [US4] Update backup result display in ConflictFormatter to show new naming in src/Dottie.Cli/Output/ConflictFormatter.cs
-- [ ] T030 [US4] Verify force mode flow with updated backup naming in src/Dottie.Cli/Commands/LinkCommand.cs
+- [X] T029 [US4] Update backup result display in ConflictFormatter to show new naming in src/Dottie.Cli/Output/ConflictFormatter.cs
+- [X] T030 [US4] Verify force mode flow with updated backup naming in src/Dottie.Cli/Commands/LinkCommand.cs
 
 **Checkpoint**: User Story 4 complete - force mode with proper backup naming
 
@@ -136,11 +136,11 @@
 
 **Purpose**: Final improvements and validation
 
-- [ ] T031 [P] Verify exit code is non-zero when any mapping fails in tests/Dottie.Cli.Tests/Commands/LinkCommandTests.cs
-- [ ] T032 [P] Add integration test scenario for link command in tests/integration/
-- [ ] T033 Run quickstart.md validation steps manually
-- [ ] T034 Update README.md with link command documentation in README.md
-- [ ] T035 Code cleanup and verify all analyzer warnings resolved
+- [X] T031 [P] Verify exit code is non-zero when any mapping fails in tests/Dottie.Cli.Tests/Commands/LinkCommandTests.cs
+- [X] T032 [P] Add integration test scenario for link command in tests/integration/
+- [X] T033 Run quickstart.md validation steps manually
+- [X] T034 Update README.md with link command documentation in README.md
+- [X] T035 Code cleanup and verify all analyzer warnings resolved
 
 ---
 

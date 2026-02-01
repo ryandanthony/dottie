@@ -133,10 +133,11 @@ public sealed class LinkingOrchestrator
         }
         else
         {
+            var error = _symlinkService.LastError ?? "Failed to create symlink";
             failedLinks.Add(LinkResult.Failure(
                 conflict.Entry,
                 conflict.TargetPath,
-                "Failed to create symlink"));
+                error));
         }
     }
 
@@ -157,7 +158,8 @@ public sealed class LinkingOrchestrator
             }
             else
             {
-                failedLinks.Add(LinkResult.Failure(entry, targetPath, "Failed to create symlink"));
+                var error = _symlinkService.LastError ?? "Failed to create symlink";
+                failedLinks.Add(LinkResult.Failure(entry, targetPath, error));
             }
         }
     }

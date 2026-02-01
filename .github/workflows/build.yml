@@ -48,11 +48,11 @@ jobs:
 
           # Parse using jq if available, fallback to grep
           if command -v jq &> /dev/null; then
-            SEMVER=$(echo "$VERSION_JSON" | jq -r '.AssemblySemFileVer')
-            FULLSEMVER=$(echo "$VERSION_JSON" | jq -r '.AssemblySemFileVer')
+            SEMVER=$(echo "$VERSION_JSON" | jq -r '.SemVer')
+            FULLSEMVER=$(echo "$VERSION_JSON" | jq -r '.FullSemVer')
           else
-            SEMVER=$(echo "$VERSION_JSON" | grep -oP '"AssemblySemFileVer"\s*:\s*"\K[^"]+')
-            FULLSEMVER=$(echo "$VERSION_JSON" | grep -oP '"AssemblySemFileVer"\s*:\s*"\K[^"]+')
+            SEMVER=$(echo "$VERSION_JSON" | grep -oP '"SemVer"\s*:\s*"\K[^"]+')
+            FULLSEMVER=$(echo "$VERSION_JSON" | grep -oP '"FullSemVer"\s*:\s*"\K[^"]+')
           fi
 
           echo "semVer=$SEMVER" >> $GITHUB_OUTPUT

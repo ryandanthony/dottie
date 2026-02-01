@@ -1,0 +1,10 @@
+# Integration test configuration for snap package installation
+# Tests installing snap packages with optional classic confinement
+
+profiles:
+  default:
+    install:
+      snaps:
+        # Using a simple snap for testing - note this requires snapd to be installed
+        - name: "hello-world"
+          classic: false

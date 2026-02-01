@@ -1,0 +1,8 @@
+# Integration test configuration for shell script installation
+# Tests the script runner functionality with custom shell scripts
+
+profiles:
+  default:
+    install:
+      scripts:
+        - "scripts/test-script.sh"

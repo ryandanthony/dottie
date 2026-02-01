@@ -1,0 +1,330 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Dottie.Configuration -> C:\code\ryandanthony\dottie\src\Dottie.Configuration\bin\Release\net10.0\Dottie.Configuration.dll
+  Dottie.Cli -> C:\code\ryandanthony\dottie\src\Dottie.Cli\bin\Release\net10.0\linux-x64\dottie.dll
+  Optimizing assemblies for size may change the behavior of the app. Be sure to test after publishing. See: https://aka.ms/dotnet-illink
+  Dottie.Cli -> C:\code\ryandanthony\dottie\publish\linux-x64\
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.35kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/ubuntu:24.04
+#2 DONE 0.3s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 535B done
+#3 DONE 0.0s
+
+#4 [1/9] FROM docker.io/library/ubuntu:24.04@sha256:cd1dba651b3080c3686ecf4e3c4220f026b521fb76978881737d24f200828b2b
+#4 resolve docker.io/library/ubuntu:24.04@sha256:cd1dba651b3080c3686ecf4e3c4220f026b521fb76978881737d24f200828b2b 0.0s done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 3.53kB done
+#5 DONE 0.0s
+
+#6 [2/9] RUN apt-get update && apt-get install -y     curl     git     sudo     && rm -rf /var/lib/apt/lists/*
+#6 CACHED
+
+#7 [3/9] RUN useradd -m -s /bin/bash testuser &&     echo "testuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+#7 CACHED
+
+#8 [4/9] COPY publish/linux-x64/dottie /usr/local/bin/dottie
+#8 CACHED
+
+#9 [5/9] RUN chmod +x /usr/local/bin/dottie
+#9 CACHED
+
+#10 [8/9] RUN chown -R testuser:testuser /home/testuser
+#10 CACHED
+
+#11 [6/9] COPY tests/integration/scenarios/ /home/testuser/scenarios/
+#11 CACHED
+
+#12 [7/9] COPY tests/integration/scripts/ /home/testuser/scripts/
+#12 CACHED
+
+#13 [9/9] WORKDIR /home/testuser
+#13 CACHED
+
+#14 exporting to image
+#14 exporting layers done
+#14 writing image sha256:34a103f13b93902ae08ad278cb82437c51b1b93dcfcdc82f0db8ae7aa3daddea done
+#14 naming to docker.io/library/dottie-integration-test done
+#14 DONE 0.0s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/iephk0wusc2lkggwfo1vinfw6
+==========================================
+Dottie Integration Test Runner
+==========================================
+
+dottie version: 0.1.0
+
+------------------------------------------
+Running scenario: basic-symlinks
+------------------------------------------
+  Running dottie validate...
+Γ£ô Profile 'default' is valid.
+  Γ£ô Validation passed
+  Running custom validation...
+  Validating basic-symlinks scenario in /tmp/test-basic-symlinks
+  Γ£ô Custom validation passed
+
+------------------------------------------
+Running scenario: conflict-handling
+------------------------------------------
+  Running dottie validate...
+Γ£ô Profile 'default' is valid.
+  Γ£ô Validation passed
+  Running custom validation...
+  Validating conflict-handling scenario in /tmp/test-conflict-handling
+  Test 1: Conflict detection (should fail with exit 1)
+Error: Conflicting files detected. Use --force to backup and overwrite.
+
+Conflicts:
+  ΓÇó /home/testuser/.test-bashrc (file)
+  ΓÇó /home/testuser/.test-vimrc (file)
+  ΓÇó /home/testuser/.config/test-nvim/init.lua (file)
+
+Found 3 conflict(s).
+    PASS: dottie link correctly detected conflicts
+    PASS: Target files were not modified
+  Test 2: Force linking with backup
+Backed up 3 file(s):
+  ΓÇó /home/testuser/.test-bashrc ΓåÆ 
+/home/testuser/.test-bashrc.dottie-backup-20260201-193404
+  ΓÇó /home/testuser/.test-vimrc ΓåÆ 
+/home/testuser/.test-vimrc.dottie-backup-20260201-193404
+  ΓÇó /home/testuser/.config/test-nvim/init.lua ΓåÆ 
+/home/testuser/.config/test-nvim/init.lua.dottie-backup-20260201-193404
+
+Γ£ô Created 3 symlink(s).
+    PASS: dottie link --force succeeded
+    PASS: Backup files created
+    PASS: Symlinks created correctly
+  Test 3: Re-running link (should skip)
+Skipped 3 file(s) (already linked).
+    PASS: Re-running link works (skips already linked)
+  All conflict-handling tests passed!
+  Γ£ô Custom validation passed
+
+------------------------------------------
+Running scenario: install-apt-packages
+------------------------------------------
+  Running dottie validate...
+Γ£ô Profile 'default' is valid.
+  Γ£ô Validation passed
+  Running custom validation...
+  Validating APT package installation in /tmp/test-install-apt-packages
+  Running dottie install...
+Γ£ô jq Success (AptPackage)
+Γ£ô tree Success (AptPackage)
+
+Installation Summary:
+  Γ£ô Succeeded: 2
+
+    Γ£ô dottie install completed
+  Checking if packages are installed...
+    Γ£ô Package jq is installed
+    Γ£ô Package tree is installed
+  Γ£ô All APT package installation tests passed!
+  Γ£ô Custom validation passed
+
+------------------------------------------
+Running scenario: install-apt-repo
+------------------------------------------
+  Running dottie validate...
+Γ£ô Profile 'default' is valid.
+  Γ£ô Validation passed
+  Running custom validation...
+  Validating private APT repository installation in /tmp/test-install-apt-repo
+  Running dottie install...
+Γ£ô docker Success (AptRepo)
+Γ£ù docker-ce-cli Failed (AptRepo) - apt-get install failed with exit code 100
+
+Installation Summary:
+  Γ£ô Succeeded: 1
+  Γ£ù Failed: 1
+
+    Γ£ù dottie install failed with exit code 1
+  Γ£ù Custom validation failed
+
+------------------------------------------
+Running scenario: install-fonts
+------------------------------------------
+  Running dottie validate...
+Γ£ô Profile 'default' is valid.
+  Γ£ô Validation passed
+  Running custom validation...
+  Validating font installation in /tmp/test-install-fonts
+  Running dottie install...
+Γ£ù Liberation Failed (Font) - Failed to download font from 
+https://github.com/liberationfonts/liberation-fonts/releases/download/2.1.5/Libe
+rationFonts-TTF-2.1.5.tar.gz: Failed to download from 
+https://github.com/liberationfonts/liberation-fonts/releases/download/2.1.5/Libe
+rationFonts-TTF-2.1.5.tar.gz: Call failed with status code 404 (Not Found): GET 
+https://github.com/liberationfonts/liberation-fonts/releases/download/2.1.5/Libe
+rationFonts-TTF-2.1.5.tar.gz
+
+Installation Summary:
+  Γ£ù Failed: 1
+
+    Γ£ù dottie install failed with exit code 1
+  Γ£ù Custom validation failed
+
+------------------------------------------
+Running scenario: install-github-release
+------------------------------------------
+  Running dottie validate...
+Γ£ô Profile 'default' is valid.
+  Γ£ô Validation passed
+  Running custom validation...
+  Validating GitHub release installation in /tmp/test-install-github-release
+  Testing GitHub API connectivity...
+    Γ£ô GitHub API reachable (HTTP 200)
+    Response preview (first 50 lines):
+      {
+        "url": "https://api.github.com/repos/jqlang/jq/releases/229086848",
+        "assets_url": "https://api.github.com/repos/jqlang/jq/releases/229086848/assets",
+        "upload_url": "https://uploads.github.com/repos/jqlang/jq/releases/229086848/assets{?name,label}",
+        "html_url": "https://github.com/jqlang/jq/releases/tag/jq-1.8.1",
+        "id": 229086848,
+        "author": {
+          "login": "github-actions[bot]",
+          "id": 41898282,
+          "node_id": "MDM6Qm90NDE4OTgyODI=",
+          "avatar_url": "https://avatars.githubusercontent.com/in/15368?v=4",
+          "gravatar_id": "",
+          "url": "https://api.github.com/users/github-actions%5Bbot%5D",
+          "html_url": "https://github.com/apps/github-actions",
+          "followers_url": "https://api.github.com/users/github-actions%5Bbot%5D/followers",
+          "following_url": "https://api.github.com/users/github-actions%5Bbot%5D/following{/other_user}",
+          "gists_url": "https://api.github.com/users/github-actions%5Bbot%5D/gists{/gist_id}",
+          "starred_url": "https://api.github.com/users/github-actions%5Bbot%5D/starred{/owner}{/repo}",
+          "subscriptions_url": "https://api.github.com/users/github-actions%5Bbot%5D/subscriptions",
+          "organizations_url": "https://api.github.com/users/github-actions%5Bbot%5D/orgs",
+          "repos_url": "https://api.github.com/users/github-actions%5Bbot%5D/repos",
+          "events_url": "https://api.github.com/users/github-actions%5Bbot%5D/events{/privacy}",
+          "received_events_url": "https://api.github.com/users/github-actions%5Bbot%5D/received_events",
+          "type": "Bot",
+          "user_view_type": "public",
+          "site_admin": false
+        },
+        "node_id": "RE_kwDOAE3WVc4Np5aA",
+        "tag_name": "jq-1.8.1",
+        "target_commitish": "master",
+        "name": "jq 1.8.1",
+        "draft": false,
+        "immutable": false,
+        "prerelease": false,
+        "created_at": "2025-07-01T10:36:14Z",
+        "updated_at": "2025-07-01T11:50:06Z",
+        "published_at": "2025-07-01T11:50:06Z",
+        "assets": [
+          {
+            "url": "https://api.github.com/repos/jqlang/jq/releases/assets/268981480",
+            "id": 268981480,
+            "node_id": "RA_kwDOAE3WVc4QCFTo",
+            "name": "jq-1.8.1.tar.gz",
+            "label": "",
+            "uploader": {
+              "login": "github-actions[bot]",
+              "id": 41898282,
+              "node_id": "MDM6Qm90NDE4OTgyODI=",
+              "avatar_url": "https://avatars.githubusercontent.com/in/15368?v=4",
+              "gravatar_id": "",
+
+    Assets in response:
+        "name": "jq 1.8.1",
+            "name": "jq-1.8.1.tar.gz",
+            "name": "jq-1.8.1.zip",
+            "name": "jq-linux-amd64",
+            "name": "jq-linux-arm64",
+            "name": "jq-linux-armel",
+            "name": "jq-linux-armhf",
+            "name": "jq-linux-i386",
+            "name": "jq-linux-mips",
+            "name": "jq-linux-mips64",
+            "name": "jq-linux-mips64el",
+            "name": "jq-linux-mips64r6",
+            "name": "jq-linux-mips64r6el",
+            "name": "jq-linux-mipsel",
+            "name": "jq-linux-mipsr6",
+            "name": "jq-linux-mipsr6el",
+            "name": "jq-linux-powerpc",
+            "name": "jq-linux-ppc64el",
+            "name": "jq-linux-riscv64",
+            "name": "jq-linux-s390x",
+            "name": "jq-linux64",
+            "name": "jq-macos-amd64",
+            "name": "jq-macos-arm64",
+            "name": "jq-osx-amd64",
+            "name": "jq-win64.exe",
+            "name": "jq-windows-amd64.exe",
+            "name": "jq-windows-i386.exe",
+            "name": "sha256sum.txt",
+
+    Γ£ô Found jq-*-linux64 asset in response
+
+  Running dottie install...
+Γ£ô jq Success (GithubRelease) - from jqlang/jq
+
+Installation Summary:
+  Γ£ô Succeeded: 1
+
+    Γ£ô dottie install completed
+  Checking if bin directory exists...
+    Γ£ô Bin directory exists
+  Checking if jq binary exists...
+    Γ£ô Binary exists
+  Checking if binary is executable...
+    Γ£ô Binary is executable
+  Testing binary execution...
+    Γ£ô Binary executes successfully (version: jq-1.8.1)
+  Γ£ô All GitHub release installation tests passed!
+  Γ£ô Custom validation passed
+
+------------------------------------------
+Running scenario: install-scripts
+------------------------------------------
+  Running dottie validate...
+Γ£ô Profile 'default' is valid.
+  Γ£ô Validation passed
+  Running custom validation...
+  Validating shell script installation in /tmp/test-install-scripts
+  Γ£ô Test script made executable
+  Running dottie install...
+Γ£ô scripts/test-script.sh Success (Script)
+
+Installation Summary:
+  Γ£ô Succeeded: 1
+
+    Γ£ô dottie install completed
+  Checking if script was executed...
+    Γ£ô Script execution marker found at /home/testuser/.local/bin/script-test.txt
+    Content: Script execution successful at Sun Feb  1 19:34:27 UTC 2026
+
+  Γ£ô All shell script installation tests passed!
+  Γ£ô Custom validation passed
+
+------------------------------------------
+Running scenario: install-snap
+------------------------------------------
+  Running dottie validate...
+Γ£ô Profile 'default' is valid.
+  Γ£ô Validation passed
+  Running custom validation...
+  Validating snap package installation in /tmp/test-install-snap
+  Γèÿ snapd not available in test environment (expected in container)
+  Γèÿ Skipping snap installation test
+  Γ£ô Custom validation passed
+
+------------------------------------------
+Running scenario: link-command
+------------------------------------------
+  SKIP: No dottie.yml found
+==========================================
+Results: 6 passed, 2 failed
+==========================================

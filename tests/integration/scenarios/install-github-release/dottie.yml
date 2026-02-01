@@ -1,0 +1,12 @@
+# Integration test configuration for GitHub release installation
+# Tests the basic GitHub release installer functionality
+
+profiles:
+  default:
+    install:
+      github:
+        # Using a small, well-known tool for testing
+        # JQ: JSON processor - small binary, available for all platforms
+        - repo: jqlang/jq
+          asset: "jq-linux-amd64"  # Specific 64-bit Linux binary
+          binary: jq

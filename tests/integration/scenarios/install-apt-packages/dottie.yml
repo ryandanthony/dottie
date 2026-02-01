@@ -1,0 +1,12 @@
+# Integration test configuration for APT package installation
+# Tests the APT package installer functionality
+
+profiles:
+  default:
+    install:
+      apt:
+        # Use lightweight, commonly available tools for testing
+        # jq: JSON processor command-line utility
+        # tree: Directory listing utility
+        - jq
+        - tree

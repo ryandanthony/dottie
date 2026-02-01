@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <PackageReference Include="YamlDotNet" Version="16.3.0" />
+    <PackageReference Include="Flurl.Http" Version="4.0.2" />
   </ItemGroup>
 
   <ItemGroup>

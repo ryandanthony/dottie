@@ -1,0 +1,11 @@
+# Integration test configuration for font installation
+# Tests downloading and installing fonts from URLs
+
+profiles:
+  default:
+    install:
+      fonts:
+        # Using fonts from a well-known archive.org mirror
+        # This is a direct .ttf file that doesn't require extraction
+        - name: "JetBrains"
+          url: "https://github.com/JetBrains/JetBrainsMono/releases/download/v2.304/JetBrainsMono-2.304.zip"

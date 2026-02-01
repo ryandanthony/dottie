@@ -1,0 +1,40 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Dottie.Configuration -> C:\code\ryandanthony\dottie\src\Dottie.Configuration\bin\Debug\net10.0\Dottie.Configuration.dll
+  Dottie.Cli -> C:\code\ryandanthony\dottie\src\Dottie.Cli\bin\Debug\net10.0\win-x64\dottie.dll
+  Dottie.Configuration.Tests -> C:\code\ryandanthony\dottie\tests\Dottie.Configuration.Tests\bin\Debug\net10.0\Dottie.Configuration.Tests.dll
+Test run for C:\code\ryandanthony\dottie\tests\Dottie.Configuration.Tests\bin\Debug\net10.0\Dottie.Configuration.Tests.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.1 (x64)
+
+Starting test execution, please wait...
+  Dottie.Cli.Tests -> C:\code\ryandanthony\dottie\tests\Dottie.Cli.Tests\bin\Debug\net10.0\Dottie.Cli.Tests.dll
+Test run for C:\code\ryandanthony\dottie\tests\Dottie.Cli.Tests\bin\Debug\net10.0\Dottie.Cli.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+VSTest version 18.0.1 (x64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+No test matches the given testcase filter `Installing` in C:\code\ryandanthony\dottie\tests\Dottie.Cli.Tests\bin\Debug\net10.0\Dottie.Cli.Tests.dll
+[xUnit.net 00:00:00.39]     Dottie.Configuration.Tests.Installing.GithubReleaseInstallerTests.InstallAsync_WithCancellation_ThrowsOperationCanceledException [FAIL]
+  Failed Dottie.Configuration.Tests.Installing.GithubReleaseInstallerTests.InstallAsync_WithCancellation_ThrowsOperationCanceledException [63 ms]
+  Error Message:
+   Expected a <System.OperationCanceledException> to be thrown, but no exception was thrown.
+  Stack Trace:
+     at FluentAssertions.Execution.LateBoundTestFramework.Throw(String message)
+   at FluentAssertions.Execution.DefaultAssertionStrategy.HandleFailure(String message)
+   at FluentAssertions.Execution.AssertionScope.AddPreFormattedFailure(String formattedFailureMessage)
+   at FluentAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at FluentAssertions.Execution.AssertionChain.FailWith(Func`1 getFailureReason)
+   at FluentAssertions.Execution.AssertionChain.FailWith(String message)
+   at FluentAssertions.Specialized.DelegateAssertionsBase`2.<>c__DisplayClass8_0`1.<ThrowInternal>b__0(AssertionChain chain)
+   at FluentAssertions.Execution.AssertionChain.WithExpectation(String message, Action`1 chain, Object[] args)
+   at FluentAssertions.Execution.AssertionChain.WithExpectation(String message, Object arg1, Action`1 chain)
+   at FluentAssertions.Specialized.DelegateAssertionsBase`2.ThrowInternal[TException](Exception exception, String because, Object[] becauseArgs)
+   at FluentAssertions.Specialized.AsyncFunctionAssertions`2.ThrowAsync[TException](String because, Object[] becauseArgs)
+   at Dottie.Configuration.Tests.Installing.GithubReleaseInstallerTests.InstallAsync_WithCancellation_ThrowsOperationCanceledException() in C:\code\ryandanthony\dottie\tests\Dottie.Configuration.Tests\Installing\GithubReleaseInstallerTests.cs:line 89
+--- End of stack trace from previous location ---
+
+[xUnit.net 00:00:04.72]     Dottie.Configuration.Tests.Installing.Utilities.HttpDownloaderTests.DownloadAsync_WithTimeout_ThrowsException [SKIP]
+  Skipped Dottie.Configuration.Tests.Installing.Utilities.HttpDownloaderTests.DownloadAsync_WithTimeout_ThrowsException [1 ms]
+
+Failed!  - Failed:     1, Passed:    50, Skipped:     1, Total:    52, Duration: 4 s - Dottie.Configuration.Tests.dll (net10.0)

@@ -1,0 +1,14 @@
+# Integration test configuration for private APT repository installation
+# Tests the APT repository installer functionality with GPG key verification
+
+profiles:
+  default:
+    install:
+      aptRepos:
+        # Using universe repository - includes sqlite3 which we can test
+        # Using Ubuntu's main repository signing key (embedded, should work)
+        - name: universe
+          repo: "deb [trusted=yes] http://archive.ubuntu.com/ubuntu jammy universe"
+          key_url: "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xF6ECB3762474EDA9D21B7022871920D1991BC93C"
+          packages:
+            - sqlite3

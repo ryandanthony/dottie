@@ -2,9 +2,12 @@
 
 using Dottie.Configuration.Installing.Utilities;
 using Dottie.Configuration.Models.InstallBlocks;
+using Flurl;
+using Flurl.Http;
 using System.Diagnostics;
-using System.Net.Http.Json;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
@@ -18,7 +21,7 @@ public class GithubReleaseInstaller : IInstallSource
 {
     private readonly HttpDownloader _downloader;
     private readonly ArchiveExtractor _extractor;
-    private readonly HttpClient _httpClient;
+    private readonly string? _githubToken;
 
     /// <inheritdoc/>
     public InstallSourceType SourceType => InstallSourceType.GithubRelease;
@@ -31,20 +34,7 @@ public class GithubReleaseInstaller : IInstallSource
     {
         _downloader = downloader ?? new HttpDownloader();
         _extractor = new ArchiveExtractor();
-        _httpClient = new HttpClient
-        {
-            DefaultRequestHeaders =
-            {
-                { "User-Agent", "dottie-dotfiles/1.0" }
-            }
-        };
-
-        // Add GitHub token if available
-        var token = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
-        if (!string.IsNullOrEmpty(token))
-        {
-            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-        }
+        _githubToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
     }
 
     /// <inheritdoc/>
@@ -122,14 +112,23 @@ public class GithubReleaseInstaller : IInstallSource
 
             try
             {
-                var response = await _httpClient.GetAsync(releaseUrl, cancellationToken);
-                if (response.IsSuccessStatusCode)
+                var request = releaseUrl
+                    .WithHeader("User-Agent", "dottie-dotfiles/1.0")
+                    .WithTimeout(TimeSpan.FromSeconds(10));
+
+                if (!string.IsNullOrEmpty(_githubToken))
+                {
+                    request = request.WithOAuthBearerToken(_githubToken);
+                }
+
+                var response = await request.HeadAsync();
+                if (response.StatusCode >= 200 && response.StatusCode < 300)
                 {
                     return InstallResult.Success(item.Binary, SourceType, null, $"GitHub release {item.Repo}@{item.Version ?? "latest"} would be installed");
                 }
                 else
                 {
-                    return InstallResult.Failed(item.Binary, SourceType, $"GitHub release not found: {item.Repo}@{item.Version ?? "latest"}");
+                    return InstallResult.Failed(item.Binary, SourceType, $"GitHub release not found: {item.Repo}@{item.Version ?? "latest"} (HTTP {response.StatusCode})");
                 }
             }
             catch (Exception ex)
@@ -142,7 +141,7 @@ public class GithubReleaseInstaller : IInstallSource
         var release = await GetGithubReleaseAsync(item, cancellationToken);
         if (release == null)
         {
-            return InstallResult.Failed(item.Binary, SourceType, $"GitHub release not found: {item.Repo}@{item.Version ?? "latest"}");
+            return InstallResult.Failed(item.Binary, SourceType, $"GitHub release not found (API returned null): {item.Repo}@{item.Version ?? "latest"}");
         }
 
         // Find the matching asset
@@ -196,6 +195,12 @@ public class GithubReleaseInstaller : IInstallSource
                     return InstallResult.Failed(item.Binary, SourceType, $"Binary '{item.Binary}' not found in release asset");
                 }
 
+                // Ensure bin directory exists
+                if (!Directory.Exists(context.BinDirectory))
+                {
+                    Directory.CreateDirectory(context.BinDirectory);
+                }
+
                 // Copy to bin directory
                 var destPath = Path.Combine(context.BinDirectory, item.Binary);
                 File.Copy(binaryPath, destPath, overwrite: true);
@@ -238,6 +243,7 @@ public class GithubReleaseInstaller : IInstallSource
         }
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Using JsonDocument for safe parsing")]
     private async Task<GithubRelease?> GetGithubReleaseAsync(GithubReleaseItem item, CancellationToken cancellationToken)
     {
         var url = string.IsNullOrEmpty(item.Version)
@@ -246,18 +252,55 @@ public class GithubReleaseInstaller : IInstallSource
 
         try
         {
-            var response = await _httpClient.GetAsync(url, cancellationToken);
-            if (response.IsSuccessStatusCode)
+            var request = url
+                .WithHeader("User-Agent", "dottie-dotfiles/1.0")
+                .WithTimeout(TimeSpan.FromSeconds(10));
+
+            if (!string.IsNullOrEmpty(_githubToken))
             {
-#pragma warning disable IL2026
-                return await response.Content.ReadFromJsonAsync<GithubRelease>(cancellationToken: cancellationToken);
-#pragma warning restore IL2026
+                request = request.WithOAuthBearerToken(_githubToken);
             }
 
+            // Fetch the release data from GitHub API
+            var responseBody = await request.GetStringAsync();
+            
+            // Deserialize using JsonDocument to handle JSON safely (for AOT compatibility)
+            using (var doc = System.Text.Json.JsonDocument.Parse(responseBody))
+            {
+                var root = doc.RootElement;
+                var assetsArray = root.GetProperty("assets");
+                
+                var assets = new List<GithubAsset>();
+                foreach (var asset in assetsArray.EnumerateArray())
+                {
+                    assets.Add(new GithubAsset
+                    {
+                        Name = asset.GetProperty("name").GetString() ?? string.Empty,
+                        BrowserDownloadUrl = asset.GetProperty("browser_download_url").GetString() ?? string.Empty
+                    });
+                }
+                
+                return new GithubRelease { Assets = assets };
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"GitHub API request failed: {ex.Message}");
             return null;
         }
-        catch
+        catch (TaskCanceledException ex)
         {
+            System.Diagnostics.Debug.WriteLine($"GitHub API request timeout: {ex.Message}");
+            return null;
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"JSON deserialization error: {ex.Message}");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Unexpected error in GitHub API: {ex.GetType().Name}: {ex.Message}");
             return null;
         }
     }
@@ -331,10 +374,10 @@ public class GithubReleaseInstaller : IInstallSource
     private class GithubAsset
     {
         [JsonPropertyName("name")]
-        public required string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         [JsonPropertyName("browser_download_url")]
-        public required string BrowserDownloadUrl { get; set; }
+        public string BrowserDownloadUrl { get; set; } = string.Empty;
     }
 }
 

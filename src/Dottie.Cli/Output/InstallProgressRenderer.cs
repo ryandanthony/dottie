@@ -68,6 +68,12 @@ public sealed class InstallProgressRenderer : IInstallProgressRenderer
             return;
         }
 
+        // Show all results first
+        foreach (var result in resultList)
+        {
+            RenderProgress(result);
+        }
+
         var succeeded = resultList.Count(r => r.Status == InstallStatus.Success);
         var failed = resultList.Count(r => r.Status == InstallStatus.Failed);
         var skipped = resultList.Count(r => r.Status == InstallStatus.Skipped);

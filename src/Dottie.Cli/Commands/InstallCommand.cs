@@ -71,8 +71,25 @@ public sealed class InstallCommand : AsyncCommand<InstallCommandSettings>
                 AnsiConsole.MarkupLine("[yellow]Dry Run Mode:[/] Previewing installation without making changes");
             }
 
-            // For now, just return success
-            AnsiConsole.MarkupLine("[green]✓[/] Installation ready (implementation in progress)");
+            // Run GitHub release installer (MVP - only GitHub releases for now)
+            var installer = new GithubReleaseInstaller();
+            var results = await installer.InstallAsync(profile.Install, context_info);
+            
+            if (!results.Any())
+            {
+                AnsiConsole.MarkupLine("[yellow]ℹ[/] No GitHub releases configured to install.");
+                return 0;
+            }
+
+            var renderer2 = new InstallProgressRenderer();
+            renderer2.RenderSummary(results);
+            
+            // Check if any failed
+            if (results.Any(r => r.Status == InstallStatus.Failed))
+            {
+                return 1;
+            }
+
             return 0;
         }
         catch (Exception ex)

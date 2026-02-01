@@ -1,5 +1,7 @@
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
+using Flurl.Http;
+
 namespace Dottie.Configuration.Installing.Utilities;
 
 /// <summary>
@@ -7,7 +9,6 @@ namespace Dottie.Configuration.Installing.Utilities;
 /// </summary>
 public class HttpDownloader
 {
-    private static readonly HttpClient _httpClient = new();
     private const int MaxRetries = 3;
     private const int TimeoutSeconds = 30;
 
@@ -29,19 +30,18 @@ public class HttpDownloader
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         cts.CancelAfter(TimeSpan.FromSeconds(TimeoutSeconds));
 
-        int attempt = 0;
-        while (attempt < MaxRetries)
+        for (int attempt = 0; attempt < MaxRetries; attempt++)
         {
             try
             {
-                var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseContentRead, cts.Token);
-                response.EnsureSuccessStatusCode();
-                return await response.Content.ReadAsByteArrayAsync(cts.Token);
+                var bytes = await url
+                    .WithTimeout(TimeSpan.FromSeconds(TimeoutSeconds))
+                    .GetBytesAsync();
+                return bytes;
             }
             catch (HttpRequestException ex) when (attempt < MaxRetries - 1 && IsRetryable(ex))
             {
-                attempt++;
-                await Task.Delay(1000 * attempt, cts.Token); // Exponential backoff
+                await Task.Delay(1000 * (attempt + 1), cts.Token); // Exponential backoff
                 continue;
             }
             catch (TaskCanceledException)
@@ -50,7 +50,11 @@ public class HttpDownloader
             }
             catch (Exception ex)
             {
-                throw new HttpRequestException($"Failed to download from {url}: {ex.Message}", ex);
+                if (attempt == MaxRetries - 1)
+                {
+                    throw new HttpRequestException($"Failed to download from {url}: {ex.Message}", ex);
+                }
+                await Task.Delay(1000 * (attempt + 1), cts.Token);
             }
         }
 
@@ -75,12 +79,11 @@ public class HttpDownloader
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             cts.CancelAfter(TimeSpan.FromSeconds(10));
 
-            var response = await _httpClient.SendAsync(
-                new HttpRequestMessage(HttpMethod.Head, url),
-                HttpCompletionOption.ResponseHeadersRead,
-                cts.Token);
+            var response = await url
+                .WithTimeout(TimeSpan.FromSeconds(10))
+                .HeadAsync();
 
-            return response.IsSuccessStatusCode;
+            return response.StatusCode >= 200 && response.StatusCode < 300;
         }
         catch
         {

@@ -1,5 +1,7 @@
 # FEATURE-04: Conflict Handling (Dotfile Linking)
 
+**STATUS**: Done
+
 ## Summary
 
 When a target file already exists and is not already a symlink to the repo, Dottie must handle conflicts safely.

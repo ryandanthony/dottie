@@ -1,5 +1,7 @@
 # Tech Debt 03 - Enable Code Standards
 
+**STATUS**: Done
+
 At some point `FestinaLente.CodeStandards` was disabled in `Directory.Build.props`
 Create a new branch to address this issue:
 

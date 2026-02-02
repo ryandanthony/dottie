@@ -1,5 +1,6 @@
 # Tech Debt 02 - Integration Testing
 
+**STATUS**: Done
 
 ## Summary
 Integration tests are going to drive the quality of the software more than unit tests. We need to take the time to ensure that they are higher quality and cover all scenarios.

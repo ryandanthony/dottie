@@ -59,10 +59,11 @@ public sealed class InstallCommand : AsyncCommand<InstallCommandSettings>
                 return 1;
             }
 
+            var sudoChecker = new SudoChecker();
             var context_info = new InstallContext
             {
                 RepoRoot = repoRoot,
-                HasSudo = SudoChecker.IsSudoAvailable(),
+                HasSudo = sudoChecker.IsSudoAvailable(),
                 DryRun = settings.DryRun
             };
 

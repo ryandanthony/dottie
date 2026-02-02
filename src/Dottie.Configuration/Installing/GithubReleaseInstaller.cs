@@ -4,7 +4,6 @@ using Dottie.Configuration.Installing.Utilities;
 using Dottie.Configuration.Models.InstallBlocks;
 using Flurl;
 using Flurl.Http;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text.Json;
@@ -21,6 +20,7 @@ public class GithubReleaseInstaller : IInstallSource
 {
     private readonly HttpDownloader _downloader;
     private readonly ArchiveExtractor _extractor;
+    private readonly IProcessRunner _processRunner;
     private readonly string? _githubToken;
 
     /// <inheritdoc/>
@@ -30,42 +30,16 @@ public class GithubReleaseInstaller : IInstallSource
     /// Creates a new instance of <see cref="GithubReleaseInstaller"/>.
     /// </summary>
     /// <param name="downloader">HTTP downloader for fetching release assets. If null, a default instance is created.</param>
-    public GithubReleaseInstaller(HttpDownloader? downloader = null)
+    /// <param name="processRunner">Process runner for executing system commands. If null, a default instance is created.</param>
+    public GithubReleaseInstaller(HttpDownloader? downloader = null, IProcessRunner? processRunner = null)
     {
         _downloader = downloader ?? new HttpDownloader();
         _extractor = new ArchiveExtractor();
+        _processRunner = processRunner ?? new ProcessRunner();
         _githubToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
     }
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallContext context, CancellationToken cancellationToken = default)
-    {
-        if (context == null)
-        {
-            throw new ArgumentNullException(nameof(context));
-        }
-
-        var results = new List<InstallResult>();
-
-        // GitHub releases require sudo to install to /usr/local/bin or user bin requires write permission
-        // For dry-run, we still proceed to validate releases exist
-        if (!context.DryRun && !context.HasSudo && !IsUserBinWritable(context))
-        {
-            return results; // Skip if no sudo and bin directory not writable
-        }
-
-        // This would be called with the InstallBlock from the config
-        // For MVP, we return empty to allow the orchestrator to work
-        return results;
-    }
-
-    /// <summary>
-    /// Installs GitHub release items from the provided install block.
-    /// </summary>
-    /// <param name="installBlock">The install block containing GitHub release specifications.</param>
-    /// <param name="context">The installation context with paths and configuration.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Installation results for each item.</returns>
     public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, CancellationToken cancellationToken = default)
     {
         if (installBlock == null)
@@ -208,18 +182,7 @@ public class GithubReleaseInstaller : IInstallSource
                 // Make executable on Unix-like systems
                 if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    var process = new Process
-                    {
-                        StartInfo = new ProcessStartInfo
-                        {
-                            FileName = "chmod",
-                            Arguments = $"+x \"{destPath}\"",
-                            UseShellExecute = false,
-                            RedirectStandardOutput = true
-                        }
-                    };
-                    process.Start();
-                    await process.WaitForExitAsync(cancellationToken);
+                    await _processRunner.RunAsync("chmod", $"+x \"{destPath}\"", cancellationToken: cancellationToken);
                 }
 
                 return InstallResult.Success(item.Binary, SourceType, destPath, $"from {item.Repo}");
@@ -263,13 +226,13 @@ public class GithubReleaseInstaller : IInstallSource
 
             // Fetch the release data from GitHub API
             var responseBody = await request.GetStringAsync();
-            
+
             // Deserialize using JsonDocument to handle JSON safely (for AOT compatibility)
             using (var doc = System.Text.Json.JsonDocument.Parse(responseBody))
             {
                 var root = doc.RootElement;
                 var assetsArray = root.GetProperty("assets");
-                
+
                 var assets = new List<GithubAsset>();
                 foreach (var asset in assetsArray.EnumerateArray())
                 {
@@ -279,7 +242,7 @@ public class GithubReleaseInstaller : IInstallSource
                         BrowserDownloadUrl = asset.GetProperty("browser_download_url").GetString() ?? string.Empty
                     });
                 }
-                
+
                 return new GithubRelease { Assets = assets };
             }
         }

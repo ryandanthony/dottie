@@ -43,7 +43,7 @@ public class InstallOrchestratorTests
         var installBlock = new InstallBlock();
 
         _mockInstaller
-            .Setup(x => x.InstallAsync(context, It.IsAny<CancellationToken>()))
+            .Setup(x => x.InstallAsync(installBlock, context, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[]
             {
                 InstallResult.Success("test-pkg", InstallSourceType.GithubRelease)
@@ -53,7 +53,7 @@ public class InstallOrchestratorTests
         var results = await _orchestrator.InstallAsync(context, installBlock);
 
         // Assert
-        _mockInstaller.Verify(x => x.InstallAsync(context, It.IsAny<CancellationToken>()), Times.Once);
+        _mockInstaller.Verify(x => x.InstallAsync(installBlock, context, It.IsAny<CancellationToken>()), Times.Once);
         results.Should().HaveCount(1);
     }
 
@@ -67,11 +67,11 @@ public class InstallOrchestratorTests
         var installBlock = new InstallBlock();
 
         _mockInstaller
-            .Setup(x => x.InstallAsync(context, It.IsAny<CancellationToken>()))
+            .Setup(x => x.InstallAsync(installBlock, context, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { InstallResult.Success("pkg1", InstallSourceType.GithubRelease) });
 
         installer2
-            .Setup(x => x.InstallAsync(context, It.IsAny<CancellationToken>()))
+            .Setup(x => x.InstallAsync(installBlock, context, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { InstallResult.Success("pkg2", InstallSourceType.AptPackage) });
 
         // Act
@@ -89,7 +89,7 @@ public class InstallOrchestratorTests
         var installBlock = new InstallBlock();
 
         _mockInstaller
-            .Setup(x => x.InstallAsync(It.Is<InstallContext>(c => c.DryRun), It.IsAny<CancellationToken>()))
+            .Setup(x => x.InstallAsync(installBlock, It.Is<InstallContext>(c => c.DryRun), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Enumerable.Empty<InstallResult>());
 
         // Act
@@ -97,7 +97,7 @@ public class InstallOrchestratorTests
 
         // Assert
         _mockInstaller.Verify(
-            x => x.InstallAsync(It.Is<InstallContext>(c => c.DryRun), It.IsAny<CancellationToken>()),
+            x => x.InstallAsync(installBlock, It.Is<InstallContext>(c => c.DryRun), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -111,11 +111,11 @@ public class InstallOrchestratorTests
         var installBlock = new InstallBlock();
 
         _mockInstaller
-            .Setup(x => x.InstallAsync(context, It.IsAny<CancellationToken>()))
+            .Setup(x => x.InstallAsync(installBlock, context, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Installer error"));
 
         installer2
-            .Setup(x => x.InstallAsync(context, It.IsAny<CancellationToken>()))
+            .Setup(x => x.InstallAsync(installBlock, context, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { InstallResult.Success("pkg2", InstallSourceType.AptPackage) });
 
         // Act

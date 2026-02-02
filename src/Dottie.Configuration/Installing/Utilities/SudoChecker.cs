@@ -1,6 +1,5 @@
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Dottie.Configuration.Installing.Utilities;
@@ -8,13 +7,24 @@ namespace Dottie.Configuration.Installing.Utilities;
 /// <summary>
 /// Utility to detect whether sudo is available on the system.
 /// </summary>
-public static class SudoChecker
+public class SudoChecker
 {
+    private readonly IProcessRunner _processRunner;
+
+    /// <summary>
+    /// Creates a new instance of <see cref="SudoChecker"/>.
+    /// </summary>
+    /// <param name="processRunner">Process runner for executing system commands. If null, a default instance is created.</param>
+    public SudoChecker(IProcessRunner? processRunner = null)
+    {
+        _processRunner = processRunner ?? new ProcessRunner();
+    }
+
     /// <summary>
     /// Checks if sudo is available on the current system.
     /// </summary>
     /// <returns>True if sudo is available; otherwise, false.</returns>
-    public static bool IsSudoAvailable()
+    public bool IsSudoAvailable()
     {
         // Only relevant on Unix-like systems
         if (!IsUnixLike())
@@ -24,20 +34,8 @@ public static class SudoChecker
 
         try
         {
-            var psi = new ProcessStartInfo
-            {
-                FileName = "which",
-                Arguments = "sudo",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using var process = Process.Start(psi);
-            process?.WaitForExit(1000); // Timeout after 1 second
-
-            return process?.ExitCode == 0;
+            var result = _processRunner.Run("which", "sudo", timeoutMilliseconds: 1000);
+            return result.Success;
         }
         catch
         {

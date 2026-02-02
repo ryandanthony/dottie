@@ -11,11 +11,13 @@ namespace Dottie.Configuration.Tests.Installing.Utilities;
 /// </summary>
 public class SudoCheckerTests
 {
+    private readonly SudoChecker _sudoChecker = new();
+
     [Fact]
     public void IsSudoAvailable_ChecksForSudoCommand()
     {
         // Arrange & Act
-        var result = SudoChecker.IsSudoAvailable();
+        var result = _sudoChecker.IsSudoAvailable();
 
         // Assert
         (result == true || result == false).Should().BeTrue();
@@ -25,7 +27,7 @@ public class SudoCheckerTests
     public void IsSudoAvailable_ReturnsTrueOrFalse_NeverThrows()
     {
         // Act & Assert
-        FluentActions.Invoking(() => SudoChecker.IsSudoAvailable())
+        FluentActions.Invoking(() => _sudoChecker.IsSudoAvailable())
             .Should()
             .NotThrow();
     }
@@ -34,23 +36,13 @@ public class SudoCheckerTests
     public void IsSudoAvailable_ConsistentAcrossMultipleCalls()
     {
         // Act
-        var result1 = SudoChecker.IsSudoAvailable();
-        var result2 = SudoChecker.IsSudoAvailable();
-        var result3 = SudoChecker.IsSudoAvailable();
+        var result1 = _sudoChecker.IsSudoAvailable();
+        var result2 = _sudoChecker.IsSudoAvailable();
+        var result3 = _sudoChecker.IsSudoAvailable();
 
         // Assert
         result1.Should().Be(result2);
         result2.Should().Be(result3);
-    }
-
-    [Fact]
-    public void IsSudoAvailable_IsStatic()
-    {
-        // Act & Assert
-        FluentActions.Invoking(() =>
-        {
-            var result = SudoChecker.IsSudoAvailable();
-        }).Should().NotThrow();
     }
 
     [Fact]
@@ -63,7 +55,7 @@ public class SudoCheckerTests
         }
 
         // Act
-        var result = SudoChecker.IsSudoAvailable();
+        var result = _sudoChecker.IsSudoAvailable();
 
         // Assert
         // Result is always bool, so this validates the method works without error
@@ -79,12 +71,85 @@ public class SudoCheckerTests
         // Act
         for (int i = 0; i < 100; i++)
         {
-            results.Add(SudoChecker.IsSudoAvailable());
+            results.Add(_sudoChecker.IsSudoAvailable());
         }
 
         // Assert
         results.Should().AllSatisfy(r => r.Should().Be(results[0]));
     }
 
+    [Fact]
+    public void Constructor_WithNullProcessRunner_CreatesDefaultRunner()
+    {
+        // Act
+        var checker = new SudoChecker(null);
+
+        // Assert
+        checker.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void IsSudoAvailable_WithMockProcessRunner_ReturnsMockedResult()
+    {
+        // Arrange
+        var mockRunner = new FakeProcessRunner(new ProcessResult(0, "/usr/bin/sudo", string.Empty));
+        var checker = new SudoChecker(mockRunner);
+
+        // Skip this test on Windows since IsSudoAvailable returns false for non-Unix systems
+        if (!IsLinux() && !RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            return;
+        }
+
+        // Act
+        var result = checker.IsSudoAvailable();
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsSudoAvailable_WithMockProcessRunner_WhenSudoNotFound_ReturnsFalse()
+    {
+        // Arrange
+        var mockRunner = new FakeProcessRunner(new ProcessResult(1, string.Empty, "sudo not found"));
+        var checker = new SudoChecker(mockRunner);
+
+        // Skip this test on Windows since IsSudoAvailable returns false for non-Unix systems
+        if (!IsLinux() && !RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            return;
+        }
+
+        // Act
+        var result = checker.IsSudoAvailable();
+
+        // Assert
+        result.Should().BeFalse();
+    }
+
     private static bool IsLinux() => RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+
+    /// <summary>
+    /// A simple fake process runner for testing.
+    /// </summary>
+    private class FakeProcessRunner : IProcessRunner
+    {
+        private readonly ProcessResult _result;
+
+        public FakeProcessRunner(ProcessResult result)
+        {
+            _result = result;
+        }
+
+        public Task<ProcessResult> RunAsync(string fileName, string arguments, string? workingDirectory = null, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(_result);
+        }
+
+        public ProcessResult Run(string fileName, string arguments, string? workingDirectory = null, int? timeoutMilliseconds = null)
+        {
+            return _result;
+        }
+    }
 }

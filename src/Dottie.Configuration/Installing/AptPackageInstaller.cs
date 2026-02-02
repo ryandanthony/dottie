@@ -1,7 +1,7 @@
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
+using Dottie.Configuration.Installing.Utilities;
 using Dottie.Configuration.Models.InstallBlocks;
-using System.Diagnostics;
 
 namespace Dottie.Configuration.Installing;
 
@@ -11,29 +11,21 @@ namespace Dottie.Configuration.Installing;
 /// </summary>
 public class AptPackageInstaller : IInstallSource
 {
+    private readonly IProcessRunner _processRunner;
+
+    /// <summary>
+    /// Creates a new instance of <see cref="AptPackageInstaller"/>.
+    /// </summary>
+    /// <param name="processRunner">Process runner for executing system commands. If null, a default instance is created.</param>
+    public AptPackageInstaller(IProcessRunner? processRunner = null)
+    {
+        _processRunner = processRunner ?? new ProcessRunner();
+    }
+
     /// <inheritdoc/>
     public InstallSourceType SourceType => InstallSourceType.AptPackage;
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallContext context, CancellationToken cancellationToken = default)
-    {
-        if (context == null)
-        {
-            throw new ArgumentNullException(nameof(context));
-        }
-
-        // This method implements the interface. The actual work is done in InstallAsync with InstallBlock.
-        // For MVP, return empty to allow the orchestrator to work.
-        return new List<InstallResult>();
-    }
-
-    /// <summary>
-    /// Installs APT packages from the provided install block.
-    /// </summary>
-    /// <param name="installBlock">The install block containing APT package specifications.</param>
-    /// <param name="context">The installation context with paths and configuration.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Installation results for each package.</returns>
     public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, CancellationToken cancellationToken = default)
     {
         if (installBlock == null)
@@ -74,23 +66,9 @@ public class AptPackageInstaller : IInstallSource
         try
         {
             // Run apt-get update first
-            var updateProcess = new Process
-            {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = "sudo",
-                    Arguments = "apt-get update",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true
-                }
-            };
+            var updateResult = await _processRunner.RunAsync("sudo", "apt-get update", cancellationToken: cancellationToken);
 
-            updateProcess.Start();
-            await updateProcess.WaitForExitAsync(cancellationToken);
-
-            if (updateProcess.ExitCode != 0)
+            if (!updateResult.Success)
             {
                 // Continue anyway, package installation might still work
             }
@@ -98,29 +76,15 @@ public class AptPackageInstaller : IInstallSource
             // Install each package
             foreach (var package in installBlock.Apt)
             {
-                var installProcess = new Process
-                {
-                    StartInfo = new ProcessStartInfo
-                    {
-                        FileName = "sudo",
-                        Arguments = $"apt-get install -y {package}",
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        CreateNoWindow = true
-                    }
-                };
+                var installResult = await _processRunner.RunAsync("sudo", $"apt-get install -y {package}", cancellationToken: cancellationToken);
 
-                installProcess.Start();
-                await installProcess.WaitForExitAsync(cancellationToken);
-
-                if (installProcess.ExitCode == 0)
+                if (installResult.Success)
                 {
                     results.Add(InstallResult.Success(package, SourceType));
                 }
                 else
                 {
-                    results.Add(InstallResult.Failed(package, SourceType, $"apt-get install failed with exit code {installProcess.ExitCode}"));
+                    results.Add(InstallResult.Failed(package, SourceType, $"apt-get install failed with exit code {installResult.ExitCode}"));
                 }
             }
         }

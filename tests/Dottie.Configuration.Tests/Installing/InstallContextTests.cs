@@ -41,7 +41,7 @@ public class InstallContextTests
         var context = new InstallContext
         {
             RepoRoot = repoRoot,
-            BinDirectory = customBin
+            BinDirectory = customBin,
         };
 
         // Assert
@@ -59,7 +59,7 @@ public class InstallContextTests
         var context = new InstallContext
         {
             RepoRoot = repoRoot,
-            FontDirectory = customFonts
+            FontDirectory = customFonts,
         };
 
         // Assert
@@ -83,7 +83,7 @@ public class InstallContextTests
             FontDirectory = fontDir,
             GithubToken = token,
             HasSudo = true,
-            DryRun = true
+            DryRun = true,
         };
 
         // Assert
@@ -136,7 +136,7 @@ public class InstallContextTests
         var context = new InstallContext
         {
             RepoRoot = repoRoot,
-            DryRun = true
+            DryRun = true,
         };
 
         // Assert
@@ -153,7 +153,7 @@ public class InstallContextTests
         var context = new InstallContext
         {
             RepoRoot = repoRoot,
-            HasSudo = true
+            HasSudo = true,
         };
 
         // Assert
@@ -168,19 +168,19 @@ public class InstallContextTests
         {
             RepoRoot = "/repo",
             BinDirectory = "/bin",
-            HasSudo = true
+            HasSudo = true,
         };
         var context2 = new InstallContext
         {
             RepoRoot = "/repo",
             BinDirectory = "/bin",
-            HasSudo = true
+            HasSudo = true,
         };
         var context3 = new InstallContext
         {
             RepoRoot = "/repo",
             BinDirectory = "/bin",
-            HasSudo = false
+            HasSudo = false,
         };
 
         // Act & Assert

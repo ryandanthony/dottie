@@ -17,7 +17,7 @@ public class SnapItemTests
         var item = new SnapItem
         {
             Name = "blender",
-            Classic = false
+            Classic = false,
         };
 
         // Assert
@@ -33,7 +33,7 @@ public class SnapItemTests
         var item = new SnapItem
         {
             Name = "code",
-            Classic = true
+            Classic = true,
         };
 
         // Assert
@@ -47,7 +47,7 @@ public class SnapItemTests
         var item = new SnapItem
         {
             Name = "test-snap",
-            Classic = false
+            Classic = false,
         };
 
         // Act
@@ -60,7 +60,8 @@ public class SnapItemTests
     // Helper method to access internal MergeKey property
     private static string GetMergeKey(SnapItem item)
     {
-        var property = typeof(SnapItem).GetProperty("MergeKey", 
+        var property = typeof(SnapItem).GetProperty(
+            "MergeKey",
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
         return (string)property!.GetValue(item)!;
     }

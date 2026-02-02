@@ -229,12 +229,12 @@ public sealed class InstallCommandTests : IDisposable
     private void SetupGitRepo()
     {
         Directory.SetCurrentDirectory(_tempDirectory);
-        
+
         // Initialize git repo
         var gitDir = Path.Combine(_tempDirectory, ".git");
         Directory.CreateDirectory(gitDir);
         File.WriteAllText(Path.Combine(gitDir, "HEAD"), "ref: refs/heads/main\n");
-        
+
         // Create refs directory
         var refsDir = Path.Combine(gitDir, "refs", "heads");
         Directory.CreateDirectory(refsDir);

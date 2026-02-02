@@ -16,16 +16,25 @@ public sealed record LinkResult
     /// <summary>
     /// Gets a value indicating whether the link operation succeeded.
     /// </summary>
+    /// <value>
+    /// <placeholder>A value indicating whether the link operation succeeded.</placeholder>
+    /// </value>
     public bool IsSuccess { get; init; }
 
     /// <summary>
     /// Gets the dotfile entry that was linked.
     /// </summary>
+    /// <value>
+    /// <placeholder>The dotfile entry that was linked.</placeholder>
+    /// </value>
     public required DotfileEntry Entry { get; init; }
 
     /// <summary>
     /// Gets the expanded target path where the symlink was created.
     /// </summary>
+    /// <value>
+    /// <placeholder>The expanded target path where the symlink was created.</placeholder>
+    /// </value>
     public required string ExpandedTargetPath { get; init; }
 
     /// <summary>
@@ -34,16 +43,25 @@ public sealed record LinkResult
     /// <remarks>
     /// Only populated when --force was used and a conflict existed.
     /// </remarks>
+    /// <value>
+    /// <placeholder>The backup result if a conflict was resolved.</placeholder>
+    /// </value>
     public BackupResult? BackupResult { get; init; }
 
     /// <summary>
     /// Gets the error message if the operation failed.
     /// </summary>
+    /// <value>
+    /// <placeholder>The error message if the operation failed.</placeholder>
+    /// </value>
     public string? Error { get; init; }
 
     /// <summary>
     /// Gets a value indicating whether this entry was skipped because it was already correctly linked.
     /// </summary>
+    /// <value>
+    /// <placeholder>A value indicating whether this entry was skipped because it was already correctly linked.</placeholder>
+    /// </value>
     public bool WasSkipped { get; init; }
 
     /// <summary>

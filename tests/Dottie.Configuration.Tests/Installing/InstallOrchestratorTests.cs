@@ -15,14 +15,21 @@ public class InstallOrchestratorTests
     private readonly InstallOrchestrator _orchestrator;
     private readonly Mock<IInstallSource> _mockInstaller;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="InstallOrchestratorTests"/> class.
+    /// </summary>
     public InstallOrchestratorTests()
     {
         _mockInstaller = new Mock<IInstallSource>();
         _orchestrator = new InstallOrchestrator(new[] { _mockInstaller.Object });
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithEmptyInstallBlock_ReturnsEmptyResults()
+    public async Task InstallAsync_WithEmptyInstallBlock_ReturnsEmptyResultsAsync()
     {
         // Arrange
         var context = new InstallContext { RepoRoot = "/repo" };
@@ -35,8 +42,12 @@ public class InstallOrchestratorTests
         results.Should().BeEmpty();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_CallsAllRegisteredInstallers()
+    public async Task InstallAsync_CallsAllRegisteredInstallersAsync()
     {
         // Arrange
         var context = new InstallContext { RepoRoot = "/repo" };
@@ -46,7 +57,7 @@ public class InstallOrchestratorTests
             .Setup(x => x.InstallAsync(installBlock, context, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[]
             {
-                InstallResult.Success("test-pkg", InstallSourceType.GithubRelease)
+                InstallResult.Success("test-pkg", InstallSourceType.GithubRelease),
             });
 
         // Act
@@ -57,8 +68,12 @@ public class InstallOrchestratorTests
         results.Should().HaveCount(1);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_AggregatesResultsFromMultipleInstallers()
+    public async Task InstallAsync_AggregatesResultsFromMultipleInstallersAsync()
     {
         // Arrange
         var installer2 = new Mock<IInstallSource>();
@@ -81,8 +96,12 @@ public class InstallOrchestratorTests
         results.Should().HaveCount(2);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithDryRun_PassesContextToInstallers()
+    public async Task InstallAsync_WithDryRun_PassesContextToInstallersAsync()
     {
         // Arrange
         var context = new InstallContext { RepoRoot = "/repo", DryRun = true };
@@ -101,8 +120,12 @@ public class InstallOrchestratorTests
             Times.Once);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_ContinuesEvenIfOneInstallerFails()
+    public async Task InstallAsync_ContinuesEvenIfOneInstallerFailsAsync()
     {
         // Arrange
         var installer2 = new Mock<IInstallSource>();

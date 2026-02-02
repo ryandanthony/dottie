@@ -14,6 +14,9 @@ public sealed class SymlinkServiceTests : IDisposable
     private readonly bool _canCreateSymlinks;
     private bool _disposed;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SymlinkServiceTests"/> class.
+    /// </summary>
     public SymlinkServiceTests()
     {
         _testDir = Path.Combine(Path.GetTempPath(), "dottie-symlink-tests", Guid.NewGuid().ToString());
@@ -244,10 +247,10 @@ public sealed class SymlinkServiceTests : IDisposable
     }
 
     [Fact]
-    public void GetWindowsSymlinkErrorMessage_ReturnsGuidanceMessage()
+    public void WindowsSymlinkErrorMessage_ReturnsGuidanceMessage()
     {
         // Arrange & Act
-        var message = SymlinkService.GetWindowsSymlinkErrorMessage();
+        var message = SymlinkService.WindowsSymlinkErrorMessage;
 
         // Assert - per spec FR-021
         message.Should().Contain("Unable to create symbolic link");

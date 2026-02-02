@@ -25,8 +25,12 @@ public class AptPackageInstallerTests
         result.Should().Be(InstallSourceType.AptPackage);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithEmptyPackageList_ReturnsEmptyResults()
+    public async Task InstallAsync_WithEmptyPackageList_ReturnsEmptyResultsAsync()
     {
         // Arrange
         var installBlock = new InstallBlock();
@@ -39,27 +43,35 @@ public class AptPackageInstallerTests
         results.Should().BeEmpty();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithValidContext_DoesNotThrow()
+    public async Task InstallAsync_WithValidContext_DoesNotThrowAsync()
     {
         // Arrange
         var installBlock = new InstallBlock();
         var context = new InstallContext { RepoRoot = "/repo" };
 
         // Act
-        var action = async () => await _installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var action = async () => await _installer.InstallAsync(installBlock, context, CancellationToken.None).ConfigureAwait(false);
 
         // Assert
         await action.Should().NotThrowAsync();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithDryRun_SkipsInstallation()
+    public async Task InstallAsync_WithDryRun_SkipsInstallationAsync()
     {
         // Arrange
         var installBlock = new InstallBlock
         {
-            Apt = new List<string> { "git", "curl" }
+            Apt = new List<string> { "git", "curl" },
         };
         var context = new InstallContext { RepoRoot = "/repo", DryRun = true };
 
@@ -70,18 +82,22 @@ public class AptPackageInstallerTests
         results.Should().BeEmpty();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithoutSudo_ReturnsWarningResults()
+    public async Task InstallAsync_WithoutSudo_ReturnsWarningResultsAsync()
     {
         // Arrange
         var installBlock = new InstallBlock
         {
-            Apt = new List<string> { "git", "curl" }
+            Apt = new List<string> { "git", "curl" },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            HasSudo = false
+            HasSudo = false,
         };
 
         // Act
@@ -92,15 +108,19 @@ public class AptPackageInstallerTests
         results.Should().AllSatisfy(r => r.Status.Should().Be(InstallStatus.Warning));
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithEmptyPackageList_ReturnsEmptyResults_WhenAptIsEmptyList()
+    public async Task InstallAsync_WithEmptyPackageList_ReturnsEmptyResults_WhenAptIsEmptyListAsync()
     {
         // Arrange
         var installBlock = new InstallBlock { Apt = new List<string>() };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            HasSudo = true
+            HasSudo = true,
         };
 
         // Act
@@ -110,36 +130,48 @@ public class AptPackageInstallerTests
         results.Should().BeEmpty();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithNullInstallBlock_ThrowsArgumentNullException()
+    public async Task InstallAsync_WithNullInstallBlock_ThrowsArgumentNullExceptionAsync()
     {
         // Arrange
         var context = new InstallContext { RepoRoot = "/repo" };
 
         // Act
-        Func<Task> act = async () => await _installer.InstallAsync(null!, context);
+        Func<Task> act = async () => await _installer.InstallAsync(null!, context).ConfigureAwait(false);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>()
             .WithParameterName("installBlock");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithNullContext_ThrowsArgumentNullException()
+    public async Task InstallAsync_WithNullContext_ThrowsArgumentNullExceptionAsync()
     {
         // Arrange
         var installBlock = new InstallBlock();
 
         // Act
-        Func<Task> act = async () => await _installer.InstallAsync(installBlock, null!);
+        Func<Task> act = async () => await _installer.InstallAsync(installBlock, null!).ConfigureAwait(false);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>()
             .WithParameterName("context");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithNullAptList_ReturnsEmptyResults()
+    public async Task InstallAsync_WithNullAptList_ReturnsEmptyResultsAsync()
     {
         // Arrange
         var installBlock = new InstallBlock { Apt = null };
@@ -152,10 +184,13 @@ public class AptPackageInstallerTests
         results.Should().BeEmpty();
     }
 
-    #region Tests using FakeProcessRunner
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithSudo_RunsAptGetUpdate()
+    public async Task InstallAsync_WithSudo_RunsAptGetUpdateAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner()
@@ -164,7 +199,7 @@ public class AptPackageInstallerTests
         var installer = new AptPackageInstaller(fakeRunner);
         var installBlock = new InstallBlock
         {
-            Apt = new List<string> { "git" }
+            Apt = new List<string> { "git" },
         };
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
@@ -177,19 +212,23 @@ public class AptPackageInstallerTests
         fakeRunner.Calls[0].Arguments.Should().Be("apt-get update");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithSudo_InstallsEachPackage()
+    public async Task InstallAsync_WithSudo_InstallsEachPackageAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner()
-            .WithSuccessResult()  // apt-get update
-            .WithSuccessResult()  // git install
+            .WithSuccessResult() // apt-get update
+            .WithSuccessResult() // git install
             .WithSuccessResult(); // curl install
 
         var installer = new AptPackageInstaller(fakeRunner);
         var installBlock = new InstallBlock
         {
-            Apt = new List<string> { "git", "curl" }
+            Apt = new List<string> { "git", "curl" },
         };
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
@@ -203,18 +242,22 @@ public class AptPackageInstallerTests
         fakeRunner.Calls.Should().Contain(c => c.Arguments == "apt-get install -y curl");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WhenPackageInstallFails_ReturnsFailedResult()
+    public async Task InstallAsync_WhenPackageInstallFails_ReturnsFailedResultAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner()
-            .WithSuccessResult()            // apt-get update
+            .WithSuccessResult() // apt-get update
             .WithFailureResult(100, "E: Unable to locate package invalid-pkg"); // package install fails
 
         var installer = new AptPackageInstaller(fakeRunner);
         var installBlock = new InstallBlock
         {
-            Apt = new List<string> { "invalid-pkg" }
+            Apt = new List<string> { "invalid-pkg" },
         };
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
@@ -228,18 +271,22 @@ public class AptPackageInstallerTests
         results.First().Message.Should().Contain("exit code 100");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WhenAptUpdateFails_StillAttemptsPackageInstall()
+    public async Task InstallAsync_WhenAptUpdateFails_StillAttemptsPackageInstallAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner()
-            .WithFailureResult(1, "apt-get update failed")  // apt-get update fails
+            .WithFailureResult(1, "apt-get update failed") // apt-get update fails
             .WithSuccessResult();                           // package install succeeds
 
         var installer = new AptPackageInstaller(fakeRunner);
         var installBlock = new InstallBlock
         {
-            Apt = new List<string> { "git" }
+            Apt = new List<string> { "git" },
         };
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
@@ -252,20 +299,24 @@ public class AptPackageInstallerTests
         fakeRunner.CallCount.Should().Be(2); // Both update and install were called
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithMultiplePackages_ReportsPartialSuccess()
+    public async Task InstallAsync_WithMultiplePackages_ReportsPartialSuccessAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner()
-            .WithSuccessResult()                    // apt-get update
-            .WithSuccessResult()                    // git succeeds
-            .WithFailureResult(100, "not found")   // invalid-pkg fails
+            .WithSuccessResult() // apt-get update
+            .WithSuccessResult() // git succeeds
+            .WithFailureResult(100, "not found") // invalid-pkg fails
             .WithSuccessResult();                   // curl succeeds
 
         var installer = new AptPackageInstaller(fakeRunner);
         var installBlock = new InstallBlock
         {
-            Apt = new List<string> { "git", "invalid-pkg", "curl" }
+            Apt = new List<string> { "git", "invalid-pkg", "curl" },
         };
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
@@ -290,8 +341,12 @@ public class AptPackageInstallerTests
         installer.SourceType.Should().Be(InstallSourceType.AptPackage);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithCustomProcessRunner_UsesProvidedRunner()
+    public async Task InstallAsync_WithCustomProcessRunner_UsesProvidedRunnerAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner()
@@ -301,7 +356,7 @@ public class AptPackageInstallerTests
         var installer = new AptPackageInstaller(fakeRunner);
         var installBlock = new InstallBlock
         {
-            Apt = new List<string> { "vim" }
+            Apt = new List<string> { "vim" },
         };
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
@@ -311,6 +366,4 @@ public class AptPackageInstallerTests
         // Assert
         fakeRunner.CallCount.Should().Be(2); // Update + 1 package
     }
-
-    #endregion
 }

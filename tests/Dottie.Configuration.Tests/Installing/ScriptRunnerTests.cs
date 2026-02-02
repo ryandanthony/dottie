@@ -23,8 +23,12 @@ public class ScriptRunnerTests
         result.Should().Be(InstallSourceType.Script);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithEmptyScriptList_ReturnsEmptyResults()
+    public async Task InstallAsync_WithEmptyScriptList_ReturnsEmptyResultsAsync()
     {
         // Arrange
         var installBlock = new InstallBlock();
@@ -37,27 +41,35 @@ public class ScriptRunnerTests
         results.Should().BeEmpty();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithValidContext_DoesNotThrow()
+    public async Task InstallAsync_WithValidContext_DoesNotThrowAsync()
     {
         // Arrange
         var installBlock = new InstallBlock();
         var context = new InstallContext { RepoRoot = "/repo" };
 
         // Act
-        var action = async () => await _runner.InstallAsync(installBlock, context, CancellationToken.None);
+        var action = async () => await _runner.InstallAsync(installBlock, context, CancellationToken.None).ConfigureAwait(false);
 
         // Assert
         await action.Should().NotThrowAsync();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithDryRun_ValidatesScriptExistence()
+    public async Task InstallAsync_WithDryRun_ValidatesScriptExistenceAsync()
     {
         // Arrange
         var installBlock = new InstallBlock
         {
-            Scripts = new List<string> { "scripts/install.sh", "scripts/nonexistent.sh" }
+            Scripts = new List<string> { "scripts/install.sh", "scripts/nonexistent.sh" },
         };
         var tempDir = Path.Combine(Path.GetTempPath(), "test-repo");
         Directory.CreateDirectory(tempDir);
@@ -83,13 +95,17 @@ public class ScriptRunnerTests
         }
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithPathEscapeAttempt_ReturnsFailed()
+    public async Task InstallAsync_WithPathEscapeAttempt_ReturnsFailedAsync()
     {
         // Arrange
         var installBlock = new InstallBlock
         {
-            Scripts = new List<string> { "../../../etc/passwd" }
+            Scripts = new List<string> { "../../../etc/passwd" },
         };
         var context = new InstallContext { RepoRoot = "/repo" };
 
@@ -101,8 +117,12 @@ public class ScriptRunnerTests
         results.Should().AllSatisfy(r => r.Status.Should().Be(InstallStatus.Failed));
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithEmptyScriptList_ReturnsEmptyResults_WhenScriptsIsEmptyList()
+    public async Task InstallAsync_WithEmptyScriptList_ReturnsEmptyResults_WhenScriptsIsEmptyListAsync()
     {
         // Arrange
         var installBlock = new InstallBlock { Scripts = new List<string>() };
@@ -115,36 +135,48 @@ public class ScriptRunnerTests
         results.Should().BeEmpty();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithNullInstallBlock_ThrowsArgumentNullException()
+    public async Task InstallAsync_WithNullInstallBlock_ThrowsArgumentNullExceptionAsync()
     {
         // Arrange
         var context = new InstallContext { RepoRoot = "/repo" };
 
         // Act
-        Func<Task> act = async () => await _runner.InstallAsync(null!, context);
+        Func<Task> act = async () => await _runner.InstallAsync(null!, context).ConfigureAwait(false);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>()
             .WithParameterName("installBlock");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithNullContext_ThrowsArgumentNullException()
+    public async Task InstallAsync_WithNullContext_ThrowsArgumentNullExceptionAsync()
     {
         // Arrange
         var installBlock = new InstallBlock();
 
         // Act
-        Func<Task> act = async () => await _runner.InstallAsync(installBlock, null!);
+        Func<Task> act = async () => await _runner.InstallAsync(installBlock, null!).ConfigureAwait(false);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>()
             .WithParameterName("context");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithNullScriptsList_ReturnsEmptyResults()
+    public async Task InstallAsync_WithNullScriptsList_ReturnsEmptyResultsAsync()
     {
         // Arrange
         var installBlock = new InstallBlock { Scripts = null };
@@ -157,4 +189,3 @@ public class ScriptRunnerTests
         results.Should().BeEmpty();
     }
 }
-

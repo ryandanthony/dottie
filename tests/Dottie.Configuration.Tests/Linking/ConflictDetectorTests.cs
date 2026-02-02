@@ -16,6 +16,9 @@ public sealed class ConflictDetectorTests : IDisposable
     private readonly bool _canCreateSymlinks;
     private bool _disposed;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ConflictDetectorTests"/> class.
+    /// </summary>
     public ConflictDetectorTests()
     {
         _testDir = Path.Combine(Path.GetTempPath(), "dottie-conflict-tests", Guid.NewGuid().ToString());

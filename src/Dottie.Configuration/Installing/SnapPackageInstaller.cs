@@ -1,4 +1,8 @@
-// Licensed under the MIT License. See LICENSE in the project root for license information.
+// -----------------------------------------------------------------------
+// <copyright file="SnapPackageInstaller.cs" company="Ryan Anthony">
+// Copyright (c) Ryan Anthony. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 using Dottie.Configuration.Installing.Utilities;
 using Dottie.Configuration.Models.InstallBlocks;
@@ -14,6 +18,7 @@ public class SnapPackageInstaller : IInstallSource
     private readonly IProcessRunner _processRunner;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="SnapPackageInstaller"/> class.
     /// Creates a new instance of <see cref="SnapPackageInstaller"/>.
     /// </summary>
     /// <param name="processRunner">Process runner for executing system commands. If null, a default instance is created.</param>
@@ -28,15 +33,9 @@ public class SnapPackageInstaller : IInstallSource
     /// <inheritdoc/>
     public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, CancellationToken cancellationToken = default)
     {
-        if (installBlock == null)
-        {
-            throw new ArgumentNullException(nameof(installBlock));
-        }
+        ArgumentNullException.ThrowIfNull(installBlock);
 
-        if (context == null)
-        {
-            throw new ArgumentNullException(nameof(context));
-        }
+        ArgumentNullException.ThrowIfNull(context);
 
         var results = new List<InstallResult>();
 
@@ -59,6 +58,7 @@ public class SnapPackageInstaller : IInstallSource
             {
                 results.Add(InstallResult.Warning(snap.Name, SourceType, "Sudo required to install snap packages"));
             }
+
             return results;
         }
 
@@ -75,14 +75,7 @@ public class SnapPackageInstaller : IInstallSource
 
                 var processResult = await _processRunner.RunAsync("sudo", arguments, cancellationToken: cancellationToken);
 
-                if (processResult.Success)
-                {
-                    results.Add(InstallResult.Success(snap.Name, SourceType));
-                }
-                else
-                {
-                    results.Add(InstallResult.Failed(snap.Name, SourceType, $"snap install failed with exit code {processResult.ExitCode}"));
-                }
+                results.Add(processResult.Success ? InstallResult.Success(snap.Name, SourceType) : InstallResult.Failed(snap.Name, SourceType, $"snap install failed with exit code {processResult.ExitCode}"));
             }
             catch (Exception ex)
             {

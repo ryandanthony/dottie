@@ -16,11 +16,17 @@ public sealed record ConflictResult
     /// <summary>
     /// Gets a value indicating whether any conflicts were detected.
     /// </summary>
+    /// <value>
+    /// <placeholder>A value indicating whether any conflicts were detected.</placeholder>
+    /// </value>
     public bool HasConflicts => Conflicts.Count > 0;
 
     /// <summary>
     /// Gets the list of conflicts detected.
     /// </summary>
+    /// <value>
+    /// <placeholder>The list of conflicts detected.</placeholder>
+    /// </value>
     public required IReadOnlyList<Conflict> Conflicts { get; init; }
 
     /// <summary>
@@ -29,11 +35,17 @@ public sealed record ConflictResult
     /// <remarks>
     /// Includes entries where the target doesn't exist or is already correctly linked.
     /// </remarks>
+    /// <value>
+    /// <placeholder>The list of dotfile entries that are safe to link (no conflicts).</placeholder>
+    /// </value>
     public required IReadOnlyList<DotfileEntry> SafeEntries { get; init; }
 
     /// <summary>
     /// Gets the list of entries that are already correctly linked (skipped).
     /// </summary>
+    /// <value>
+    /// <placeholder>The list of entries that are already correctly linked (skipped).</placeholder>
+    /// </value>
     public required IReadOnlyList<DotfileEntry> AlreadyLinked { get; init; }
 
     /// <summary>

@@ -19,7 +19,7 @@ public class AptRepoItemTests
             Name = "docker",
             KeyUrl = "https://download.docker.com/linux/ubuntu/gpg",
             Repo = "deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable",
-            Packages = new List<string> { "docker-ce", "docker-ce-cli" }
+            Packages = new List<string> { "docker-ce", "docker-ce-cli" },
         };
 
         // Assert
@@ -39,7 +39,7 @@ public class AptRepoItemTests
             Name = "test-repo",
             KeyUrl = "https://example.com/key.gpg",
             Repo = "deb https://example.com stable main",
-            Packages = new List<string> { "pkg1" }
+            Packages = new List<string> { "pkg1" },
         };
 
         // Act
@@ -52,7 +52,8 @@ public class AptRepoItemTests
     // Helper method to access internal MergeKey property
     private static string GetMergeKey(AptRepoItem item)
     {
-        var property = typeof(AptRepoItem).GetProperty("MergeKey", 
+        var property = typeof(AptRepoItem).GetProperty(
+            "MergeKey",
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
         return (string)property!.GetValue(item)!;
     }

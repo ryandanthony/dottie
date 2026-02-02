@@ -1,4 +1,8 @@
-// Licensed under the MIT License. See LICENSE in the project root for license information.
+// -----------------------------------------------------------------------
+// <copyright file="AptRepoInstaller.cs" company="Ryan Anthony">
+// Copyright (c) Ryan Anthony. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 using Dottie.Configuration.Installing.Utilities;
 using Dottie.Configuration.Models.InstallBlocks;
@@ -18,6 +22,7 @@ public class AptRepoInstaller : IInstallSource
     public InstallSourceType SourceType => InstallSourceType.AptRepo;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="AptRepoInstaller"/> class.
     /// Creates a new instance of <see cref="AptRepoInstaller"/>.
     /// </summary>
     /// <param name="downloader">HTTP downloader for fetching GPG keys. If null, a default instance is created.</param>
@@ -31,139 +36,158 @@ public class AptRepoInstaller : IInstallSource
     /// <inheritdoc/>
     public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, CancellationToken cancellationToken = default)
     {
-        if (installBlock == null)
+        ArgumentNullException.ThrowIfNull(installBlock);
+        ArgumentNullException.ThrowIfNull(context);
+
+        if (installBlock.AptRepos == null || installBlock.AptRepos.Count == 0 || context.DryRun)
         {
-            throw new ArgumentNullException(nameof(installBlock));
+            return [];
         }
 
-        if (context == null)
+        if (!context.HasSudo)
         {
-            throw new ArgumentNullException(nameof(context));
+            return CreateSudoRequiredWarnings(installBlock.AptRepos.AsReadOnly());
         }
 
         var results = new List<InstallResult>();
-
-        // Check if there are any APT repositories to configure
-        if (installBlock.AptRepos == null || installBlock.AptRepos.Count == 0)
-        {
-            return results;
-        }
-
-        // Skip installation if dry-run is enabled
-        if (context.DryRun)
-        {
-            return results;
-        }
-
-        // If sudo is not available, return warning results
-        if (!context.HasSudo)
-        {
-            foreach (var repo in installBlock.AptRepos)
-            {
-                results.Add(InstallResult.Warning(repo.Name, SourceType, "Sudo required to add APT repositories"));
-                foreach (var package in repo.Packages ?? new List<string>())
-                {
-                    results.Add(InstallResult.Warning(package, SourceType, "Sudo required to install packages from APT repositories"));
-                }
-            }
-            return results;
-        }
-
-        // Configure each repository
         foreach (var repo in installBlock.AptRepos)
         {
-            try
+            var repoResults = await ConfigureRepositoryAsync(repo, cancellationToken);
+            results.AddRange(repoResults);
+        }
+
+        return results;
+    }
+
+    private List<InstallResult> CreateSudoRequiredWarnings(IReadOnlyList<AptRepoItem> repos)
+    {
+        var results = new List<InstallResult>();
+        foreach (var repo in repos)
+        {
+            results.Add(InstallResult.Warning(repo.Name, SourceType, "Sudo required to add APT repositories"));
+            foreach (var package in repo.Packages ?? [])
             {
-                // Download GPG key
-                byte[] keyData;
-                try
-                {
-                    keyData = await _downloader.DownloadAsync(repo.KeyUrl, cancellationToken);
-                }
-                catch (Exception ex)
-                {
-                    results.Add(InstallResult.Failed(repo.Name, SourceType, $"Failed to download GPG key from {repo.KeyUrl}: {ex.Message}"));
-                    continue;
-                }
-
-                // Add GPG key to trusted keys
-                var keyPath = $"/etc/apt/trusted.gpg.d/{repo.Name}.gpg";
-                try
-                {
-                    var addKeyResult = await _processRunner.RunAsync(
-                        "bash",
-                        $"-c \"echo '{Convert.ToBase64String(keyData)}' | base64 -d | sudo tee {keyPath} > /dev/null\"",
-                        cancellationToken: cancellationToken);
-
-                    if (!addKeyResult.Success)
-                    {
-                        results.Add(InstallResult.Failed(repo.Name, SourceType, $"Failed to add GPG key: exit code {addKeyResult.ExitCode}"));
-                        continue;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    results.Add(InstallResult.Failed(repo.Name, SourceType, $"Failed to add GPG key: {ex.Message}"));
-                    continue;
-                }
-
-                // Create sources list file
-                var sourcesPath = $"/etc/apt/sources.list.d/{repo.Name}.list";
-                try
-                {
-                    var addSourceResult = await _processRunner.RunAsync(
-                        "bash",
-                        $"-c \"echo '{repo.Repo}' | sudo tee {sourcesPath} > /dev/null\"",
-                        cancellationToken: cancellationToken);
-
-                    if (!addSourceResult.Success)
-                    {
-                        results.Add(InstallResult.Failed(repo.Name, SourceType, $"Failed to add repository source: exit code {addSourceResult.ExitCode}"));
-                        continue;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    results.Add(InstallResult.Failed(repo.Name, SourceType, $"Failed to add repository source: {ex.Message}"));
-                    continue;
-                }
-
-                results.Add(InstallResult.Success(repo.Name, SourceType));
-
-                // Now install packages from this repository
-                if (repo.Packages != null && repo.Packages.Count > 0)
-                {
-                    foreach (var package in repo.Packages)
-                    {
-                        try
-                        {
-                            var installResult = await _processRunner.RunAsync(
-                                "sudo",
-                                $"apt-get install -y {package}",
-                                cancellationToken: cancellationToken);
-
-                            if (installResult.Success)
-                            {
-                                results.Add(InstallResult.Success(package, SourceType));
-                            }
-                            else
-                            {
-                                results.Add(InstallResult.Failed(package, SourceType, $"apt-get install failed with exit code {installResult.ExitCode}"));
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            results.Add(InstallResult.Failed(package, SourceType, $"Exception during package installation: {ex.Message}"));
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                results.Add(InstallResult.Failed(repo.Name, SourceType, $"Unexpected error configuring repository: {ex.Message}"));
+                results.Add(InstallResult.Warning(package, SourceType, "Sudo required to install packages from APT repositories"));
             }
         }
 
         return results;
+    }
+
+    private async Task<List<InstallResult>> ConfigureRepositoryAsync(AptRepoItem repo, CancellationToken cancellationToken)
+    {
+        var results = new List<InstallResult>();
+
+        try
+        {
+            var keyResult = await AddGpgKeyAsync(repo, cancellationToken);
+            if (keyResult != null)
+            {
+                results.Add(keyResult);
+                return results;
+            }
+
+            var sourceResult = await AddSourcesListAsync(repo, cancellationToken);
+            if (sourceResult != null)
+            {
+                results.Add(sourceResult);
+                return results;
+            }
+
+            results.Add(InstallResult.Success(repo.Name, SourceType));
+            results.AddRange(await InstallPackagesAsync(repo, cancellationToken));
+        }
+        catch (Exception ex)
+        {
+            results.Add(InstallResult.Failed(repo.Name, SourceType, $"Unexpected error configuring repository: {ex.Message}"));
+        }
+
+        return results;
+    }
+
+    private async Task<InstallResult?> AddGpgKeyAsync(AptRepoItem repo, CancellationToken cancellationToken)
+    {
+        byte[] keyData;
+        try
+        {
+            keyData = await _downloader.DownloadAsync(repo.KeyUrl, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            return InstallResult.Failed(repo.Name, SourceType, $"Failed to download GPG key from {repo.KeyUrl}: {ex.Message}");
+        }
+
+        var keyPath = $"/etc/apt/trusted.gpg.d/{repo.Name}.gpg";
+        try
+        {
+            var addKeyResult = await _processRunner.RunAsync(
+                "bash",
+                $"-c \"echo '{Convert.ToBase64String(keyData)}' | base64 -d | sudo tee {keyPath} > /dev/null\"",
+                cancellationToken: cancellationToken);
+
+            return addKeyResult.Success
+                ? null
+                : InstallResult.Failed(repo.Name, SourceType, $"Failed to add GPG key: exit code {addKeyResult.ExitCode}");
+        }
+        catch (Exception ex)
+        {
+            return InstallResult.Failed(repo.Name, SourceType, $"Failed to add GPG key: {ex.Message}");
+        }
+    }
+
+    private async Task<InstallResult?> AddSourcesListAsync(AptRepoItem repo, CancellationToken cancellationToken)
+    {
+        var sourcesPath = $"/etc/apt/sources.list.d/{repo.Name}.list";
+        try
+        {
+            var addSourceResult = await _processRunner.RunAsync(
+                "bash",
+                $"-c \"echo '{repo.Repo}' | sudo tee {sourcesPath} > /dev/null\"",
+                cancellationToken: cancellationToken);
+
+            return addSourceResult.Success
+                ? null
+                : InstallResult.Failed(repo.Name, SourceType, $"Failed to add repository source: exit code {addSourceResult.ExitCode}");
+        }
+        catch (Exception ex)
+        {
+            return InstallResult.Failed(repo.Name, SourceType, $"Failed to add repository source: {ex.Message}");
+        }
+    }
+
+    private async Task<List<InstallResult>> InstallPackagesAsync(AptRepoItem repo, CancellationToken cancellationToken)
+    {
+        var results = new List<InstallResult>();
+        if (repo.Packages == null || repo.Packages.Count == 0)
+        {
+            return results;
+        }
+
+        foreach (var package in repo.Packages)
+        {
+            var result = await InstallSinglePackageAsync(package, cancellationToken);
+            results.Add(result);
+        }
+
+        return results;
+    }
+
+    private async Task<InstallResult> InstallSinglePackageAsync(string package, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var installResult = await _processRunner.RunAsync(
+                "sudo",
+                $"apt-get install -y {package}",
+                cancellationToken: cancellationToken);
+
+            return installResult.Success
+                ? InstallResult.Success(package, SourceType)
+                : InstallResult.Failed(package, SourceType, $"apt-get install failed with exit code {installResult.ExitCode}");
+        }
+        catch (Exception ex)
+        {
+            return InstallResult.Failed(package, SourceType, $"Exception during package installation: {ex.Message}");
+        }
     }
 }

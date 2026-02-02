@@ -8,13 +8,9 @@
   </PropertyGroup>
 
   <!-- FestinaLente.CodeStandards - Required by constitution v1.6.0 -->
-  <!-- TODO: Re-enable once GitHub Packages authentication is configured in CI/CD -->
-  <!-- Commented out temporarily due to authentication issues with private GitHub Packages -->
-  <!--
   <ItemGroup>
     <PackageReference Include="FestinaLente.CodeStandards" Version="*" />
   </ItemGroup>
-  -->
 
   <!-- StyleCop configuration -->
   <ItemGroup>

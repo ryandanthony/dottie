@@ -1,4 +1,8 @@
-// Licensed under the MIT License. See LICENSE in the project root for license information.
+// -----------------------------------------------------------------------
+// <copyright file="FontInstaller.cs" company="Ryan Anthony">
+// Copyright (c) Ryan Anthony. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 using Dottie.Configuration.Installing.Utilities;
 using Dottie.Configuration.Models.InstallBlocks;
@@ -19,6 +23,7 @@ public class FontInstaller : IInstallSource
     public InstallSourceType SourceType => InstallSourceType.Font;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="FontInstaller"/> class.
     /// Creates a new instance of <see cref="FontInstaller"/>.
     /// </summary>
     /// <param name="downloader">HTTP downloader for fetching fonts. If null, a default instance is created.</param>
@@ -33,111 +38,131 @@ public class FontInstaller : IInstallSource
     /// <inheritdoc/>
     public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, CancellationToken cancellationToken = default)
     {
-        if (installBlock == null)
+        ArgumentNullException.ThrowIfNull(installBlock);
+        ArgumentNullException.ThrowIfNull(context);
+
+        if (installBlock.Fonts == null || installBlock.Fonts.Count == 0 || context.DryRun)
         {
-            throw new ArgumentNullException(nameof(installBlock));
+            return [];
         }
 
-        if (context == null)
+        if (!TryEnsureFontDirectory(context.FontDirectory, out var directoryError))
         {
-            throw new ArgumentNullException(nameof(context));
+            return installBlock.Fonts
+                .Select(font => InstallResult.Failed(font.Name, SourceType, directoryError!))
+                .ToList();
         }
 
         var results = new List<InstallResult>();
-
-        // Check if there are any fonts to install
-        if (installBlock.Fonts == null || installBlock.Fonts.Count == 0)
+        foreach (var font in installBlock.Fonts)
         {
-            return results;
+            var result = await InstallSingleFontAsync(font, context.FontDirectory, cancellationToken);
+            results.Add(result);
         }
 
-        // Skip installation if dry-run is enabled
-        if (context.DryRun)
-        {
-            return results;
-        }
+        await RefreshFontCacheIfNeededAsync(results, cancellationToken);
+        return results;
+    }
 
-        // Ensure font directory exists
+    private static bool TryEnsureFontDirectory(string fontDirectory, out string? error)
+    {
+        error = null;
         try
         {
-            Directory.CreateDirectory(context.FontDirectory);
+            Directory.CreateDirectory(fontDirectory);
+            return true;
         }
         catch (Exception ex)
         {
-            foreach (var font in installBlock.Fonts)
-            {
-                results.Add(InstallResult.Failed(font.Name, SourceType, $"Failed to create font directory: {ex.Message}"));
-            }
-            return results;
+            error = $"Failed to create font directory: {ex.Message}";
+            return false;
         }
+    }
 
-        // Download and install each font
-        foreach (var font in installBlock.Fonts)
+    private async Task<InstallResult> InstallSingleFontAsync(FontItem font, string fontDirectory, CancellationToken cancellationToken)
+    {
+        try
         {
-            try
+            var fontData = await DownloadFontAsync(font, cancellationToken);
+            if (fontData == null)
             {
-                // Download font archive
-                byte[] fontData;
-                try
-                {
-                    fontData = await _downloader.DownloadAsync(font.Url, cancellationToken);
-                }
-                catch (Exception ex)
-                {
-                    results.Add(InstallResult.Failed(font.Name, SourceType, $"Failed to download font from {font.Url}: {ex.Message}"));
-                    continue;
-                }
-
-                // Create font directory
-                var fontDir = Path.Combine(context.FontDirectory, font.Name);
-                try
-                {
-                    Directory.CreateDirectory(fontDir);
-                }
-                catch (Exception ex)
-                {
-                    results.Add(InstallResult.Failed(font.Name, SourceType, $"Failed to create font subdirectory: {ex.Message}"));
-                    continue;
-                }
-
-                // Extract font archive
-                try
-                {
-                    // Save the downloaded data to a temporary file with .zip extension
-                    // (required by ArchiveExtractor which determines format by extension)
-                    var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.zip");
-                    try
-                    {
-                        await File.WriteAllBytesAsync(tempFile, fontData, cancellationToken);
-                        _extractor.Extract(tempFile, fontDir);
-                        results.Add(InstallResult.Success(font.Name, SourceType));
-                    }
-                    finally
-                    {
-                        // Clean up temp file
-                        try
-                        {
-                            File.Delete(tempFile);
-                        }
-                        catch
-                        {
-                            // Ignore cleanup errors
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    results.Add(InstallResult.Failed(font.Name, SourceType, $"Failed to extract font archive: {ex.Message}"));
-                }
+                return InstallResult.Failed(font.Name, SourceType, $"Failed to download font from {font.Url}");
             }
-            catch (Exception ex)
+
+            var fontDir = CreateFontSubdirectory(font.Name, fontDirectory);
+            if (fontDir == null)
             {
-                results.Add(InstallResult.Failed(font.Name, SourceType, $"Unexpected error installing font: {ex.Message}"));
+                return InstallResult.Failed(font.Name, SourceType, "Failed to create font subdirectory");
             }
+
+            return await ExtractFontArchiveAsync(font.Name, fontData, fontDir, cancellationToken);
         }
+        catch (Exception ex)
+        {
+            return InstallResult.Failed(font.Name, SourceType, $"Unexpected error installing font: {ex.Message}");
+        }
+    }
 
-        // Refresh font cache after all fonts are installed
-        if (results.Any(r => r.Status == InstallStatus.Success))
+    private async Task<byte[]?> DownloadFontAsync(FontItem font, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _downloader.DownloadAsync(font.Url, cancellationToken);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string? CreateFontSubdirectory(string fontName, string fontDirectory)
+    {
+        try
+        {
+            var fontDir = Path.Combine(fontDirectory, fontName);
+            Directory.CreateDirectory(fontDir);
+            return fontDir;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private async Task<InstallResult> ExtractFontArchiveAsync(string fontName, byte[] fontData, string fontDir, CancellationToken cancellationToken)
+    {
+        var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.zip");
+        try
+        {
+            await File.WriteAllBytesAsync(tempFile, fontData, cancellationToken);
+            _extractor.Extract(tempFile, fontDir);
+            return InstallResult.Success(fontName, SourceType);
+        }
+        catch (Exception ex)
+        {
+            return InstallResult.Failed(fontName, SourceType, $"Failed to extract font archive: {ex.Message}");
+        }
+        finally
+        {
+            TryDeleteFile(tempFile);
+        }
+    }
+
+    private static void TryDeleteFile(string path)
+    {
+        try
+        {
+            File.Delete(path);
+        }
+        catch
+        {
+            // Ignore cleanup errors
+        }
+    }
+
+    private async Task RefreshFontCacheIfNeededAsync(List<InstallResult> results, CancellationToken cancellationToken)
+    {
+        if (results.Exists(r => r.Status == InstallStatus.Success))
         {
             try
             {
@@ -148,7 +173,5 @@ public class FontInstaller : IInstallSource
                 // Font cache update failure is non-critical
             }
         }
-
-        return results;
     }
 }

@@ -1,4 +1,8 @@
-// Licensed under the MIT License. See LICENSE in the project root for license information.
+// -----------------------------------------------------------------------
+// <copyright file="ScriptRunner.cs" company="Ryan Anthony">
+// Copyright (c) Ryan Anthony. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 using Dottie.Configuration.Installing.Utilities;
 using Dottie.Configuration.Models.InstallBlocks;
@@ -14,6 +18,7 @@ public class ScriptRunner : IInstallSource
     private readonly IProcessRunner _processRunner;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="ScriptRunner"/> class.
     /// Creates a new instance of <see cref="ScriptRunner"/>.
     /// </summary>
     /// <param name="processRunner">Process runner for executing system commands. If null, a default instance is created.</param>
@@ -28,85 +33,74 @@ public class ScriptRunner : IInstallSource
     /// <inheritdoc/>
     public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, CancellationToken cancellationToken = default)
     {
-        if (installBlock == null)
-        {
-            throw new ArgumentNullException(nameof(installBlock));
-        }
+        ArgumentNullException.ThrowIfNull(installBlock);
+        ArgumentNullException.ThrowIfNull(context);
 
-        if (context == null)
-        {
-            throw new ArgumentNullException(nameof(context));
-        }
-
-        var results = new List<InstallResult>();
-
-        // Check if there are any scripts to run
         if (installBlock.Scripts == null || installBlock.Scripts.Count == 0)
         {
-            return results;
+            return [];
         }
 
-        // Skip installation if dry-run is enabled
-        if (context.DryRun)
+        return context.DryRun
+            ? ValidateScriptsExist(installBlock.Scripts.AsReadOnly(), context.RepoRoot)
+            : await ExecuteScriptsAsync(installBlock.Scripts.AsReadOnly(), context, cancellationToken);
+    }
+
+    private List<InstallResult> ValidateScriptsExist(IReadOnlyList<string> scripts, string repoRoot)
+    {
+        var results = new List<InstallResult>();
+        foreach (var scriptPath in scripts)
         {
-            // In dry-run mode, just validate scripts exist
-            foreach (var scriptPath in installBlock.Scripts)
-            {
-                var fullPath = Path.Combine(context.RepoRoot, scriptPath);
-                if (File.Exists(fullPath))
-                {
-                    results.Add(InstallResult.Success(scriptPath, SourceType, null, $"Script would be executed: {scriptPath}"));
-                }
-                else
-                {
-                    results.Add(InstallResult.Failed(scriptPath, SourceType, $"Script not found: {scriptPath}"));
-                }
-            }
-            return results;
-        }
-
-        // Execute each script
-        foreach (var scriptPath in installBlock.Scripts)
-        {
-            try
-            {
-                // Validate path doesn't escape repo root
-                var fullPath = Path.GetFullPath(Path.Combine(context.RepoRoot, scriptPath));
-                if (!fullPath.StartsWith(context.RepoRoot, StringComparison.Ordinal))
-                {
-                    results.Add(InstallResult.Failed(scriptPath, SourceType, "Script path escapes repository root"));
-                    continue;
-                }
-
-                // Validate script exists
-                if (!File.Exists(fullPath))
-                {
-                    results.Add(InstallResult.Failed(scriptPath, SourceType, "Script file not found"));
-                    continue;
-                }
-
-                // Execute script
-                var processResult = await _processRunner.RunAsync(
-                    "bash",
-                    fullPath,
-                    workingDirectory: context.RepoRoot,
-                    cancellationToken: cancellationToken);
-
-                if (processResult.Success)
-                {
-                    results.Add(InstallResult.Success(scriptPath, SourceType));
-                }
-                else
-                {
-                    results.Add(InstallResult.Failed(scriptPath, SourceType, $"Script exited with code {processResult.ExitCode}"));
-                }
-            }
-            catch (Exception ex)
-            {
-                results.Add(InstallResult.Failed(scriptPath, SourceType, $"Exception during script execution: {ex.Message}"));
-            }
+            var fullPath = Path.Combine(repoRoot, scriptPath);
+            var result = File.Exists(fullPath)
+                ? InstallResult.Success(scriptPath, SourceType, message: $"Script would be executed: {scriptPath}")
+                : InstallResult.Failed(scriptPath, SourceType, $"Script not found: {scriptPath}");
+            results.Add(result);
         }
 
         return results;
+    }
+
+    private async Task<List<InstallResult>> ExecuteScriptsAsync(IReadOnlyList<string> scripts, InstallContext context, CancellationToken cancellationToken)
+    {
+        var results = new List<InstallResult>();
+        foreach (var scriptPath in scripts)
+        {
+            var result = await ExecuteSingleScriptAsync(scriptPath, context, cancellationToken);
+            results.Add(result);
+        }
+
+        return results;
+    }
+
+    private async Task<InstallResult> ExecuteSingleScriptAsync(string scriptPath, InstallContext context, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var fullPath = Path.GetFullPath(Path.Combine(context.RepoRoot, scriptPath));
+            if (!fullPath.StartsWith(context.RepoRoot, StringComparison.Ordinal))
+            {
+                return InstallResult.Failed(scriptPath, SourceType, "Script path escapes repository root");
+            }
+
+            if (!File.Exists(fullPath))
+            {
+                return InstallResult.Failed(scriptPath, SourceType, "Script file not found");
+            }
+
+            var processResult = await _processRunner.RunAsync(
+                "bash",
+                fullPath,
+                workingDirectory: context.RepoRoot,
+                cancellationToken: cancellationToken);
+
+            return processResult.Success
+                ? InstallResult.Success(scriptPath, SourceType)
+                : InstallResult.Failed(scriptPath, SourceType, $"Script exited with code {processResult.ExitCode}");
+        }
+        catch (Exception ex)
+        {
+            return InstallResult.Failed(scriptPath, SourceType, $"Exception during script execution: {ex.Message}");
+        }
     }
 }

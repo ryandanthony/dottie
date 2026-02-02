@@ -14,6 +14,9 @@ public sealed class StarterTemplateTests : IDisposable
 {
     private readonly string _tempDir;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="StarterTemplateTests"/> class.
+    /// </summary>
     public StarterTemplateTests()
     {
         _tempDir = Path.Combine(Path.GetTempPath(), $"dottie-test-{Guid.NewGuid()}");

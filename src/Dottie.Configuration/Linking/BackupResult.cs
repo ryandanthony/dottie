@@ -14,11 +14,17 @@ public sealed record BackupResult
     /// <summary>
     /// Gets a value indicating whether the backup succeeded.
     /// </summary>
+    /// <value>
+    /// <placeholder>A value indicating whether the backup succeeded.</placeholder>
+    /// </value>
     public bool IsSuccess { get; init; }
 
     /// <summary>
     /// Gets the original path that was backed up.
     /// </summary>
+    /// <value>
+    /// <placeholder>The original path that was backed up.</placeholder>
+    /// </value>
     public required string OriginalPath { get; init; }
 
     /// <summary>
@@ -27,16 +33,25 @@ public sealed record BackupResult
     /// <remarks>
     /// Null if the backup failed.
     /// </remarks>
+    /// <value>
+    /// <placeholder>The backup path where the original was moved.</placeholder>
+    /// </value>
     public string? BackupPath { get; init; }
 
     /// <summary>
     /// Gets the error message if the backup failed.
     /// </summary>
+    /// <value>
+    /// <placeholder>The error message if the backup failed.</placeholder>
+    /// </value>
     public string? Error { get; init; }
 
     /// <summary>
     /// Gets the timestamp when the backup was created.
     /// </summary>
+    /// <value>
+    /// <placeholder>The timestamp when the backup was created.</placeholder>
+    /// </value>
     public DateTimeOffset Timestamp { get; init; }
 
     /// <summary>

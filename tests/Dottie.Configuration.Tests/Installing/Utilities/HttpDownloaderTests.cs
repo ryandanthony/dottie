@@ -20,10 +20,13 @@ public class HttpDownloaderTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    #region DownloadAsync - Argument Validation Tests
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task DownloadAsync_WithNullUrl_ThrowsArgumentException()
+    public async Task DownloadAsync_WithNullUrl_ThrowsArgumentExceptionAsync()
     {
         // Act & Assert
         await FluentActions.Invoking(() => _downloader.DownloadAsync(null!))
@@ -32,8 +35,12 @@ public class HttpDownloaderTests : IDisposable
             .WithParameterName("url");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task DownloadAsync_WithEmptyUrl_ThrowsArgumentException()
+    public async Task DownloadAsync_WithEmptyUrl_ThrowsArgumentExceptionAsync()
     {
         // Act & Assert
         await FluentActions.Invoking(() => _downloader.DownloadAsync(string.Empty))
@@ -42,8 +49,12 @@ public class HttpDownloaderTests : IDisposable
             .WithParameterName("url");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task DownloadAsync_WithWhitespaceUrl_ThrowsArgumentException()
+    public async Task DownloadAsync_WithWhitespaceUrl_ThrowsArgumentExceptionAsync()
     {
         // Act & Assert
         await FluentActions.Invoking(() => _downloader.DownloadAsync("   "))
@@ -52,12 +63,14 @@ public class HttpDownloaderTests : IDisposable
             .WithParameterName("url");
     }
 
-    #endregion
 
-    #region DownloadAsync - Success Tests
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task DownloadAsync_WithValidUrl_ReturnsContent()
+    public async Task DownloadAsync_WithValidUrl_ReturnsContentAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -72,8 +85,12 @@ public class HttpDownloaderTests : IDisposable
         content.Should().NotBeEmpty();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task DownloadAsync_WithValidUrl_CallsCorrectEndpoint()
+    public async Task DownloadAsync_WithValidUrl_CallsCorrectEndpointAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -90,8 +107,12 @@ public class HttpDownloaderTests : IDisposable
             .Times(1);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task DownloadAsync_ReturnsNonEmptyBytesFromResponse()
+    public async Task DownloadAsync_ReturnsNonEmptyBytesFromResponseAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -105,8 +126,12 @@ public class HttpDownloaderTests : IDisposable
         result.Length.Should().BeGreaterThan(0);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task DownloadAsync_WithLargeContent_ReturnsAllContent()
+    public async Task DownloadAsync_WithLargeContent_ReturnsAllContentAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -121,12 +146,14 @@ public class HttpDownloaderTests : IDisposable
         result.Length.Should().Be(10000);
     }
 
-    #endregion
 
-    #region DownloadAsync - Error Handling Tests
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task DownloadAsync_With404Response_ThrowsHttpRequestException()
+    public async Task DownloadAsync_With404Response_ThrowsHttpRequestExceptionAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -138,8 +165,12 @@ public class HttpDownloaderTests : IDisposable
             .ThrowAsync<HttpRequestException>();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task DownloadAsync_With401Response_ThrowsHttpRequestException()
+    public async Task DownloadAsync_With401Response_ThrowsHttpRequestExceptionAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -151,8 +182,12 @@ public class HttpDownloaderTests : IDisposable
             .ThrowAsync<HttpRequestException>();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task DownloadAsync_With403Response_ThrowsHttpRequestException()
+    public async Task DownloadAsync_With403Response_ThrowsHttpRequestExceptionAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -164,15 +199,18 @@ public class HttpDownloaderTests : IDisposable
             .ThrowAsync<HttpRequestException>();
     }
 
-    #endregion
 
-    #region DownloadAsync - Retry Tests
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task DownloadAsync_WithServerError_RetriesAndEventuallyThrows()
+    public async Task DownloadAsync_WithServerError_RetriesAndEventuallyThrowsAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
+
         // Return 500 for all attempts (MaxRetries = 3)
         _httpTest.RespondWith(status: 500);
         _httpTest.RespondWith(status: 500);
@@ -188,8 +226,12 @@ public class HttpDownloaderTests : IDisposable
             .Times(3);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task DownloadAsync_WithTransientError_RetriesAndSucceeds()
+    public async Task DownloadAsync_WithTransientError_RetriesAndSucceedsAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -208,8 +250,12 @@ public class HttpDownloaderTests : IDisposable
             .Times(3);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task DownloadAsync_WithFirstAttemptSuccess_DoesNotRetry()
+    public async Task DownloadAsync_WithFirstAttemptSuccess_DoesNotRetryAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -223,16 +269,18 @@ public class HttpDownloaderTests : IDisposable
             .Times(1);
     }
 
-    #endregion
 
-    #region DownloadAsync - Cancellation Tests
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task DownloadAsync_WithCancelledToken_ThrowsException()
+    public async Task DownloadAsync_WithCancelledToken_ThrowsExceptionAsync()
     {
         // Arrange - not using HttpTest here as cancellation is checked before HTTP call
         using var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act & Assert - the implementation creates a linked token that checks cancellation
         // The exact exception type may vary based on implementation
@@ -241,12 +289,14 @@ public class HttpDownloaderTests : IDisposable
             .ThrowAsync<Exception>(); // Could be OperationCanceledException or HttpRequestException
     }
 
-    #endregion
 
-    #region IsReachableAsync - Argument Validation Tests
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task IsReachableAsync_WithNullUrl_ReturnsFalse()
+    public async Task IsReachableAsync_WithNullUrl_ReturnsFalseAsync()
     {
         // Act
         var result = await _downloader.IsReachableAsync(null!);
@@ -255,8 +305,12 @@ public class HttpDownloaderTests : IDisposable
         result.Should().BeFalse();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task IsReachableAsync_WithEmptyUrl_ReturnsFalse()
+    public async Task IsReachableAsync_WithEmptyUrl_ReturnsFalseAsync()
     {
         // Act
         var result = await _downloader.IsReachableAsync(string.Empty);
@@ -265,8 +319,12 @@ public class HttpDownloaderTests : IDisposable
         result.Should().BeFalse();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task IsReachableAsync_WithWhitespaceUrl_ReturnsFalse()
+    public async Task IsReachableAsync_WithWhitespaceUrl_ReturnsFalseAsync()
     {
         // Act
         var result = await _downloader.IsReachableAsync("   ");
@@ -275,12 +333,14 @@ public class HttpDownloaderTests : IDisposable
         result.Should().BeFalse();
     }
 
-    #endregion
 
-    #region IsReachableAsync - Success Tests
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task IsReachableAsync_With200Response_ReturnsTrue()
+    public async Task IsReachableAsync_With200Response_ReturnsTrueAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -293,8 +353,12 @@ public class HttpDownloaderTests : IDisposable
         result.Should().BeTrue();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task IsReachableAsync_With200Response_UsesHeadMethod()
+    public async Task IsReachableAsync_With200Response_UsesHeadMethodAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -309,8 +373,12 @@ public class HttpDownloaderTests : IDisposable
             .Times(1);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task IsReachableAsync_With201Response_ReturnsTrue()
+    public async Task IsReachableAsync_With201Response_ReturnsTrueAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -323,8 +391,12 @@ public class HttpDownloaderTests : IDisposable
         result.Should().BeTrue();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task IsReachableAsync_With204Response_ReturnsTrue()
+    public async Task IsReachableAsync_With204Response_ReturnsTrueAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -337,12 +409,14 @@ public class HttpDownloaderTests : IDisposable
         result.Should().BeTrue();
     }
 
-    #endregion
 
-    #region IsReachableAsync - Failure Tests
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task IsReachableAsync_With404Response_ReturnsFalse()
+    public async Task IsReachableAsync_With404Response_ReturnsFalseAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -355,8 +429,12 @@ public class HttpDownloaderTests : IDisposable
         result.Should().BeFalse();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task IsReachableAsync_With500Response_ReturnsFalse()
+    public async Task IsReachableAsync_With500Response_ReturnsFalseAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -369,8 +447,12 @@ public class HttpDownloaderTests : IDisposable
         result.Should().BeFalse();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task IsReachableAsync_With301Response_ReturnsFalse()
+    public async Task IsReachableAsync_With301Response_ReturnsFalseAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -383,8 +465,12 @@ public class HttpDownloaderTests : IDisposable
         result.Should().BeFalse();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task IsReachableAsync_WhenExceptionThrown_ReturnsFalse()
+    public async Task IsReachableAsync_WhenExceptionThrown_ReturnsFalseAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -397,12 +483,14 @@ public class HttpDownloaderTests : IDisposable
         result.Should().BeFalse();
     }
 
-    #endregion
 
-    #region IsReachableAsync - Cancellation Tests
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task IsReachableAsync_WhenExceptionOccurs_ReturnsFalse()
+    public async Task IsReachableAsync_WhenExceptionOccurs_ReturnsFalseAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -414,6 +502,4 @@ public class HttpDownloaderTests : IDisposable
         // Assert - IsReachable catches all exceptions and returns false
         result.Should().BeFalse();
     }
-
-    #endregion
 }

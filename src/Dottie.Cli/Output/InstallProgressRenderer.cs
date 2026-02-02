@@ -1,30 +1,13 @@
-// Licensed under the MIT License. See LICENSE in the project root for license information.
+// -----------------------------------------------------------------------
+// <copyright file="InstallProgressRenderer.cs" company="Ryan Anthony">
+// Copyright (c) Ryan Anthony. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 using Dottie.Configuration.Installing;
 using Spectre.Console;
 
 namespace Dottie.Cli.Output;
-
-/// <summary>
-/// Renders installation progress and results to the console.
-/// </summary>
-public interface IInstallProgressRenderer
-{
-    /// <summary>
-    /// Renders a single installation result.
-    /// </summary>
-    void RenderProgress(InstallResult result);
-
-    /// <summary>
-    /// Renders a summary of all installation results.
-    /// </summary>
-    void RenderSummary(IEnumerable<InstallResult> results);
-
-    /// <summary>
-    /// Renders an error message.
-    /// </summary>
-    void RenderError(string message);
-}
 
 /// <summary>
 /// Implementation of install progress renderer using Spectre.Console.
@@ -34,13 +17,15 @@ public sealed class InstallProgressRenderer : IInstallProgressRenderer
     /// <inheritdoc/>
     public void RenderProgress(InstallResult result)
     {
+        ArgumentNullException.ThrowIfNull(result);
+
         var icon = result.Status switch
         {
             InstallStatus.Success => "[green]✓[/]",
             InstallStatus.Failed => "[red]✗[/]",
             InstallStatus.Skipped => "[yellow]⊘[/]",
             InstallStatus.Warning => "[yellow]⚠[/]",
-            _ => "[dim]?[/]"
+            _ => "[dim]?[/]",
         };
 
         var statusText = result.Status switch
@@ -49,7 +34,7 @@ public sealed class InstallProgressRenderer : IInstallProgressRenderer
             InstallStatus.Failed => $"[red]{result.Status}[/]",
             InstallStatus.Skipped => $"[yellow]{result.Status}[/]",
             InstallStatus.Warning => $"[yellow]{result.Status}[/]",
-            _ => result.Status.ToString()
+            _ => result.Status.ToString(),
         };
 
         var sourceType = $"[dim]({result.SourceType})[/]";
@@ -62,7 +47,7 @@ public sealed class InstallProgressRenderer : IInstallProgressRenderer
     public void RenderSummary(IEnumerable<InstallResult> results)
     {
         var resultList = results.ToList();
-        if (!resultList.Any())
+        if (resultList.Count == 0)
         {
             AnsiConsole.MarkupLine("[yellow]No items to install.[/]");
             return;
@@ -81,10 +66,25 @@ public sealed class InstallProgressRenderer : IInstallProgressRenderer
 
         AnsiConsole.WriteLine();
         AnsiConsole.MarkupLine("[bold]Installation Summary:[/]");
-        if (succeeded > 0) AnsiConsole.MarkupLine($"  [green]✓ Succeeded:[/] {succeeded}");
-        if (failed > 0) AnsiConsole.MarkupLine($"  [red]✗ Failed:[/] {failed}");
-        if (skipped > 0) AnsiConsole.MarkupLine($"  [yellow]⊘ Skipped:[/] {skipped}");
-        if (warnings > 0) AnsiConsole.MarkupLine($"  [yellow]⚠ Warnings:[/] {warnings}");
+        if (succeeded > 0)
+        {
+            AnsiConsole.MarkupLine($"  [green]✓ Succeeded:[/] {succeeded}");
+        }
+
+        if (failed > 0)
+        {
+            AnsiConsole.MarkupLine($"  [red]✗ Failed:[/] {failed}");
+        }
+
+        if (skipped > 0)
+        {
+            AnsiConsole.MarkupLine($"  [yellow]⊘ Skipped:[/] {skipped}");
+        }
+
+        if (warnings > 0)
+        {
+            AnsiConsole.MarkupLine($"  [yellow]⚠ Warnings:[/] {warnings}");
+        }
     }
 
     /// <inheritdoc/>

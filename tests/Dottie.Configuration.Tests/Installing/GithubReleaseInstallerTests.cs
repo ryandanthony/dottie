@@ -33,8 +33,12 @@ public class GithubReleaseInstallerTests : IDisposable
         result.Should().Be(InstallSourceType.GithubRelease);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithEmptyReleasesList_ReturnsEmptyResults()
+    public async Task InstallAsync_WithEmptyReleasesList_ReturnsEmptyResultsAsync()
     {
         // Arrange
         var installBlock = new InstallBlock { Github = new List<GithubReleaseItem>() };
@@ -47,22 +51,30 @@ public class GithubReleaseInstallerTests : IDisposable
         results.Should().BeEmpty();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithValidContext_DoesNotThrow()
+    public async Task InstallAsync_WithValidContext_DoesNotThrowAsync()
     {
         // Arrange
         var installBlock = new InstallBlock();
         var context = new InstallContext { RepoRoot = "/repo" };
 
         // Act
-        var action = async () => await _installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var action = async () => await _installer.InstallAsync(installBlock, context, CancellationToken.None).ConfigureAwait(false);
 
         // Assert
         await action.Should().NotThrowAsync();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithNullGithubList_ReturnsEmptyResults()
+    public async Task InstallAsync_WithNullGithubList_ReturnsEmptyResultsAsync()
     {
         // Arrange
         var installBlock = new InstallBlock { Github = null };
@@ -75,8 +87,12 @@ public class GithubReleaseInstallerTests : IDisposable
         results.Should().BeEmpty();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithEmptyGithubList_ReturnsEmptyResults()
+    public async Task InstallAsync_WithEmptyGithubList_ReturnsEmptyResultsAsync()
     {
         // Arrange
         var installBlock = new InstallBlock { Github = new List<GithubReleaseItem>() };
@@ -89,38 +105,49 @@ public class GithubReleaseInstallerTests : IDisposable
         results.Should().BeEmpty();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithNullInstallBlock_ThrowsArgumentNullException()
+    public async Task InstallAsync_WithNullInstallBlock_ThrowsArgumentNullExceptionAsync()
     {
         // Arrange
         var context = new InstallContext { RepoRoot = "/repo", DryRun = true };
 
         // Act
-        Func<Task> act = async () => await _installer.InstallAsync(null!, context);
+        Func<Task> act = async () => await _installer.InstallAsync(null!, context).ConfigureAwait(false);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>()
             .WithParameterName("installBlock");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithNullContext_ThrowsArgumentNullException()
+    public async Task InstallAsync_WithNullContext_ThrowsArgumentNullExceptionAsync()
     {
         // Arrange
         var installBlock = new InstallBlock();
 
         // Act
-        Func<Task> act = async () => await _installer.InstallAsync(installBlock, null!);
+        Func<Task> act = async () => await _installer.InstallAsync(installBlock, null!).ConfigureAwait(false);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>()
             .WithParameterName("context");
     }
 
-    #region Dry Run Tests with HttpTest
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_DryRun_WhenReleaseExists_ReturnsSuccess()
+    public async Task InstallAsync_DryRun_WhenReleaseExists_ReturnsSuccessAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -138,7 +165,7 @@ public class GithubReleaseInstallerTests : IDisposable
                     Binary = "mybin",
                     Version = "v1.0.0"
                 }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", DryRun = true };
 
@@ -156,8 +183,12 @@ public class GithubReleaseInstallerTests : IDisposable
             .Times(1);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_DryRun_WhenReleaseNotFound_ReturnsFailed()
+    public async Task InstallAsync_DryRun_WhenReleaseNotFound_ReturnsFailedAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -174,7 +205,7 @@ public class GithubReleaseInstallerTests : IDisposable
                     Asset = "*.tar.gz",
                     Binary = "mybin"
                 }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", DryRun = true };
 
@@ -187,8 +218,12 @@ public class GithubReleaseInstallerTests : IDisposable
         results.First().Message.Should().Contain("404");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_DryRun_WithoutVersion_UsesLatestEndpoint()
+    public async Task InstallAsync_DryRun_WithoutVersion_UsesLatestEndpointAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -204,9 +239,10 @@ public class GithubReleaseInstallerTests : IDisposable
                     Repo = "owner/repo",
                     Asset = "*.tar.gz",
                     Binary = "mybin"
+
                     // No version - should use latest
                 }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", DryRun = true };
 
@@ -219,8 +255,12 @@ public class GithubReleaseInstallerTests : IDisposable
             .Times(1);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_DryRun_WithVersion_UsesTagEndpoint()
+    public async Task InstallAsync_DryRun_WithVersion_UsesTagEndpointAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -238,7 +278,7 @@ public class GithubReleaseInstallerTests : IDisposable
                     Binary = "mybin",
                     Version = "v2.0.0"
                 }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", DryRun = true };
 
@@ -250,8 +290,12 @@ public class GithubReleaseInstallerTests : IDisposable
             .Times(1);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_DryRun_SetsUserAgentHeader()
+    public async Task InstallAsync_DryRun_SetsUserAgentHeaderAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -268,7 +312,7 @@ public class GithubReleaseInstallerTests : IDisposable
                     Asset = "*.tar.gz",
                     Binary = "mybin"
                 }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", DryRun = true };
 
@@ -281,8 +325,12 @@ public class GithubReleaseInstallerTests : IDisposable
             .Times(1);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_DryRun_WhenHttpException_ReturnsFailed()
+    public async Task InstallAsync_DryRun_WhenHttpException_ReturnsFailedAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -299,7 +347,7 @@ public class GithubReleaseInstallerTests : IDisposable
                     Asset = "*.tar.gz",
                     Binary = "mybin"
                 }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", DryRun = true };
 
@@ -312,13 +360,17 @@ public class GithubReleaseInstallerTests : IDisposable
         results.First().Message.Should().Contain("Failed to verify");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_DryRun_MultipleItems_ProcessesAll()
+    public async Task InstallAsync_DryRun_MultipleItems_ProcessesAllAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
         _httpTest
-            .RespondWith(status: 200)  // First item succeeds
+            .RespondWith(status: 200) // First item succeeds
             .RespondWith(status: 404); // Second item not found
 
         var installer = new GithubReleaseInstaller();
@@ -328,7 +380,7 @@ public class GithubReleaseInstallerTests : IDisposable
             {
                 new GithubReleaseItem { Repo = "owner/exists", Asset = "*.tar.gz", Binary = "bin1" },
                 new GithubReleaseItem { Repo = "owner/notexists", Asset = "*.tar.gz", Binary = "bin2" }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", DryRun = true };
 
@@ -341,12 +393,14 @@ public class GithubReleaseInstallerTests : IDisposable
         results.Should().ContainSingle(r => r.Status == InstallStatus.Failed && r.ItemName == "bin2");
     }
 
-    #endregion
 
-    #region Full Install Tests with HttpTest and FakeProcessRunner
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WhenReleaseApiReturnsNull_ReturnsFailed()
+    public async Task InstallAsync_WhenReleaseApiReturnsNull_ReturnsFailedAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -366,7 +420,7 @@ public class GithubReleaseInstallerTests : IDisposable
                     Asset = "*.tar.gz",
                     Binary = "mybin"
                 }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", DryRun = false, HasSudo = true };
 
@@ -379,8 +433,12 @@ public class GithubReleaseInstallerTests : IDisposable
         results.First().Message.Should().Contain("not found");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WhenAssetNotMatched_ReturnsFailed()
+    public async Task InstallAsync_WhenAssetNotMatched_ReturnsFailedAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -389,7 +447,7 @@ public class GithubReleaseInstallerTests : IDisposable
             assets = new[]
             {
                 new { name = "app-windows.exe", browser_download_url = "https://example.com/app-windows.exe" }
-            }
+            },
         });
 
         var mockDownloader = new Mock<HttpDownloader>();
@@ -406,7 +464,7 @@ public class GithubReleaseInstallerTests : IDisposable
                     Asset = "*-linux.tar.gz",  // Won't match
                     Binary = "mybin"
                 }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", DryRun = false, HasSudo = true };
 
@@ -419,8 +477,12 @@ public class GithubReleaseInstallerTests : IDisposable
         results.First().Message.Should().Contain("No asset matching pattern");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WhenDownloadFails_ReturnsFailed()
+    public async Task InstallAsync_WhenDownloadFails_ReturnsFailedAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -429,7 +491,7 @@ public class GithubReleaseInstallerTests : IDisposable
             assets = new[]
             {
                 new { name = "app-linux.tar.gz", browser_download_url = "https://example.com/app-linux.tar.gz" }
-            }
+            },
         });
 
         var mockDownloader = new Mock<HttpDownloader>();
@@ -450,7 +512,7 @@ public class GithubReleaseInstallerTests : IDisposable
                     Asset = "*-linux.tar.gz",
                     Binary = "mybin"
                 }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", DryRun = false, HasSudo = true };
 
@@ -463,8 +525,12 @@ public class GithubReleaseInstallerTests : IDisposable
         results.First().Message.Should().Contain("Failed to download");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithGlobPattern_MatchesCorrectAsset()
+    public async Task InstallAsync_WithGlobPattern_MatchesCorrectAssetAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -475,7 +541,7 @@ public class GithubReleaseInstallerTests : IDisposable
                 new { name = "app-v1.0.0-windows-amd64.zip", browser_download_url = "https://example.com/win.zip" },
                 new { name = "app-v1.0.0-linux-amd64.tar.gz", browser_download_url = "https://example.com/linux.tar.gz" },
                 new { name = "app-v1.0.0-darwin-amd64.tar.gz", browser_download_url = "https://example.com/darwin.tar.gz" }
-            }
+            },
         });
 
         var mockDownloader = new Mock<HttpDownloader>();
@@ -496,7 +562,7 @@ public class GithubReleaseInstallerTests : IDisposable
                     Asset = "*-linux-amd64.tar.gz",
                     Binary = "app"
                 }
-            }
+            },
         };
 
         var tempDir = Path.Combine(Path.GetTempPath(), $"test-bin-{Guid.NewGuid():N}");
@@ -509,7 +575,7 @@ public class GithubReleaseInstallerTests : IDisposable
                 RepoRoot = "/repo",
                 DryRun = false,
                 HasSudo = true,
-                BinDirectory = tempDir
+                BinDirectory = tempDir,
             };
 
             // Act
@@ -527,8 +593,12 @@ public class GithubReleaseInstallerTests : IDisposable
         }
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_ParsesGithubApiResponse_Correctly()
+    public async Task InstallAsync_ParsesGithubApiResponse_CorrectlyAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -542,7 +612,7 @@ public class GithubReleaseInstallerTests : IDisposable
                     name = "myapp-linux-amd64",
                     browser_download_url = "https://github.com/owner/repo/releases/download/v1.2.3/myapp-linux-amd64"
                 }
-            }
+            },
         });
 
         var mockDownloader = new Mock<HttpDownloader>();
@@ -568,14 +638,14 @@ public class GithubReleaseInstallerTests : IDisposable
                         Asset = "myapp-linux-amd64",
                         Binary = "myapp"
                     }
-                }
+                },
             };
             var context = new InstallContext
             {
                 RepoRoot = "/repo",
                 DryRun = false,
                 HasSudo = true,
-                BinDirectory = tempDir
+                BinDirectory = tempDir,
             };
 
             // Act
@@ -594,10 +664,6 @@ public class GithubReleaseInstallerTests : IDisposable
             }
         }
     }
-
-    #endregion
-
-    #region Constructor Tests
 
     [Fact]
     public void Constructor_WithNullParameters_CreatesDefaults()
@@ -636,12 +702,14 @@ public class GithubReleaseInstallerTests : IDisposable
         installer.Should().NotBeNull();
     }
 
-    #endregion
 
-    #region Error Handling Tests
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WhenExceptionThrown_ReturnsFailedResult()
+    public async Task InstallAsync_WhenExceptionThrown_ReturnsFailedResultAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -650,7 +718,7 @@ public class GithubReleaseInstallerTests : IDisposable
             assets = new[]
             {
                 new { name = "app.tar.gz", browser_download_url = "https://example.com/app.tar.gz" }
-            }
+            },
         });
 
         var mockDownloader = new Mock<HttpDownloader>();
@@ -669,7 +737,7 @@ public class GithubReleaseInstallerTests : IDisposable
                     Asset = "*.tar.gz",
                     Binary = "mybin"
                 }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", DryRun = false, HasSudo = true };
 
@@ -681,8 +749,12 @@ public class GithubReleaseInstallerTests : IDisposable
         results.First().Status.Should().Be(InstallStatus.Failed);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WhenJsonParsingFails_ReturnsNull()
+    public async Task InstallAsync_WhenJsonParsingFails_ReturnsNullAsync()
     {
         // Arrange
         _httpTest = new HttpTest();
@@ -699,7 +771,7 @@ public class GithubReleaseInstallerTests : IDisposable
                     Asset = "*.tar.gz",
                     Binary = "mybin"
                 }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", DryRun = false, HasSudo = true };
 
@@ -711,6 +783,4 @@ public class GithubReleaseInstallerTests : IDisposable
         results.First().Status.Should().Be(InstallStatus.Failed);
         results.First().Message.Should().Contain("not found");
     }
-
-    #endregion
 }

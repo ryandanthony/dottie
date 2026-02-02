@@ -39,7 +39,7 @@ public class InstallCommandSettingsTests
         var settings = new InstallCommandSettings
         {
             ProfileName = "custom-profile",
-            ConfigPath = "/path/to/config.yml"
+            ConfigPath = "/path/to/config.yml",
         };
 
         // Act & Assert

@@ -1,7 +1,7 @@
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
-using Dottie.Configuration.Installing;
 using Dottie.Cli.Output;
+using Dottie.Configuration.Installing;
 using FluentAssertions;
 
 namespace Dottie.Cli.Tests.Output;
@@ -13,6 +13,9 @@ public class InstallProgressRendererTests
 {
     private readonly InstallProgressRenderer _renderer;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="InstallProgressRendererTests"/> class.
+    /// </summary>
     public InstallProgressRendererTests()
     {
         _renderer = new InstallProgressRenderer();
@@ -79,7 +82,7 @@ public class InstallProgressRendererTests
             InstallResult.Success("pkg1", InstallSourceType.GithubRelease),
             InstallResult.Success("pkg2", InstallSourceType.AptPackage),
             InstallResult.Failed("pkg3", InstallSourceType.Font, "Download error"),
-            InstallResult.Skipped("pkg4", InstallSourceType.Script, "Already installed")
+            InstallResult.Skipped("pkg4", InstallSourceType.Script, "Already installed"),
         };
 
         // Act

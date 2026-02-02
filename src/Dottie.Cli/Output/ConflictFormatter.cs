@@ -28,6 +28,10 @@ public static class ConflictFormatter
         IReadOnlyList<Conflict> conflicts,
         string repoRoot)
     {
+        ArgumentNullException.ThrowIfNull(safeEntries);
+        ArgumentNullException.ThrowIfNull(alreadyLinked);
+        ArgumentNullException.ThrowIfNull(conflicts);
+
         AnsiConsole.MarkupLine("[yellow]Dry run - no changes will be made.[/]");
         AnsiConsole.WriteLine();
 

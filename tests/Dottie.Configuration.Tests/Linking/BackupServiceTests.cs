@@ -13,6 +13,9 @@ public sealed class BackupServiceTests : IDisposable
     private readonly string _testDir;
     private bool _disposed;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BackupServiceTests"/> class.
+    /// </summary>
     public BackupServiceTests()
     {
         _testDir = Path.Combine(Path.GetTempPath(), "dottie-backup-tests", Guid.NewGuid().ToString());

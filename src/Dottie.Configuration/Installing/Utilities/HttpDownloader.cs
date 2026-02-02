@@ -1,4 +1,8 @@
-// Licensed under the MIT License. See LICENSE in the project root for license information.
+// -----------------------------------------------------------------------
+// <copyright file="HttpDownloader.cs" company="Ryan Anthony">
+// Copyright (c) Ryan Anthony. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 using Flurl.Http;
 
@@ -11,6 +15,10 @@ public class HttpDownloader
 {
     private const int MaxRetries = 3;
     private const int TimeoutSeconds = 30;
+    private const int RetryDelayBaseMs = 1000;
+    private const int HttpSuccessMin = 200;
+    private const int HttpSuccessMax = 300;
+    private const int HttpServerErrorMin = 500;
 
     /// <summary>
     /// Downloads content from the specified URL with retry logic.
@@ -41,8 +49,7 @@ public class HttpDownloader
             }
             catch (HttpRequestException ex) when (attempt < MaxRetries - 1 && IsRetryable(ex))
             {
-                await Task.Delay(1000 * (attempt + 1), cts.Token); // Exponential backoff
-                continue;
+                await Task.Delay(RetryDelayBaseMs * (attempt + 1), cts.Token); // Exponential backoff
             }
             catch (TaskCanceledException)
             {
@@ -54,7 +61,8 @@ public class HttpDownloader
                 {
                     throw new HttpRequestException($"Failed to download from {url}: {ex.Message}", ex);
                 }
-                await Task.Delay(1000 * (attempt + 1), cts.Token);
+
+                await Task.Delay(RetryDelayBaseMs * (attempt + 1), cts.Token);
             }
         }
 
@@ -83,7 +91,7 @@ public class HttpDownloader
                 .WithTimeout(TimeSpan.FromSeconds(10))
                 .HeadAsync();
 
-            return response.StatusCode >= 200 && response.StatusCode < 300;
+            return response.StatusCode >= HttpSuccessMin && response.StatusCode < HttpSuccessMax;
         }
         catch
         {
@@ -95,6 +103,6 @@ public class HttpDownloader
     {
         // Retry on transient errors (server errors, timeouts)
         return ex.InnerException is TimeoutException
-            || (ex.StatusCode.HasValue && (int)ex.StatusCode >= 500);
+            || (ex.StatusCode.HasValue && (int)ex.StatusCode >= HttpServerErrorMin);
     }
 }

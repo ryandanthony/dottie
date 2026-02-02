@@ -1,4 +1,8 @@
-// Licensed under the MIT License. See LICENSE in the project root for license information.
+// -----------------------------------------------------------------------
+// <copyright file="ArchiveExtractor.cs" company="Ryan Anthony">
+// Copyright (c) Ryan Anthony. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 using System.IO.Compression;
 using System.Text;
@@ -20,6 +24,9 @@ public class ArchiveExtractor
     /// <exception cref="IOException">Thrown when extraction fails.</exception>
     public void Extract(string archivePath, string extractPath)
     {
+        ArgumentNullException.ThrowIfNull(archivePath);
+        ArgumentNullException.ThrowIfNull(extractPath);
+
         if (!File.Exists(archivePath))
         {
             throw new FileNotFoundException($"Archive file not found: {archivePath}");
@@ -54,10 +61,17 @@ public class ArchiveExtractor
     {
         try
         {
+            var fullExtractPath = Path.GetFullPath(extractPath);
             using var archive = ZipFile.OpenRead(zipPath);
             foreach (var entry in archive.Entries)
             {
-                var targetPath = Path.Combine(extractPath, entry.FullName);
+                // Sanitize entry name to prevent zip slip attacks
+                var targetPath = Path.GetFullPath(Path.Combine(fullExtractPath, entry.FullName));
+                if (!targetPath.StartsWith(fullExtractPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException($"Zip entry '{entry.FullName}' would extract outside of the target directory (zip slip detected)");
+                }
+
                 var targetDir = Path.GetDirectoryName(targetPath);
 
                 if (targetDir != null && !Directory.Exists(targetDir))
@@ -104,42 +118,75 @@ public class ArchiveExtractor
     {
         const int blockSize = 512;
         var buffer = new byte[blockSize];
+        var fullExtractPath = Path.GetFullPath(extractPath);
 
-        while (stream.Read(buffer, 0, blockSize) == blockSize)
+        while (TryReadTarEntry(stream, buffer, blockSize, out var entry))
         {
-            var name = Encoding.ASCII.GetString(buffer, 0, 100).TrimEnd('\0');
-            if (string.IsNullOrEmpty(name))
+            if (string.IsNullOrEmpty(entry.Name))
             {
-                break;
+                return;
             }
 
-            var typeflag = (char)buffer[156];
-            var size = Convert.ToInt64(Encoding.ASCII.GetString(buffer, 124, 12).TrimEnd('\0', ' '), 8);
-
-            var targetPath = Path.Combine(extractPath, name);
-            var targetDir = Path.GetDirectoryName(targetPath);
-
-            if (targetDir != null && !Directory.Exists(targetDir))
-            {
-                Directory.CreateDirectory(targetDir);
-            }
-
-            if (typeflag != '5' && size > 0)
-            {
-                using var file = File.Create(targetPath);
-                var remaining = size;
-                while (remaining > 0)
-                {
-                    var toRead = (int)Math.Min(blockSize, remaining);
-                    if (stream.Read(buffer, 0, blockSize) != blockSize)
-                    {
-                        break;
-                    }
-
-                    file.Write(buffer, 0, toRead);
-                    remaining -= toRead;
-                }
-            }
+            ExtractTarEntry(stream, fullExtractPath, entry, buffer, blockSize);
         }
     }
+
+    private static bool TryReadTarEntry(Stream stream, byte[] buffer, int blockSize, out TarEntry entry)
+    {
+        // TAR header field positions and sizes (POSIX ustar format)
+        const int NameOffset = 0;
+        const int NameLength = 100;
+        const int TypeFlagOffset = 156;
+        const int SizeOffset = 124;
+        const int SizeLength = 12;
+        const int OctalBase = 8;
+
+        entry = default;
+        if (stream.Read(buffer, 0, blockSize) != blockSize)
+        {
+            return false;
+        }
+
+        entry = new TarEntry(
+            Encoding.ASCII.GetString(buffer, NameOffset, NameLength).TrimEnd('\0'),
+            (char)buffer[TypeFlagOffset],
+            Convert.ToInt64(Encoding.ASCII.GetString(buffer, SizeOffset, SizeLength).TrimEnd('\0', ' '), OctalBase));
+
+        return true;
+    }
+
+    private static void ExtractTarEntry(Stream stream, string fullExtractPath, TarEntry entry, byte[] buffer, int blockSize)
+    {
+        // Sanitize path to prevent zip slip attacks
+        var targetPath = Path.GetFullPath(Path.Combine(fullExtractPath, entry.Name));
+        if (!targetPath.StartsWith(fullExtractPath, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException($"Tar entry '{entry.Name}' would extract outside of the target directory (zip slip detected)");
+        }
+
+        var targetDir = Path.GetDirectoryName(targetPath);
+        if (targetDir != null && !Directory.Exists(targetDir))
+        {
+            Directory.CreateDirectory(targetDir);
+        }
+
+        if (entry.TypeFlag != '5' && entry.Size > 0)
+        {
+            WriteTarEntryToFile(stream, targetPath, entry.Size, buffer, blockSize);
+        }
+    }
+
+    private static void WriteTarEntryToFile(Stream stream, string targetPath, long size, byte[] buffer, int blockSize)
+    {
+        using var file = File.Create(targetPath);
+        var remaining = size;
+        while (remaining > 0 && stream.Read(buffer, 0, blockSize) == blockSize)
+        {
+            var toWrite = (int)Math.Min(blockSize, remaining);
+            file.Write(buffer, 0, toWrite);
+            remaining -= toWrite;
+        }
+    }
+
+    private readonly record struct TarEntry(string Name, char TypeFlag, long Size);
 }

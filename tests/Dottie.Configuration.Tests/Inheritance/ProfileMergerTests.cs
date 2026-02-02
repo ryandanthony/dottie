@@ -306,7 +306,7 @@ public sealed class ProfileMergerTests
         result.Profile.Install.Fonts[0].Name.Should().Be("JetBrains Mono");
     }
 
-    #pragma warning disable SA1124 // Do not use regions
+#pragma warning disable SA1124 // Do not use regions
 
     #region Phase 4: User Story 2 - Multi-level Inheritance Chain Tests
 
@@ -388,8 +388,7 @@ public sealed class ProfileMergerTests
         result.Profile!.Dotfiles.Should().HaveCount(4);
 
         // gitconfig should be personal's version, not base's
-        var gitconfig = result.Profile.Dotfiles.Single(d =>
-            d.Target == "~/.gitconfig");
+        var gitconfig = result.Profile.Dotfiles.Single(d => string.Equals(d.Target, "~/.gitconfig", StringComparison.Ordinal));
         gitconfig.Source.Should().Be("dotfiles/personal/gitconfig");
     }
 
@@ -446,12 +445,11 @@ public sealed class ProfileMergerTests
         result.Profile!.Dotfiles.Should().HaveCount(5);
 
         // gitconfig should be deep-child's version
-        var gitconfig = result.Profile.Dotfiles.Single(d =>
-            d.Target == "~/.gitconfig");
+        var gitconfig = result.Profile.Dotfiles.Single(d => string.Equals(d.Target, "~/.gitconfig", StringComparison.Ordinal));
         gitconfig.Source.Should().Be("dotfiles/deep/gitconfig");
     }
 
     #endregion
 
-    #pragma warning restore SA1124
+#pragma warning restore SA1124
 }

@@ -14,6 +14,9 @@ public class ArchiveExtractorTests
     private readonly ArchiveExtractor _extractor = new();
     private readonly string _testDir = Path.Combine(Path.GetTempPath(), $"archive-test-{Guid.NewGuid()}");
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ArchiveExtractorTests"/> class.
+    /// </summary>
     public ArchiveExtractorTests()
     {
         if (!Directory.Exists(_testDir))
@@ -51,6 +54,7 @@ public class ArchiveExtractorTests
 
         // Assert
         Directory.Exists(extractDir).Should().BeTrue();
+
         // Note: Tar.gz extraction is complex; verify directory was created
         // Real-world tests would use SharpCompress or similar
     }
@@ -68,6 +72,7 @@ public class ArchiveExtractorTests
 
         // Assert
         Directory.Exists(extractDir).Should().BeTrue();
+
         // Note: Tar.gz extraction is complex; verify directory was created
         // Real-world tests would use SharpCompress or similar
     }
@@ -190,6 +195,9 @@ public class ArchiveExtractorTests
         gzipStream.Write(testData, 0, testData.Length);
     }
 
+    /// <summary>
+    /// Finalizes an instance of the <see cref="ArchiveExtractorTests"/> class.
+    /// </summary>
     ~ArchiveExtractorTests()
     {
         try

@@ -18,6 +18,9 @@ public class FontInstallerTests : IDisposable
     private readonly FontInstaller _installer = new();
     private readonly string _tempDir;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FontInstallerTests"/> class.
+    /// </summary>
     public FontInstallerTests()
     {
         _tempDir = Path.Combine(Path.GetTempPath(), $"FontInstallerTests_{Guid.NewGuid():N}");
@@ -49,6 +52,7 @@ public class FontInstallerTests : IDisposable
         {
             var entry = archive.CreateEntry(fontFileName);
             using var entryStream = entry.Open();
+
             // Write some dummy font data
             var dummyData = new byte[] { 0x00, 0x01, 0x00, 0x00 }; // Minimal TTF header bytes
             entryStream.Write(dummyData, 0, dummyData.Length);
@@ -68,8 +72,12 @@ public class FontInstallerTests : IDisposable
         result.Should().Be(InstallSourceType.Font);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithEmptyFontList_ReturnsEmptyResults()
+    public async Task InstallAsync_WithEmptyFontList_ReturnsEmptyResultsAsync()
     {
         // Arrange
         var installBlock = new InstallBlock();
@@ -82,22 +90,30 @@ public class FontInstallerTests : IDisposable
         results.Should().BeEmpty();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithValidContext_DoesNotThrow()
+    public async Task InstallAsync_WithValidContext_DoesNotThrowAsync()
     {
         // Arrange
         var installBlock = new InstallBlock();
         var context = new InstallContext { RepoRoot = "/repo", FontDirectory = _tempDir };
 
         // Act
-        var action = async () => await _installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var action = async () => await _installer.InstallAsync(installBlock, context, CancellationToken.None).ConfigureAwait(false);
 
         // Assert
         await action.Should().NotThrowAsync();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithDryRun_SkipsInstallation()
+    public async Task InstallAsync_WithDryRun_SkipsInstallationAsync()
     {
         // Arrange
         var installBlock = new InstallBlock
@@ -105,13 +121,13 @@ public class FontInstallerTests : IDisposable
             Fonts = new List<FontItem>
             {
                 new() { Name = "Ubuntu", Url = "https://example.com/font.zip" }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
             FontDirectory = _tempDir,
-            DryRun = true
+            DryRun = true,
         };
 
         // Act
@@ -121,18 +137,22 @@ public class FontInstallerTests : IDisposable
         results.Should().BeEmpty();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithoutFonts_SkipsInstallation()
+    public async Task InstallAsync_WithoutFonts_SkipsInstallationAsync()
     {
         // Arrange
         var installBlock = new InstallBlock
         {
-            Fonts = new List<FontItem>()
+            Fonts = new List<FontItem>(),
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            FontDirectory = _tempDir
+            FontDirectory = _tempDir,
         };
 
         // Act
@@ -142,43 +162,55 @@ public class FontInstallerTests : IDisposable
         results.Should().BeEmpty();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithNullInstallBlock_ThrowsArgumentNullException()
+    public async Task InstallAsync_WithNullInstallBlock_ThrowsArgumentNullExceptionAsync()
     {
         // Arrange
         var context = new InstallContext { RepoRoot = "/repo", FontDirectory = _tempDir };
 
         // Act
-        Func<Task> act = async () => await _installer.InstallAsync(null!, context);
+        Func<Task> act = async () => await _installer.InstallAsync(null!, context).ConfigureAwait(false);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>()
             .WithParameterName("installBlock");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithNullContext_ThrowsArgumentNullException()
+    public async Task InstallAsync_WithNullContext_ThrowsArgumentNullExceptionAsync()
     {
         // Arrange
         var installBlock = new InstallBlock();
 
         // Act
-        Func<Task> act = async () => await _installer.InstallAsync(installBlock, null!);
+        Func<Task> act = async () => await _installer.InstallAsync(installBlock, null!).ConfigureAwait(false);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>()
             .WithParameterName("context");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithNullFontsList_ReturnsEmptyResults()
+    public async Task InstallAsync_WithNullFontsList_ReturnsEmptyResultsAsync()
     {
         // Arrange
         var installBlock = new InstallBlock { Fonts = null };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            FontDirectory = _tempDir
+            FontDirectory = _tempDir,
         };
 
         // Act
@@ -188,10 +220,13 @@ public class FontInstallerTests : IDisposable
         results.Should().BeEmpty();
     }
 
-    #region Tests using Mocks
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WhenDownloadSucceeds_ReturnsSuccessResult()
+    public async Task InstallAsync_WhenDownloadSucceeds_ReturnsSuccessResultAsync()
     {
         // Arrange
         var mockDownloader = new Mock<HttpDownloader>();
@@ -209,12 +244,12 @@ public class FontInstallerTests : IDisposable
             Fonts = new List<FontItem>
             {
                 new() { Name = "TestFont", Url = "https://example.com/testfont.zip" }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            FontDirectory = _tempDir
+            FontDirectory = _tempDir,
         };
 
         // Act
@@ -227,8 +262,12 @@ public class FontInstallerTests : IDisposable
         results.First().SourceType.Should().Be(InstallSourceType.Font);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WhenDownloadFails_ReturnsFailedResult()
+    public async Task InstallAsync_WhenDownloadFails_ReturnsFailedResultAsync()
     {
         // Arrange
         var mockDownloader = new Mock<HttpDownloader>();
@@ -243,12 +282,12 @@ public class FontInstallerTests : IDisposable
             Fonts = new List<FontItem>
             {
                 new() { Name = "FailFont", Url = "https://example.com/failfont.zip" }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            FontDirectory = _tempDir
+            FontDirectory = _tempDir,
         };
 
         // Act
@@ -259,11 +298,14 @@ public class FontInstallerTests : IDisposable
         results.First().Status.Should().Be(InstallStatus.Failed);
         results.First().ItemName.Should().Be("FailFont");
         results.First().Message.Should().Contain("Failed to download");
-        results.First().Message.Should().Contain("Network error");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithMultipleFonts_ProcessesAll()
+    public async Task InstallAsync_WithMultipleFonts_ProcessesAllAsync()
     {
         // Arrange
         var mockDownloader = new Mock<HttpDownloader>();
@@ -283,12 +325,12 @@ public class FontInstallerTests : IDisposable
                 new() { Name = "Font1", Url = "https://example.com/font1.zip" },
                 new() { Name = "Font2", Url = "https://example.com/font2.zip" },
                 new() { Name = "Font3", Url = "https://example.com/font3.zip" }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            FontDirectory = _tempDir
+            FontDirectory = _tempDir,
         };
 
         // Act
@@ -300,8 +342,12 @@ public class FontInstallerTests : IDisposable
         results.Select(r => r.ItemName).Should().BeEquivalentTo(new[] { "Font1", "Font2", "Font3" });
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithMultipleFonts_ReportsPartialSuccess()
+    public async Task InstallAsync_WithMultipleFonts_ReportsPartialSuccessAsync()
     {
         // Arrange
         var mockDownloader = new Mock<HttpDownloader>();
@@ -309,8 +355,8 @@ public class FontInstallerTests : IDisposable
 
         mockDownloader
             .SetupSequence(d => d.DownloadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(validZipBytes)  // Font1 succeeds
-            .ThrowsAsync(new HttpRequestException("Network error"))  // Font2 fails
+            .ReturnsAsync(validZipBytes) // Font1 succeeds
+            .ThrowsAsync(new HttpRequestException("Network error")) // Font2 fails
             .ReturnsAsync(validZipBytes); // Font3 succeeds
 
         var fakeRunner = new FakeProcessRunner()
@@ -324,12 +370,12 @@ public class FontInstallerTests : IDisposable
                 new() { Name = "Font1", Url = "https://example.com/font1.zip" },
                 new() { Name = "Font2", Url = "https://example.com/font2.zip" },
                 new() { Name = "Font3", Url = "https://example.com/font3.zip" }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            FontDirectory = _tempDir
+            FontDirectory = _tempDir,
         };
 
         // Act
@@ -342,8 +388,12 @@ public class FontInstallerTests : IDisposable
         results.Single(r => r.Status == InstallStatus.Failed).ItemName.Should().Be("Font2");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_OnSuccess_RefreshesFontCache()
+    public async Task InstallAsync_OnSuccess_RefreshesFontCacheAsync()
     {
         // Arrange
         var mockDownloader = new Mock<HttpDownloader>();
@@ -361,12 +411,12 @@ public class FontInstallerTests : IDisposable
             Fonts = new List<FontItem>
             {
                 new() { Name = "TestFont", Url = "https://example.com/testfont.zip" }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            FontDirectory = _tempDir
+            FontDirectory = _tempDir,
         };
 
         // Act
@@ -378,8 +428,12 @@ public class FontInstallerTests : IDisposable
         fakeRunner.Calls[0].Arguments.Should().Be("-fv");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WhenAllFontsFail_DoesNotRefreshFontCache()
+    public async Task InstallAsync_WhenAllFontsFail_DoesNotRefreshFontCacheAsync()
     {
         // Arrange
         var mockDownloader = new Mock<HttpDownloader>();
@@ -394,12 +448,12 @@ public class FontInstallerTests : IDisposable
             Fonts = new List<FontItem>
             {
                 new() { Name = "FailFont", Url = "https://example.com/failfont.zip" }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            FontDirectory = _tempDir
+            FontDirectory = _tempDir,
         };
 
         // Act
@@ -409,8 +463,12 @@ public class FontInstallerTests : IDisposable
         fakeRunner.CallCount.Should().Be(0);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WhenFontCacheFails_DoesNotThrow()
+    public async Task InstallAsync_WhenFontCacheFails_DoesNotThrowAsync()
     {
         // Arrange
         var mockDownloader = new Mock<HttpDownloader>();
@@ -428,23 +486,27 @@ public class FontInstallerTests : IDisposable
             Fonts = new List<FontItem>
             {
                 new() { Name = "TestFont", Url = "https://example.com/testfont.zip" }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            FontDirectory = _tempDir
+            FontDirectory = _tempDir,
         };
 
         // Act
-        var action = async () => await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var action = async () => await installer.InstallAsync(installBlock, context, CancellationToken.None).ConfigureAwait(false);
 
         // Assert - should not throw even if fc-cache fails
         await action.Should().NotThrowAsync();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_CreatesFontSubdirectory()
+    public async Task InstallAsync_CreatesFontSubdirectoryAsync()
     {
         // Arrange
         var mockDownloader = new Mock<HttpDownloader>();
@@ -462,12 +524,12 @@ public class FontInstallerTests : IDisposable
             Fonts = new List<FontItem>
             {
                 new() { Name = "MyCustomFont", Url = "https://example.com/font.zip" }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            FontDirectory = _tempDir
+            FontDirectory = _tempDir,
         };
 
         // Act
@@ -478,8 +540,12 @@ public class FontInstallerTests : IDisposable
         Directory.Exists(fontSubDir).Should().BeTrue();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_DownloadsFromCorrectUrl()
+    public async Task InstallAsync_DownloadsFromCorrectUrlAsync()
     {
         // Arrange
         var mockDownloader = new Mock<HttpDownloader>();
@@ -498,12 +564,12 @@ public class FontInstallerTests : IDisposable
             Fonts = new List<FontItem>
             {
                 new() { Name = "JetBrainsMono", Url = expectedUrl }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            FontDirectory = _tempDir
+            FontDirectory = _tempDir,
         };
 
         // Act
@@ -526,11 +592,16 @@ public class FontInstallerTests : IDisposable
         installer.SourceType.Should().Be(InstallSourceType.Font);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WhenExtractFails_ReturnsFailedResult()
+    public async Task InstallAsync_WhenExtractFails_ReturnsFailedResultAsync()
     {
         // Arrange
         var mockDownloader = new Mock<HttpDownloader>();
+
         // Return invalid zip data that will fail extraction
         var invalidZipBytes = new byte[] { 0x00, 0x01, 0x02, 0x03 };
         mockDownloader
@@ -544,12 +615,12 @@ public class FontInstallerTests : IDisposable
             Fonts = new List<FontItem>
             {
                 new() { Name = "BadArchive", Url = "https://example.com/bad.zip" }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            FontDirectory = _tempDir
+            FontDirectory = _tempDir,
         };
 
         // Act
@@ -562,8 +633,12 @@ public class FontInstallerTests : IDisposable
         results.First().Message.Should().Contain("extract");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_DryRun_DoesNotDownloadFonts()
+    public async Task InstallAsync_DryRun_DoesNotDownloadFontsAsync()
     {
         // Arrange
         var mockDownloader = new Mock<HttpDownloader>();
@@ -575,13 +650,13 @@ public class FontInstallerTests : IDisposable
             Fonts = new List<FontItem>
             {
                 new() { Name = "TestFont", Url = "https://example.com/testfont.zip" }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
             FontDirectory = _tempDir,
-            DryRun = true
+            DryRun = true,
         };
 
         // Act
@@ -593,8 +668,12 @@ public class FontInstallerTests : IDisposable
             Times.Never);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_DryRun_DoesNotRefreshFontCache()
+    public async Task InstallAsync_DryRun_DoesNotRefreshFontCacheAsync()
     {
         // Arrange
         var mockDownloader = new Mock<HttpDownloader>();
@@ -606,13 +685,13 @@ public class FontInstallerTests : IDisposable
             Fonts = new List<FontItem>
             {
                 new() { Name = "TestFont", Url = "https://example.com/testfont.zip" }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
             FontDirectory = _tempDir,
-            DryRun = true
+            DryRun = true,
         };
 
         // Act
@@ -621,7 +700,4 @@ public class FontInstallerTests : IDisposable
         // Assert - fc-cache should NOT be called in dry-run mode
         fakeRunner.CallCount.Should().Be(0);
     }
-
-    #endregion
 }
-

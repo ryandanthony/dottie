@@ -19,7 +19,7 @@ public sealed class ProfileResolverTests
         "..",
         "Fixtures");
 
-    #pragma warning disable SA1124 // Do not use regions
+#pragma warning disable SA1124 // Do not use regions
 
     #region Implicit Default Profile Tests (US1)
 
@@ -86,7 +86,7 @@ public sealed class ProfileResolverTests
 
     #endregion
 
-    #pragma warning restore SA1124
+#pragma warning restore SA1124
 
     [Fact]
     public void GetProfile_ExistingProfile_ReturnsProfile()
@@ -139,7 +139,6 @@ public sealed class ProfileResolverTests
     // See new tests: GetProfile_NullProfileName_ReturnsDefaultProfile,
     // GetProfile_EmptyProfileName_ReturnsDefaultProfile, and
     // GetProfile_DefaultNotDefined_ReturnsImplicitEmptyDefault
-
     [Fact]
     public void ListProfiles_ReturnsAllProfileNames()
     {
@@ -213,7 +212,7 @@ public sealed class ProfileResolverTests
             .WithParameterName("configuration");
     }
 
-    #pragma warning disable SA1124 // Do not use regions
+#pragma warning disable SA1124 // Do not use regions
 
     #region ListProfilesWithInfo Tests (US4)
 
@@ -234,11 +233,11 @@ public sealed class ProfileResolverTests
         // Assert
         profiles.Should().NotBeEmpty();
 
-        var defaultProfile = profiles.FirstOrDefault(p => p.Name == "default");
+        var defaultProfile = profiles.FirstOrDefault(p => string.Equals(p.Name, "default", StringComparison.Ordinal));
         defaultProfile.Should().NotBeNull();
         defaultProfile!.Extends.Should().BeNull("default has no parent");
 
-        var workProfile = profiles.FirstOrDefault(p => p.Name == "work");
+        var workProfile = profiles.FirstOrDefault(p => string.Equals(p.Name, "work", StringComparison.Ordinal));
         workProfile.Should().NotBeNull();
         workProfile!.Extends.Should().Be("default", "work extends default");
     }
@@ -277,17 +276,17 @@ public sealed class ProfileResolverTests
         var profiles = resolver.ListProfilesWithInfo();
 
         // Assert
-        var defaultProfile = profiles.FirstOrDefault(p => p.Name == "default");
+        var defaultProfile = profiles.FirstOrDefault(p => string.Equals(p.Name, "default", StringComparison.Ordinal));
         defaultProfile.Should().NotBeNull();
         defaultProfile!.DotfileCount.Should().BeGreaterThan(0);
         defaultProfile.HasInstallBlock.Should().BeTrue("default has an install block");
 
-        var minimalProfile = profiles.FirstOrDefault(p => p.Name == "minimal");
+        var minimalProfile = profiles.FirstOrDefault(p => string.Equals(p.Name, "minimal", StringComparison.Ordinal));
         minimalProfile.Should().NotBeNull();
         minimalProfile!.HasInstallBlock.Should().BeFalse("minimal has no install block");
     }
 
     #endregion
 
-    #pragma warning restore SA1124
+#pragma warning restore SA1124
 }

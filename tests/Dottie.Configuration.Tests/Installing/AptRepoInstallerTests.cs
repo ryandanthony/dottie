@@ -26,8 +26,12 @@ public class AptRepoInstallerTests
         result.Should().Be(InstallSourceType.AptRepo);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithEmptyRepoList_ReturnsEmptyResults()
+    public async Task InstallAsync_WithEmptyRepoList_ReturnsEmptyResultsAsync()
     {
         // Arrange
         var installBlock = new InstallBlock();
@@ -40,22 +44,30 @@ public class AptRepoInstallerTests
         results.Should().BeEmpty();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithValidContext_DoesNotThrow()
+    public async Task InstallAsync_WithValidContext_DoesNotThrowAsync()
     {
         // Arrange
         var installBlock = new InstallBlock();
         var context = new InstallContext { RepoRoot = "/repo" };
 
         // Act
-        var action = async () => await _installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var action = async () => await _installer.InstallAsync(installBlock, context, CancellationToken.None).ConfigureAwait(false);
 
         // Assert
         await action.Should().NotThrowAsync();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithDryRun_SkipsInstallation()
+    public async Task InstallAsync_WithDryRun_SkipsInstallationAsync()
     {
         // Arrange
         var installBlock = new InstallBlock
@@ -69,7 +81,7 @@ public class AptRepoInstallerTests
                     KeyUrl = "https://packages.microsoft.com/keys/microsoft.asc",
                     Packages = new List<string> { "code" }
                 }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", DryRun = true };
 
@@ -80,8 +92,12 @@ public class AptRepoInstallerTests
         results.Should().BeEmpty();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithoutSudo_ReturnsWarningResults()
+    public async Task InstallAsync_WithoutSudo_ReturnsWarningResultsAsync()
     {
         // Arrange
         var installBlock = new InstallBlock
@@ -95,12 +111,12 @@ public class AptRepoInstallerTests
                     KeyUrl = "https://packages.microsoft.com/keys/microsoft.asc",
                     Packages = new List<string> { "code" }
                 }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            HasSudo = false
+            HasSudo = false,
         };
 
         // Act
@@ -111,15 +127,19 @@ public class AptRepoInstallerTests
         results.Should().AllSatisfy(r => r.Status.Should().Be(InstallStatus.Warning));
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithEmptyRepoList_ReturnsEmptyResults_WhenAptReposIsEmptyList()
+    public async Task InstallAsync_WithEmptyRepoList_ReturnsEmptyResults_WhenAptReposIsEmptyListAsync()
     {
         // Arrange
         var installBlock = new InstallBlock { AptRepos = new List<AptRepoItem>() };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            HasSudo = true
+            HasSudo = true,
         };
 
         // Act
@@ -129,36 +149,48 @@ public class AptRepoInstallerTests
         results.Should().BeEmpty();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithNullInstallBlock_ThrowsArgumentNullException()
+    public async Task InstallAsync_WithNullInstallBlock_ThrowsArgumentNullExceptionAsync()
     {
         // Arrange
         var context = new InstallContext { RepoRoot = "/repo" };
 
         // Act
-        Func<Task> act = async () => await _installer.InstallAsync(null!, context);
+        Func<Task> act = async () => await _installer.InstallAsync(null!, context).ConfigureAwait(false);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>()
             .WithParameterName("installBlock");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithNullContext_ThrowsArgumentNullException()
+    public async Task InstallAsync_WithNullContext_ThrowsArgumentNullExceptionAsync()
     {
         // Arrange
         var installBlock = new InstallBlock();
 
         // Act
-        Func<Task> act = async () => await _installer.InstallAsync(installBlock, null!);
+        Func<Task> act = async () => await _installer.InstallAsync(installBlock, null!).ConfigureAwait(false);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>()
             .WithParameterName("context");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithNullAptReposList_ReturnsEmptyResults()
+    public async Task InstallAsync_WithNullAptReposList_ReturnsEmptyResultsAsync()
     {
         // Arrange
         var installBlock = new InstallBlock { AptRepos = null };
@@ -171,10 +203,13 @@ public class AptRepoInstallerTests
         results.Should().BeEmpty();
     }
 
-    #region Tests using FakeProcessRunner and Mock HttpDownloader
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithSudo_AddsGpgKey()
+    public async Task InstallAsync_WithSudo_AddsGpgKeyAsync()
     {
         // Arrange
         var mockDownloader = new Mock<HttpDownloader>();
@@ -183,8 +218,8 @@ public class AptRepoInstallerTests
             .ReturnsAsync(new byte[] { 0x01, 0x02, 0x03 }); // Fake GPG key data
 
         var fakeRunner = new FakeProcessRunner()
-            .WithSuccessResult()  // Add GPG key
-            .WithSuccessResult()  // Add source
+            .WithSuccessResult() // Add GPG key
+            .WithSuccessResult() // Add source
             .WithSuccessResult(); // Install package
 
         var installer = new AptRepoInstaller(mockDownloader.Object, fakeRunner);
@@ -199,7 +234,7 @@ public class AptRepoInstallerTests
                     KeyUrl = "https://example.com/key.gpg",
                     Packages = new List<string> { "testpkg" }
                 }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
@@ -211,8 +246,12 @@ public class AptRepoInstallerTests
         mockDownloader.Verify(d => d.DownloadAsync("https://example.com/key.gpg", It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithSudo_AddsSourcesList()
+    public async Task InstallAsync_WithSudo_AddsSourcesListAsync()
     {
         // Arrange
         var mockDownloader = new Mock<HttpDownloader>();
@@ -221,8 +260,8 @@ public class AptRepoInstallerTests
             .ReturnsAsync(new byte[] { 0x01, 0x02, 0x03 });
 
         var fakeRunner = new FakeProcessRunner()
-            .WithSuccessResult()  // Add GPG key
-            .WithSuccessResult()  // Add source
+            .WithSuccessResult() // Add GPG key
+            .WithSuccessResult() // Add source
             .WithSuccessResult(); // Install package
 
         var installer = new AptRepoInstaller(mockDownloader.Object, fakeRunner);
@@ -237,7 +276,7 @@ public class AptRepoInstallerTests
                     KeyUrl = "https://example.com/key.gpg",
                     Packages = new List<string> { "testpkg" }
                 }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
@@ -248,8 +287,12 @@ public class AptRepoInstallerTests
         fakeRunner.Calls.Should().Contain(c => c.FileName == "bash" && c.Arguments.Contains("sources.list.d"));
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithSudo_InstallsPackagesFromRepo()
+    public async Task InstallAsync_WithSudo_InstallsPackagesFromRepoAsync()
     {
         // Arrange
         var mockDownloader = new Mock<HttpDownloader>();
@@ -258,9 +301,9 @@ public class AptRepoInstallerTests
             .ReturnsAsync(new byte[] { 0x01, 0x02, 0x03 });
 
         var fakeRunner = new FakeProcessRunner()
-            .WithSuccessResult()  // Add GPG key
-            .WithSuccessResult()  // Add source
-            .WithSuccessResult()  // Install package 1
+            .WithSuccessResult() // Add GPG key
+            .WithSuccessResult() // Add source
+            .WithSuccessResult() // Install package 1
             .WithSuccessResult(); // Install package 2
 
         var installer = new AptRepoInstaller(mockDownloader.Object, fakeRunner);
@@ -275,7 +318,7 @@ public class AptRepoInstallerTests
                     KeyUrl = "https://example.com/key.gpg",
                     Packages = new List<string> { "pkg1", "pkg2" }
                 }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
@@ -288,8 +331,12 @@ public class AptRepoInstallerTests
         fakeRunner.Calls.Should().Contain(c => c.FileName == "sudo" && c.Arguments == "apt-get install -y pkg2");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WhenKeyDownloadFails_ReturnsFailedResult()
+    public async Task InstallAsync_WhenKeyDownloadFails_ReturnsFailedResultAsync()
     {
         // Arrange
         var mockDownloader = new Mock<HttpDownloader>();
@@ -310,7 +357,7 @@ public class AptRepoInstallerTests
                     KeyUrl = "https://example.com/key.gpg",
                     Packages = new List<string> { "testpkg" }
                 }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
@@ -323,8 +370,12 @@ public class AptRepoInstallerTests
         results.First().Message.Should().Contain("Failed to download GPG key");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WhenAddGpgKeyFails_ReturnsFailedResult()
+    public async Task InstallAsync_WhenAddGpgKeyFails_ReturnsFailedResultAsync()
     {
         // Arrange
         var mockDownloader = new Mock<HttpDownloader>();
@@ -347,7 +398,7 @@ public class AptRepoInstallerTests
                     KeyUrl = "https://example.com/key.gpg",
                     Packages = new List<string> { "testpkg" }
                 }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
@@ -360,8 +411,12 @@ public class AptRepoInstallerTests
         results.First().Message.Should().Contain("Failed to add GPG key");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WhenAddSourceFails_ReturnsFailedResult()
+    public async Task InstallAsync_WhenAddSourceFails_ReturnsFailedResultAsync()
     {
         // Arrange
         var mockDownloader = new Mock<HttpDownloader>();
@@ -370,7 +425,7 @@ public class AptRepoInstallerTests
             .ReturnsAsync(new byte[] { 0x01, 0x02, 0x03 });
 
         var fakeRunner = new FakeProcessRunner()
-            .WithSuccessResult()                       // Add GPG key succeeds
+            .WithSuccessResult() // Add GPG key succeeds
             .WithFailureResult(1, "Permission denied"); // Add source fails
 
         var installer = new AptRepoInstaller(mockDownloader.Object, fakeRunner);
@@ -385,7 +440,7 @@ public class AptRepoInstallerTests
                     KeyUrl = "https://example.com/key.gpg",
                     Packages = new List<string> { "testpkg" }
                 }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
@@ -398,8 +453,12 @@ public class AptRepoInstallerTests
         results.First().Message.Should().Contain("Failed to add repository source");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WhenPackageInstallFails_ReturnsFailedResultForPackage()
+    public async Task InstallAsync_WhenPackageInstallFails_ReturnsFailedResultForPackageAsync()
     {
         // Arrange
         var mockDownloader = new Mock<HttpDownloader>();
@@ -408,8 +467,8 @@ public class AptRepoInstallerTests
             .ReturnsAsync(new byte[] { 0x01, 0x02, 0x03 });
 
         var fakeRunner = new FakeProcessRunner()
-            .WithSuccessResult()                        // Add GPG key
-            .WithSuccessResult()                        // Add source
+            .WithSuccessResult() // Add GPG key
+            .WithSuccessResult() // Add source
             .WithFailureResult(100, "Package not found"); // Install fails
 
         var installer = new AptRepoInstaller(mockDownloader.Object, fakeRunner);
@@ -424,7 +483,7 @@ public class AptRepoInstallerTests
                     KeyUrl = "https://example.com/key.gpg",
                     Packages = new List<string> { "testpkg" }
                 }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
@@ -437,8 +496,12 @@ public class AptRepoInstallerTests
         results.Should().ContainSingle(r => r.Status == InstallStatus.Failed && r.ItemName == "testpkg");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithNoPackages_OnlyAddsRepo()
+    public async Task InstallAsync_WithNoPackages_OnlyAddsRepoAsync()
     {
         // Arrange
         var mockDownloader = new Mock<HttpDownloader>();
@@ -447,7 +510,7 @@ public class AptRepoInstallerTests
             .ReturnsAsync(new byte[] { 0x01, 0x02, 0x03 });
 
         var fakeRunner = new FakeProcessRunner()
-            .WithSuccessResult()  // Add GPG key
+            .WithSuccessResult() // Add GPG key
             .WithSuccessResult(); // Add source
 
         var installer = new AptRepoInstaller(mockDownloader.Object, fakeRunner);
@@ -462,7 +525,7 @@ public class AptRepoInstallerTests
                     KeyUrl = "https://example.com/key.gpg",
                     Packages = null // No packages
                 }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
@@ -476,8 +539,12 @@ public class AptRepoInstallerTests
         fakeRunner.CallCount.Should().Be(2); // Only GPG key and source, no package install
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithMultipleRepos_ProcessesAllRepos()
+    public async Task InstallAsync_WithMultipleRepos_ProcessesAllReposAsync()
     {
         // Arrange
         var mockDownloader = new Mock<HttpDownloader>();
@@ -486,11 +553,11 @@ public class AptRepoInstallerTests
             .ReturnsAsync(new byte[] { 0x01, 0x02, 0x03 });
 
         var fakeRunner = new FakeProcessRunner()
-            .WithSuccessResult()  // Repo1: Add GPG key
-            .WithSuccessResult()  // Repo1: Add source
-            .WithSuccessResult()  // Repo1: Install pkg
-            .WithSuccessResult()  // Repo2: Add GPG key
-            .WithSuccessResult()  // Repo2: Add source
+            .WithSuccessResult() // Repo1: Add GPG key
+            .WithSuccessResult() // Repo1: Add source
+            .WithSuccessResult() // Repo1: Install pkg
+            .WithSuccessResult() // Repo2: Add GPG key
+            .WithSuccessResult() // Repo2: Add source
             .WithSuccessResult(); // Repo2: Install pkg
 
         var installer = new AptRepoInstaller(mockDownloader.Object, fakeRunner);
@@ -512,7 +579,7 @@ public class AptRepoInstallerTests
                     KeyUrl = "https://example2.com/key.gpg",
                     Packages = new List<string> { "pkg2" }
                 }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
@@ -534,6 +601,4 @@ public class AptRepoInstallerTests
         installer.Should().NotBeNull();
         installer.SourceType.Should().Be(InstallSourceType.AptRepo);
     }
-
-    #endregion
 }

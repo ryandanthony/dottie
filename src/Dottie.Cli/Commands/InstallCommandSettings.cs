@@ -1,4 +1,8 @@
-// Licensed under the MIT License. See LICENSE in the project root for license information.
+// -----------------------------------------------------------------------
+// <copyright file="InstallCommandSettings.cs" company="Ryan Anthony">
+// Copyright (c) Ryan Anthony. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 using System.ComponentModel;
 using Spectre.Console.Cli;

@@ -14,25 +14,40 @@ public sealed record LinkOperationResult
     /// <summary>
     /// Gets a value indicating whether the entire operation succeeded.
     /// </summary>
+    /// <value>
+    /// <placeholder>A value indicating whether the entire operation succeeded.</placeholder>
+    /// </value>
     public bool IsSuccess => FailedLinks.Count == 0;
 
     /// <summary>
     /// Gets the list of successfully linked entries.
     /// </summary>
+    /// <value>
+    /// <placeholder>The list of successfully linked entries.</placeholder>
+    /// </value>
     public required IReadOnlyList<LinkResult> SuccessfulLinks { get; init; }
 
     /// <summary>
     /// Gets the list of skipped entries (already correctly linked).
     /// </summary>
+    /// <value>
+    /// <placeholder>The list of skipped entries (already correctly linked).</placeholder>
+    /// </value>
     public required IReadOnlyList<LinkResult> SkippedLinks { get; init; }
 
     /// <summary>
     /// Gets the list of failed link attempts.
     /// </summary>
+    /// <value>
+    /// <placeholder>The list of failed link attempts.</placeholder>
+    /// </value>
     public required IReadOnlyList<LinkResult> FailedLinks { get; init; }
 
     /// <summary>
     /// Gets the total number of entries processed.
     /// </summary>
+    /// <value>
+    /// <placeholder>The total number of entries processed.</placeholder>
+    /// </value>
     public int TotalProcessed => SuccessfulLinks.Count + SkippedLinks.Count + FailedLinks.Count;
 }

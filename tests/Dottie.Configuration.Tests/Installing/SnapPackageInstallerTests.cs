@@ -12,8 +12,6 @@ namespace Dottie.Configuration.Tests.Installing;
 /// </summary>
 public class SnapPackageInstallerTests
 {
-    #region SourceType Tests
-
     [Fact]
     public void SourceType_ReturnsSnapPackage()
     {
@@ -27,46 +25,54 @@ public class SnapPackageInstallerTests
         result.Should().Be(InstallSourceType.SnapPackage);
     }
 
-    #endregion
 
-    #region Argument Validation Tests
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithNullInstallBlock_ThrowsArgumentNullException()
+    public async Task InstallAsync_WithNullInstallBlock_ThrowsArgumentNullExceptionAsync()
     {
         // Arrange
         var installer = new SnapPackageInstaller();
         var context = new InstallContext { RepoRoot = "/repo" };
 
         // Act
-        Func<Task> act = async () => await installer.InstallAsync(null!, context);
+        Func<Task> act = async () => await installer.InstallAsync(null!, context).ConfigureAwait(false);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>()
             .WithParameterName("installBlock");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithNullContext_ThrowsArgumentNullException()
+    public async Task InstallAsync_WithNullContext_ThrowsArgumentNullExceptionAsync()
     {
         // Arrange
         var installer = new SnapPackageInstaller();
         var installBlock = new InstallBlock();
 
         // Act
-        Func<Task> act = async () => await installer.InstallAsync(installBlock, null!);
+        Func<Task> act = async () => await installer.InstallAsync(installBlock, null!).ConfigureAwait(false);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>()
             .WithParameterName("context");
     }
 
-    #endregion
 
-    #region Empty/Null Snaps List Tests
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithEmptySnapList_ReturnsEmptyResults()
+    public async Task InstallAsync_WithEmptySnapList_ReturnsEmptyResultsAsync()
     {
         // Arrange
         var installer = new SnapPackageInstaller();
@@ -80,8 +86,12 @@ public class SnapPackageInstallerTests
         results.Should().BeEmpty();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithNullSnapsList_ReturnsEmptyResults()
+    public async Task InstallAsync_WithNullSnapsList_ReturnsEmptyResultsAsync()
     {
         // Arrange
         var installer = new SnapPackageInstaller();
@@ -95,8 +105,12 @@ public class SnapPackageInstallerTests
         results.Should().BeEmpty();
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithNoSnaps_ReturnsEmptyResults()
+    public async Task InstallAsync_WithNoSnaps_ReturnsEmptyResultsAsync()
     {
         // Arrange
         var installer = new SnapPackageInstaller();
@@ -110,12 +124,14 @@ public class SnapPackageInstallerTests
         results.Should().BeEmpty();
     }
 
-    #endregion
 
-    #region DryRun Tests
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithDryRun_SkipsInstallation()
+    public async Task InstallAsync_WithDryRun_SkipsInstallationAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner();
@@ -125,7 +141,7 @@ public class SnapPackageInstallerTests
             Snaps = new List<SnapItem>
             {
                 new() { Name = "blender", Classic = false }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true, DryRun = true };
 
@@ -137,8 +153,12 @@ public class SnapPackageInstallerTests
         fakeRunner.CallCount.Should().Be(0);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithDryRun_DoesNotExecuteAnyProcesses()
+    public async Task InstallAsync_WithDryRun_DoesNotExecuteAnyProcessesAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner();
@@ -149,7 +169,7 @@ public class SnapPackageInstallerTests
             {
                 new() { Name = "vscode", Classic = true },
                 new() { Name = "firefox", Classic = false }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true, DryRun = true };
 
@@ -160,12 +180,14 @@ public class SnapPackageInstallerTests
         fakeRunner.Calls.Should().BeEmpty();
     }
 
-    #endregion
 
-    #region No Sudo Tests
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithoutSudo_ReturnsWarningResults()
+    public async Task InstallAsync_WithoutSudo_ReturnsWarningResultsAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner();
@@ -175,12 +197,12 @@ public class SnapPackageInstallerTests
             Snaps = new List<SnapItem>
             {
                 new() { Name = "blender", Classic = false }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            HasSudo = false
+            HasSudo = false,
         };
 
         // Act
@@ -192,8 +214,12 @@ public class SnapPackageInstallerTests
         results.First().Message.Should().Contain("Sudo required");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithoutSudo_ReturnsWarningForEachSnap()
+    public async Task InstallAsync_WithoutSudo_ReturnsWarningForEachSnapAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner();
@@ -205,12 +231,12 @@ public class SnapPackageInstallerTests
                 new() { Name = "snap1", Classic = false },
                 new() { Name = "snap2", Classic = true },
                 new() { Name = "snap3", Classic = false }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            HasSudo = false
+            HasSudo = false,
         };
 
         // Act
@@ -225,8 +251,12 @@ public class SnapPackageInstallerTests
         });
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithoutSudo_DoesNotExecuteAnyProcesses()
+    public async Task InstallAsync_WithoutSudo_DoesNotExecuteAnyProcessesAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner();
@@ -236,12 +266,12 @@ public class SnapPackageInstallerTests
             Snaps = new List<SnapItem>
             {
                 new() { Name = "blender", Classic = false }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            HasSudo = false
+            HasSudo = false,
         };
 
         // Act
@@ -251,12 +281,14 @@ public class SnapPackageInstallerTests
         fakeRunner.CallCount.Should().Be(0);
     }
 
-    #endregion
 
-    #region Successful Installation Tests
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithSingleSnap_ReturnsSuccessResult()
+    public async Task InstallAsync_WithSingleSnap_ReturnsSuccessResultAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner()
@@ -267,12 +299,12 @@ public class SnapPackageInstallerTests
             Snaps = new List<SnapItem>
             {
                 new() { Name = "vlc", Classic = false }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            HasSudo = true
+            HasSudo = true,
         };
 
         // Act
@@ -285,8 +317,12 @@ public class SnapPackageInstallerTests
         results.First().SourceType.Should().Be(InstallSourceType.SnapPackage);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithMultipleSnaps_ReturnsSuccessResultsForEach()
+    public async Task InstallAsync_WithMultipleSnaps_ReturnsSuccessResultsForEachAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner()
@@ -301,12 +337,12 @@ public class SnapPackageInstallerTests
                 new() { Name = "vlc", Classic = false },
                 new() { Name = "spotify", Classic = false },
                 new() { Name = "code", Classic = true }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            HasSudo = true
+            HasSudo = true,
         };
 
         // Act
@@ -318,8 +354,12 @@ public class SnapPackageInstallerTests
         results.Select(r => r.ItemName).Should().ContainInOrder("vlc", "spotify", "code");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_CallsSudoSnapInstall_WithCorrectArguments()
+    public async Task InstallAsync_CallsSudoSnapInstall_WithCorrectArgumentsAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner()
@@ -330,12 +370,12 @@ public class SnapPackageInstallerTests
             Snaps = new List<SnapItem>
             {
                 new() { Name = "vlc", Classic = false }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            HasSudo = true
+            HasSudo = true,
         };
 
         // Act
@@ -347,8 +387,12 @@ public class SnapPackageInstallerTests
         fakeRunner.Calls[0].Arguments.Should().Be("snap install vlc");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithClassicConfinement_AddsClassicFlag()
+    public async Task InstallAsync_WithClassicConfinement_AddsClassicFlagAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner()
@@ -359,12 +403,12 @@ public class SnapPackageInstallerTests
             Snaps = new List<SnapItem>
             {
                 new() { Name = "code", Classic = true }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            HasSudo = true
+            HasSudo = true,
         };
 
         // Act
@@ -376,8 +420,12 @@ public class SnapPackageInstallerTests
         fakeRunner.Calls[0].Arguments.Should().Be("snap install code --classic");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithoutClassicConfinement_DoesNotAddClassicFlag()
+    public async Task InstallAsync_WithoutClassicConfinement_DoesNotAddClassicFlagAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner()
@@ -388,12 +436,12 @@ public class SnapPackageInstallerTests
             Snaps = new List<SnapItem>
             {
                 new() { Name = "vlc", Classic = false }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            HasSudo = true
+            HasSudo = true,
         };
 
         // Act
@@ -403,8 +451,12 @@ public class SnapPackageInstallerTests
         fakeRunner.Calls[0].Arguments.Should().NotContain("--classic");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithMixedClassicSettings_UsesCorrectFlagsForEach()
+    public async Task InstallAsync_WithMixedClassicSettings_UsesCorrectFlagsForEachAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner()
@@ -419,12 +471,12 @@ public class SnapPackageInstallerTests
                 new() { Name = "vlc", Classic = false },
                 new() { Name = "code", Classic = true },
                 new() { Name = "firefox", Classic = false }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            HasSudo = true
+            HasSudo = true,
         };
 
         // Act
@@ -436,12 +488,14 @@ public class SnapPackageInstallerTests
         fakeRunner.Calls[2].Arguments.Should().Be("snap install firefox");
     }
 
-    #endregion
 
-    #region Failed Installation Tests
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WhenProcessFails_ReturnsFailedResult()
+    public async Task InstallAsync_WhenProcessFails_ReturnsFailedResultAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner()
@@ -452,12 +506,12 @@ public class SnapPackageInstallerTests
             Snaps = new List<SnapItem>
             {
                 new() { Name = "unknown", Classic = false }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            HasSudo = true
+            HasSudo = true,
         };
 
         // Act
@@ -470,8 +524,12 @@ public class SnapPackageInstallerTests
         results.First().Message.Should().Contain("exit code 1");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithPartialFailures_ReportsCorrectStatusForEach()
+    public async Task InstallAsync_WithPartialFailures_ReportsCorrectStatusForEachAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner()
@@ -486,12 +544,12 @@ public class SnapPackageInstallerTests
                 new() { Name = "vlc", Classic = false },
                 new() { Name = "unknown", Classic = false },
                 new() { Name = "firefox", Classic = false }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            HasSudo = true
+            HasSudo = true,
         };
 
         // Act
@@ -507,8 +565,12 @@ public class SnapPackageInstallerTests
         results.ElementAt(2).ItemName.Should().Be("firefox");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WhenAllSnapsFail_ReturnsAllFailedResults()
+    public async Task InstallAsync_WhenAllSnapsFail_ReturnsAllFailedResultsAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner()
@@ -521,12 +583,12 @@ public class SnapPackageInstallerTests
             {
                 new() { Name = "bad1", Classic = false },
                 new() { Name = "bad2", Classic = false }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            HasSudo = true
+            HasSudo = true,
         };
 
         // Act
@@ -537,8 +599,12 @@ public class SnapPackageInstallerTests
         results.Should().AllSatisfy(r => r.Status.Should().Be(InstallStatus.Failed));
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithNonZeroExitCode_IncludesExitCodeInMessage()
+    public async Task InstallAsync_WithNonZeroExitCode_IncludesExitCodeInMessageAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner()
@@ -549,12 +615,12 @@ public class SnapPackageInstallerTests
             Snaps = new List<SnapItem>
             {
                 new() { Name = "badsnap", Classic = false }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            HasSudo = true
+            HasSudo = true,
         };
 
         // Act
@@ -564,12 +630,14 @@ public class SnapPackageInstallerTests
         results.First().Message.Should().Contain("127");
     }
 
-    #endregion
 
-    #region Exception Handling Tests
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WhenProcessRunnerThrows_ReturnsFailedResult()
+    public async Task InstallAsync_WhenProcessRunnerThrows_ReturnsFailedResultAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner()
@@ -580,12 +648,12 @@ public class SnapPackageInstallerTests
             Snaps = new List<SnapItem>
             {
                 new() { Name = "crashsnap", Classic = false }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            HasSudo = true
+            HasSudo = true,
         };
 
         // Act
@@ -598,8 +666,12 @@ public class SnapPackageInstallerTests
         results.First().Message.Should().Contain("Process crashed");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WhenExceptionOccurs_ContinuesWithRemainingSnaps()
+    public async Task InstallAsync_WhenExceptionOccurs_ContinuesWithRemainingSnapsAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner()
@@ -612,12 +684,12 @@ public class SnapPackageInstallerTests
             {
                 new() { Name = "crashsnap", Classic = false },
                 new() { Name = "goodsnap", Classic = false }
-            }
+            },
         };
         var context = new InstallContext
         {
             RepoRoot = "/repo",
-            HasSudo = true
+            HasSudo = true,
         };
 
         // Act
@@ -628,10 +700,6 @@ public class SnapPackageInstallerTests
         results.ElementAt(0).Status.Should().Be(InstallStatus.Failed);
         results.ElementAt(1).Status.Should().Be(InstallStatus.Success);
     }
-
-    #endregion
-
-    #region Constructor Tests
 
     [Fact]
     public void Constructor_WithNullProcessRunner_UsesDefaultRunner()
@@ -657,12 +725,14 @@ public class SnapPackageInstallerTests
         installer.Should().NotBeNull();
     }
 
-    #endregion
 
-    #region Foreach Loop Iteration Tests
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_ProcessesSnapsInOrder()
+    public async Task InstallAsync_ProcessesSnapsInOrderAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner()
@@ -681,7 +751,7 @@ public class SnapPackageInstallerTests
                 new() { Name = "third", Classic = false },
                 new() { Name = "fourth", Classic = true },
                 new() { Name = "fifth", Classic = false }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
@@ -697,8 +767,12 @@ public class SnapPackageInstallerTests
         fakeRunner.Calls[4].Arguments.Should().Contain("fifth");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_ResultsMatchSnapOrder()
+    public async Task InstallAsync_ResultsMatchSnapOrderAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner()
@@ -715,7 +789,7 @@ public class SnapPackageInstallerTests
                 new() { Name = "beta", Classic = false },
                 new() { Name = "gamma", Classic = false },
                 new() { Name = "delta", Classic = false }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
@@ -734,8 +808,12 @@ public class SnapPackageInstallerTests
         results[3].Status.Should().Be(InstallStatus.Failed);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_EachSnapGetsIndividualProcessCall()
+    public async Task InstallAsync_EachSnapGetsIndividualProcessCallAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner()
@@ -750,7 +828,7 @@ public class SnapPackageInstallerTests
                 new() { Name = "snap-a", Classic = false },
                 new() { Name = "snap-b", Classic = true },
                 new() { Name = "snap-c", Classic = false }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
@@ -765,8 +843,12 @@ public class SnapPackageInstallerTests
         fakeRunner.Calls[2].Arguments.Should().Be("snap install snap-c");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_ContinuesProcessingAfterFailure()
+    public async Task InstallAsync_ContinuesProcessingAfterFailureAsync()
     {
         // Arrange - first snap fails, rest should still be processed
         var fakeRunner = new FakeProcessRunner()
@@ -781,7 +863,7 @@ public class SnapPackageInstallerTests
                 new() { Name = "failing-snap", Classic = false },
                 new() { Name = "working-snap-1", Classic = false },
                 new() { Name = "working-snap-2", Classic = false }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
@@ -796,8 +878,12 @@ public class SnapPackageInstallerTests
         results[2].Status.Should().Be(InstallStatus.Success);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_ContinuesProcessingAfterException()
+    public async Task InstallAsync_ContinuesProcessingAfterExceptionAsync()
     {
         // Arrange - first snap throws, rest should still be processed
         var fakeRunner = new FakeProcessRunner()
@@ -814,7 +900,7 @@ public class SnapPackageInstallerTests
                 new() { Name = "good-snap-1", Classic = false },
                 new() { Name = "error-snap", Classic = false },
                 new() { Name = "good-snap-2", Classic = false }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
@@ -832,8 +918,12 @@ public class SnapPackageInstallerTests
         results[3].Status.Should().Be(InstallStatus.Success);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithSingleSnap_MakesExactlyOneCall()
+    public async Task InstallAsync_WithSingleSnap_MakesExactlyOneCallAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner()
@@ -844,7 +934,7 @@ public class SnapPackageInstallerTests
             Snaps = new List<SnapItem>
             {
                 new() { Name = "single-snap", Classic = false }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
@@ -856,8 +946,12 @@ public class SnapPackageInstallerTests
         results.Should().HaveCount(1);
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithManySnaps_ProcessesAllOfThem()
+    public async Task InstallAsync_WithManySnaps_ProcessesAllOfThemAsync()
     {
         // Arrange - test with 10 snaps
         var fakeRunner = new FakeProcessRunner();
@@ -882,8 +976,12 @@ public class SnapPackageInstallerTests
         results.Should().AllSatisfy(r => r.Status.Should().Be(InstallStatus.Success));
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_PreservesSnapNameInResult()
+    public async Task InstallAsync_PreservesSnapNameInResultAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner()
@@ -896,7 +994,7 @@ public class SnapPackageInstallerTests
             {
                 new() { Name = "my-special-snap", Classic = false },
                 new() { Name = "another-snap-name", Classic = true }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
@@ -908,8 +1006,12 @@ public class SnapPackageInstallerTests
         results[1].ItemName.Should().Be("another-snap-name");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithSnapNameContainingHyphen_FormatsArgumentCorrectly()
+    public async Task InstallAsync_WithSnapNameContainingHyphen_FormatsArgumentCorrectlyAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner()
@@ -920,7 +1022,7 @@ public class SnapPackageInstallerTests
             Snaps = new List<SnapItem>
             {
                 new() { Name = "visual-studio-code", Classic = true }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
@@ -931,8 +1033,12 @@ public class SnapPackageInstallerTests
         fakeRunner.Calls[0].Arguments.Should().Be("snap install visual-studio-code --classic");
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_AllResultsHaveCorrectSourceType()
+    public async Task InstallAsync_AllResultsHaveCorrectSourceTypeAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner()
@@ -947,7 +1053,7 @@ public class SnapPackageInstallerTests
                 new() { Name = "success-snap", Classic = false },
                 new() { Name = "failed-snap", Classic = false },
                 new() { Name = "exception-snap", Classic = false }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
@@ -958,8 +1064,12 @@ public class SnapPackageInstallerTests
         results.Should().AllSatisfy(r => r.SourceType.Should().Be(InstallSourceType.SnapPackage));
     }
 
+    /// <summary>
+    ///
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
     [Fact]
-    public async Task InstallAsync_WithoutSudo_IteratesAllSnapsForWarnings()
+    public async Task InstallAsync_WithoutSudo_IteratesAllSnapsForWarningsAsync()
     {
         // Arrange
         var fakeRunner = new FakeProcessRunner();
@@ -972,7 +1082,7 @@ public class SnapPackageInstallerTests
                 new() { Name = "snap2", Classic = true },
                 new() { Name = "snap3", Classic = false },
                 new() { Name = "snap4", Classic = true }
-            }
+            },
         };
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = false };
 
@@ -990,9 +1100,8 @@ public class SnapPackageInstallerTests
             r.Status.Should().Be(InstallStatus.Warning);
             r.Message.Should().Contain("Sudo required");
         });
+
         // No process calls should have been made
         fakeRunner.CallCount.Should().Be(0);
     }
-
-    #endregion
 }

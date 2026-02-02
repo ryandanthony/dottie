@@ -39,32 +39,32 @@ public sealed class ConflictDetector
             switch (conflictType)
             {
                 case ConflictType.None:
-                {
-                    if (IsSymlink(targetPath))
                     {
-                        alreadyLinked.Add(entry);
-                    }
-                    else
-                    {
-                        safeEntries.Add(entry);
-                    }
+                        if (IsSymlink(targetPath))
+                        {
+                            alreadyLinked.Add(entry);
+                        }
+                        else
+                        {
+                            safeEntries.Add(entry);
+                        }
 
-                    break;
-                }
+                        break;
+                    }
 
                 case ConflictType.File:
                 case ConflictType.Directory:
                 case ConflictType.MismatchedSymlink:
-                {
-                    conflicts.Add(new Conflict
                     {
-                        Entry = entry,
-                        TargetPath = targetPath,
-                        Type = conflictType,
-                        ExistingTarget = existingTarget,
-                    });
-                    break;
-                }
+                        conflicts.Add(new Conflict
+                        {
+                            Entry = entry,
+                            TargetPath = targetPath,
+                            Type = conflictType,
+                            ExistingTarget = existingTarget,
+                        });
+                        break;
+                    }
 
                 default:
                     throw new InvalidOperationException($"Unexpected conflict type: {conflictType}");

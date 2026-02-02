@@ -1,4 +1,8 @@
-// Licensed under the MIT License. See LICENSE in the project root for license information.
+// -----------------------------------------------------------------------
+// <copyright file="IProcessRunner.cs" company="Ryan Anthony">
+// Copyright (c) Ryan Anthony. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace Dottie.Configuration.Installing.Utilities;
 

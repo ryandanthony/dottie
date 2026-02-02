@@ -14,22 +14,21 @@ public sealed class SymlinkService
     /// <summary>
     /// Gets the error message from the last failed operation.
     /// </summary>
+    /// <value>
+    /// <placeholder>The error message from the last failed operation.</placeholder>
+    /// </value>
     public string? LastError { get; private set; }
 
     /// <summary>
     /// Gets the Windows-specific symlink permission error message.
     /// </summary>
-    /// <returns>A user-friendly error message with remediation steps.</returns>
-    public static string GetWindowsSymlinkErrorMessage()
-    {
-        return """
-            Error: Unable to create symbolic link - insufficient permissions.
+    public static string WindowsSymlinkErrorMessage { get; } = """
+        Error: Unable to create symbolic link - insufficient permissions.
 
-            On Windows, symbolic links require either:
-              • Run dottie as Administrator, OR
-              • Enable Developer Mode in Windows Settings > Update & Security > For developers
-            """;
-    }
+        On Windows, symbolic links require either:
+          • Run dottie as Administrator, OR
+          • Enable Developer Mode in Windows Settings > Update & Security > For developers
+        """;
 
     /// <summary>
     /// Creates a symbolic link.
@@ -68,14 +67,7 @@ public sealed class SymlinkService
         catch (UnauthorizedAccessException ex)
         {
             // Check if this is a Windows symlink permission error
-            if (OperatingSystem.IsWindows())
-            {
-                LastError = GetWindowsSymlinkErrorMessage();
-            }
-            else
-            {
-                LastError = $"Permission denied: {ex.Message}";
-            }
+            LastError = OperatingSystem.IsWindows() ? WindowsSymlinkErrorMessage : $"Permission denied: {ex.Message}";
 
             return false;
         }

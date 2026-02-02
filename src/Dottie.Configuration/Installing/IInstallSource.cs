@@ -1,4 +1,8 @@
-// Licensed under the MIT License. See LICENSE in the project root for license information.
+// -----------------------------------------------------------------------
+// <copyright file="IInstallSource.cs" company="Ryan Anthony">
+// Copyright (c) Ryan Anthony. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 using Dottie.Configuration.Models.InstallBlocks;
 
@@ -12,6 +16,9 @@ public interface IInstallSource
     /// <summary>
     /// Gets the source type this installer handles.
     /// </summary>
+    /// <value>
+    /// <placeholder>The source type this installer handles.</placeholder>
+    /// </value>
     InstallSourceType SourceType { get; }
 
     /// <summary>

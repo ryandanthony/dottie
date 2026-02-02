@@ -17,7 +17,7 @@ public class FontItemTests
         var item = new FontItem
         {
             Name = "JetBrains Mono",
-            Url = "https://github.com/JetBrains/JetBrainsMono/releases/download/v2.304/JetBrainsMono-2.304.zip"
+            Url = "https://github.com/JetBrains/JetBrainsMono/releases/download/v2.304/JetBrainsMono-2.304.zip",
         };
 
         // Assert
@@ -33,7 +33,7 @@ public class FontItemTests
         var item = new FontItem
         {
             Name = "Ubuntu Font",
-            Url = "https://example.com/ubuntu-font.zip"
+            Url = "https://example.com/ubuntu-font.zip",
         };
 
         // Act
@@ -46,7 +46,8 @@ public class FontItemTests
     // Helper method to access internal MergeKey property
     private static string GetMergeKey(FontItem item)
     {
-        var property = typeof(FontItem).GetProperty("MergeKey", 
+        var property = typeof(FontItem).GetProperty(
+            "MergeKey",
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
         return (string)property!.GetValue(item)!;
     }

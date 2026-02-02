@@ -1,4 +1,8 @@
-// Licensed under the MIT License. See LICENSE in the project root for license information.
+// -----------------------------------------------------------------------
+// <copyright file="ProcessResult.cs" company="Ryan Anthony">
+// Copyright (c) Ryan Anthony. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace Dottie.Configuration.Installing.Utilities;
 
@@ -8,6 +12,7 @@ namespace Dottie.Configuration.Installing.Utilities;
 public class ProcessResult
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="ProcessResult"/> class.
     /// Creates a new instance of <see cref="ProcessResult"/>.
     /// </summary>
     /// <param name="exitCode">The exit code of the process.</param>
@@ -23,21 +28,33 @@ public class ProcessResult
     /// <summary>
     /// Gets the exit code of the process.
     /// </summary>
+    /// <value>
+    /// <placeholder>The exit code of the process.</placeholder>
+    /// </value>
     public int ExitCode { get; }
 
     /// <summary>
     /// Gets the standard output from the process.
     /// </summary>
+    /// <value>
+    /// <placeholder>The standard output from the process.</placeholder>
+    /// </value>
     public string StandardOutput { get; }
 
     /// <summary>
     /// Gets the standard error from the process.
     /// </summary>
+    /// <value>
+    /// <placeholder>The standard error from the process.</placeholder>
+    /// </value>
     public string StandardError { get; }
 
     /// <summary>
     /// Gets a value indicating whether the process completed successfully (exit code 0).
     /// </summary>
+    /// <value>
+    /// <placeholder>A value indicating whether the process completed successfully (exit code 0).</placeholder>
+    /// </value>
     public bool Success => ExitCode == 0;
 
     /// <summary>

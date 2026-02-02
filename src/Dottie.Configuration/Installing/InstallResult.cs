@@ -1,68 +1,10 @@
-// Licensed under the MIT License. See LICENSE in the project root for license information.
+// -----------------------------------------------------------------------
+// <copyright file="InstallResult.cs" company="Ryan Anthony">
+// Copyright (c) Ryan Anthony. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace Dottie.Configuration.Installing;
-
-/// <summary>
-/// Status of an installation operation.
-/// </summary>
-public enum InstallStatus
-{
-    /// <summary>
-    /// Item installed successfully.
-    /// </summary>
-    Success,
-
-    /// <summary>
-    /// Item already installed or not applicable.
-    /// </summary>
-    Skipped,
-
-    /// <summary>
-    /// Item skipped due to missing capability (e.g., no sudo).
-    /// </summary>
-    Warning,
-
-    /// <summary>
-    /// Item installation failed.
-    /// </summary>
-    Failed
-}
-
-/// <summary>
-/// Source type for installation, determining priority order (value = priority).
-/// </summary>
-public enum InstallSourceType
-{
-    /// <summary>
-    /// Download from GitHub release (Priority 1).
-    /// </summary>
-    GithubRelease = 1,
-
-    /// <summary>
-    /// Install standard APT package (Priority 2).
-    /// </summary>
-    AptPackage = 2,
-
-    /// <summary>
-    /// Setup private APT repository (Priority 3).
-    /// </summary>
-    AptRepo = 3,
-
-    /// <summary>
-    /// Execute shell script (Priority 4).
-    /// </summary>
-    Script = 4,
-
-    /// <summary>
-    /// Install font (Priority 5).
-    /// </summary>
-    Font = 5,
-
-    /// <summary>
-    /// Install snap package (Priority 6).
-    /// </summary>
-    SnapPackage = 6
-}
 
 /// <summary>
 /// Result of a single installation operation.
@@ -124,7 +66,7 @@ public sealed record InstallResult
             SourceType = source,
             Status = InstallStatus.Success,
             InstalledPath = path,
-            Message = message
+            Message = message,
         };
 
     /// <summary>
@@ -140,7 +82,7 @@ public sealed record InstallResult
             ItemName = name,
             SourceType = source,
             Status = InstallStatus.Skipped,
-            Message = reason
+            Message = reason,
         };
 
     /// <summary>
@@ -156,7 +98,7 @@ public sealed record InstallResult
             ItemName = name,
             SourceType = source,
             Status = InstallStatus.Warning,
-            Message = reason
+            Message = reason,
         };
 
     /// <summary>
@@ -172,6 +114,6 @@ public sealed record InstallResult
             ItemName = name,
             SourceType = source,
             Status = InstallStatus.Failed,
-            Message = error
+            Message = error,
         };
 }

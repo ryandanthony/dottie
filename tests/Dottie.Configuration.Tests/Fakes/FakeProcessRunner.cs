@@ -24,6 +24,7 @@ public class FakeProcessRunner : IProcessRunner
     public int CallCount => _calls.Count;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="FakeProcessRunner"/> class.
     /// Creates a new instance of <see cref="FakeProcessRunner"/> with a default successful result.
     /// </summary>
     public FakeProcessRunner()
@@ -31,6 +32,7 @@ public class FakeProcessRunner : IProcessRunner
     }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="FakeProcessRunner"/> class.
     /// Creates a new instance of <see cref="FakeProcessRunner"/> with a single result.
     /// </summary>
     /// <param name="result">The result to return for all calls.</param>

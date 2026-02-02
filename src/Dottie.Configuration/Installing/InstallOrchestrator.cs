@@ -1,4 +1,8 @@
-// Licensed under the MIT License. See LICENSE in the project root for license information.
+// -----------------------------------------------------------------------
+// <copyright file="InstallOrchestrator.cs" company="Ryan Anthony">
+// Copyright (c) Ryan Anthony. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 using Dottie.Configuration.Models.InstallBlocks;
 
@@ -12,6 +16,7 @@ public class InstallOrchestrator
     private readonly IEnumerable<IInstallSource> _installers;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="InstallOrchestrator"/> class.
     /// Creates a new instance of <see cref="InstallOrchestrator"/>.
     /// </summary>
     /// <param name="installers">Collection of installer services, in priority order.</param>
@@ -32,15 +37,9 @@ public class InstallOrchestrator
         InstallBlock installBlock,
         CancellationToken cancellationToken = default)
     {
-        if (context == null)
-        {
-            throw new ArgumentNullException(nameof(context));
-        }
+        ArgumentNullException.ThrowIfNull(context);
 
-        if (installBlock == null)
-        {
-            throw new ArgumentNullException(nameof(installBlock));
-        }
+        ArgumentNullException.ThrowIfNull(installBlock);
 
         var allResults = new List<InstallResult>();
 

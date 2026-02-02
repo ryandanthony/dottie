@@ -1,6 +1,8 @@
-// Licensed under the MIT License. See LICENSE in the project root for license information.
-
-using System.Runtime.InteropServices;
+// -----------------------------------------------------------------------
+// <copyright file="SudoChecker.cs" company="Ryan Anthony">
+// Copyright (c) Ryan Anthony. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace Dottie.Configuration.Installing.Utilities;
 
@@ -12,6 +14,7 @@ public class SudoChecker
     private readonly IProcessRunner _processRunner;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="SudoChecker"/> class.
     /// Creates a new instance of <see cref="SudoChecker"/>.
     /// </summary>
     /// <param name="processRunner">Process runner for executing system commands. If null, a default instance is created.</param>
@@ -50,7 +53,7 @@ public class SudoChecker
     /// <returns>True if the system is Unix-like; otherwise, false.</returns>
     private static bool IsUnixLike()
     {
-        return RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
-               RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+        return OperatingSystem.IsLinux() ||
+               OperatingSystem.IsMacOS();
     }
 }

@@ -1,4 +1,8 @@
-// Licensed under the MIT License. See LICENSE in the project root for license information.
+// -----------------------------------------------------------------------
+// <copyright file="ProcessRunner.cs" company="Ryan Anthony">
+// Copyright (c) Ryan Anthony. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -8,7 +12,7 @@ namespace Dottie.Configuration.Installing.Utilities;
 /// <summary>
 /// Default implementation of <see cref="IProcessRunner"/> that executes real system processes.
 /// </summary>
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Wrapper for system process execution, tested via integration tests")]
 public class ProcessRunner : IProcessRunner
 {
     /// <inheritdoc/>
@@ -32,8 +36,8 @@ public class ProcessRunner : IProcessRunner
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
-                CreateNoWindow = true
-            }
+                CreateNoWindow = true,
+            },
         };
 
         if (!string.IsNullOrWhiteSpace(workingDirectory))
@@ -76,8 +80,8 @@ public class ProcessRunner : IProcessRunner
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
-                CreateNoWindow = true
-            }
+                CreateNoWindow = true,
+            },
         };
 
         if (!string.IsNullOrWhiteSpace(workingDirectory))

@@ -14,21 +14,33 @@ public sealed record LinkExecutionResult
     /// <summary>
     /// Gets a value indicating whether the operation was blocked due to conflicts.
     /// </summary>
+    /// <value>
+    /// <placeholder>A value indicating whether the operation was blocked due to conflicts.</placeholder>
+    /// </value>
     public bool IsBlocked { get; init; }
 
     /// <summary>
     /// Gets the conflict result if the operation was blocked.
     /// </summary>
+    /// <value>
+    /// <placeholder>The conflict result if the operation was blocked.</placeholder>
+    /// </value>
     public ConflictResult? ConflictResult { get; init; }
 
     /// <summary>
     /// Gets the link operation result if the operation completed.
     /// </summary>
+    /// <value>
+    /// <placeholder>The link operation result if the operation completed.</placeholder>
+    /// </value>
     public LinkOperationResult? LinkResult { get; init; }
 
     /// <summary>
     /// Gets the backup results from the operation.
     /// </summary>
+    /// <value>
+    /// <placeholder>The backup results from the operation.</placeholder>
+    /// </value>
     public IReadOnlyList<BackupResult> BackupResults { get; init; } = [];
 
     /// <summary>

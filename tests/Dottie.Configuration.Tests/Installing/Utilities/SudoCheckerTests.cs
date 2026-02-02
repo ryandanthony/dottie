@@ -20,7 +20,7 @@ public class SudoCheckerTests
         var result = _sudoChecker.IsSudoAvailable();
 
         // Assert
-        (result == true || result == false).Should().BeTrue();
+        (result || !result).Should().BeTrue();
     }
 
     [Fact]
@@ -59,7 +59,7 @@ public class SudoCheckerTests
 
         // Assert
         // Result is always bool, so this validates the method works without error
-        (result == true || result == false).Should().BeTrue();
+        (result || !result).Should().BeTrue();
     }
 
     [Fact]

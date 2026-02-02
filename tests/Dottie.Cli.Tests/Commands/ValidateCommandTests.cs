@@ -173,7 +173,7 @@ public sealed class ValidateCommandTests
         result.Should().Be(1);
     }
 
-    #pragma warning disable SA1124 // Do not use regions
+#pragma warning disable SA1124 // Do not use regions
 
     #region Profile Flag Tests (US1)
 
@@ -255,5 +255,5 @@ public sealed class ValidateCommandTests
 
     #endregion
 
-    #pragma warning restore SA1124
+#pragma warning restore SA1124
 }

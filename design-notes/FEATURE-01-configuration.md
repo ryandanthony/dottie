@@ -1,5 +1,7 @@
 # FEATURE-01: Configuration (YAML)
 
+**STATUS**: Done
+
 ## Summary
 
 Configuration is defined in a single YAML file `dottie.yaml` at the repo root.

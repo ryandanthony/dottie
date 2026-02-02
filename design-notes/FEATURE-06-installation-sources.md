@@ -1,5 +1,7 @@
 # FEATURE-06: Installation Sources
 
+**STATUS**: Done
+
 ## Summary
 
 Dottie installs tools from multiple sources, in priority order.

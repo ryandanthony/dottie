@@ -1,5 +1,7 @@
 # FEATURE-02: Profiles
 
+**STATUS**: Done
+
 ## Summary
 
 Profiles allow different configurations for different machines/use cases.

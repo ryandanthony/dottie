@@ -1,5 +1,7 @@
 # FEATURE-05: CLI Command `link`
 
+**STATUS**: Done
+
 ## Command
 
 `dottie link [--profile <name>] [--force] [--dry-run]`

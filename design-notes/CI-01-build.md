@@ -1,4 +1,5 @@
 # CI-01: Build Pipeline Design
+**STATUS**: Done
 
 ## Overview
 

@@ -1,7 +1,7 @@
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
+using Dottie.Configuration.Installing.Utilities;
 using Dottie.Configuration.Models.InstallBlocks;
-using System.Diagnostics;
 
 namespace Dottie.Configuration.Installing;
 
@@ -11,28 +11,21 @@ namespace Dottie.Configuration.Installing;
 /// </summary>
 public class ScriptRunner : IInstallSource
 {
+    private readonly IProcessRunner _processRunner;
+
+    /// <summary>
+    /// Creates a new instance of <see cref="ScriptRunner"/>.
+    /// </summary>
+    /// <param name="processRunner">Process runner for executing system commands. If null, a default instance is created.</param>
+    public ScriptRunner(IProcessRunner? processRunner = null)
+    {
+        _processRunner = processRunner ?? new ProcessRunner();
+    }
+
     /// <inheritdoc/>
     public InstallSourceType SourceType => InstallSourceType.Script;
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallContext context, CancellationToken cancellationToken = default)
-    {
-        if (context == null)
-        {
-            throw new ArgumentNullException(nameof(context));
-        }
-
-        // This method implements the interface. The actual work is done in InstallAsync with InstallBlock.
-        return new List<InstallResult>();
-    }
-
-    /// <summary>
-    /// Executes scripts from the provided install block.
-    /// </summary>
-    /// <param name="installBlock">The install block containing script paths.</param>
-    /// <param name="context">The installation context with paths and configuration.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Installation results for each script executed.</returns>
     public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, CancellationToken cancellationToken = default)
     {
         if (installBlock == null)
@@ -93,30 +86,19 @@ public class ScriptRunner : IInstallSource
                 }
 
                 // Execute script
-                var process = new Process
-                {
-                    StartInfo = new ProcessStartInfo
-                    {
-                        FileName = "bash",
-                        Arguments = fullPath,
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        CreateNoWindow = true,
-                        WorkingDirectory = context.RepoRoot
-                    }
-                };
+                var processResult = await _processRunner.RunAsync(
+                    "bash",
+                    fullPath,
+                    workingDirectory: context.RepoRoot,
+                    cancellationToken: cancellationToken);
 
-                process.Start();
-                await process.WaitForExitAsync(cancellationToken);
-
-                if (process.ExitCode == 0)
+                if (processResult.Success)
                 {
                     results.Add(InstallResult.Success(scriptPath, SourceType));
                 }
                 else
                 {
-                    results.Add(InstallResult.Failed(scriptPath, SourceType, $"Script exited with code {process.ExitCode}"));
+                    results.Add(InstallResult.Failed(scriptPath, SourceType, $"Script exited with code {processResult.ExitCode}"));
                 }
             }
             catch (Exception ex)

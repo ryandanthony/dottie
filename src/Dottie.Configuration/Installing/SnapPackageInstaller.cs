@@ -1,7 +1,7 @@
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
+using Dottie.Configuration.Installing.Utilities;
 using Dottie.Configuration.Models.InstallBlocks;
-using System.Diagnostics;
 
 namespace Dottie.Configuration.Installing;
 
@@ -11,28 +11,21 @@ namespace Dottie.Configuration.Installing;
 /// </summary>
 public class SnapPackageInstaller : IInstallSource
 {
+    private readonly IProcessRunner _processRunner;
+
+    /// <summary>
+    /// Creates a new instance of <see cref="SnapPackageInstaller"/>.
+    /// </summary>
+    /// <param name="processRunner">Process runner for executing system commands. If null, a default instance is created.</param>
+    public SnapPackageInstaller(IProcessRunner? processRunner = null)
+    {
+        _processRunner = processRunner ?? new ProcessRunner();
+    }
+
     /// <inheritdoc/>
     public InstallSourceType SourceType => InstallSourceType.SnapPackage;
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallContext context, CancellationToken cancellationToken = default)
-    {
-        if (context == null)
-        {
-            throw new ArgumentNullException(nameof(context));
-        }
-
-        // This method implements the interface. The actual work is done in InstallAsync with InstallBlock.
-        return new List<InstallResult>();
-    }
-
-    /// <summary>
-    /// Installs snap packages from the provided install block.
-    /// </summary>
-    /// <param name="installBlock">The install block containing snap package specifications.</param>
-    /// <param name="context">The installation context with paths and configuration.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Installation results for each snap package.</returns>
     public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, CancellationToken cancellationToken = default)
     {
         if (installBlock == null)
@@ -80,29 +73,15 @@ public class SnapPackageInstaller : IInstallSource
                     arguments += " --classic";
                 }
 
-                var process = new Process
-                {
-                    StartInfo = new ProcessStartInfo
-                    {
-                        FileName = "sudo",
-                        Arguments = arguments,
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        CreateNoWindow = true
-                    }
-                };
+                var processResult = await _processRunner.RunAsync("sudo", arguments, cancellationToken: cancellationToken);
 
-                process.Start();
-                await process.WaitForExitAsync(cancellationToken);
-
-                if (process.ExitCode == 0)
+                if (processResult.Success)
                 {
                     results.Add(InstallResult.Success(snap.Name, SourceType));
                 }
                 else
                 {
-                    results.Add(InstallResult.Failed(snap.Name, SourceType, $"snap install failed with exit code {process.ExitCode}"));
+                    results.Add(InstallResult.Failed(snap.Name, SourceType, $"snap install failed with exit code {processResult.ExitCode}"));
                 }
             }
             catch (Exception ex)

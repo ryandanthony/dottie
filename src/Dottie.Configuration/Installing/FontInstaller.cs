@@ -2,7 +2,6 @@
 
 using Dottie.Configuration.Installing.Utilities;
 using Dottie.Configuration.Models.InstallBlocks;
-using System.Diagnostics;
 
 namespace Dottie.Configuration.Installing;
 
@@ -14,6 +13,7 @@ public class FontInstaller : IInstallSource
 {
     private readonly HttpDownloader _downloader;
     private readonly ArchiveExtractor _extractor;
+    private readonly IProcessRunner _processRunner;
 
     /// <inheritdoc/>
     public InstallSourceType SourceType => InstallSourceType.Font;
@@ -22,31 +22,15 @@ public class FontInstaller : IInstallSource
     /// Creates a new instance of <see cref="FontInstaller"/>.
     /// </summary>
     /// <param name="downloader">HTTP downloader for fetching fonts. If null, a default instance is created.</param>
-    public FontInstaller(HttpDownloader? downloader = null)
+    /// <param name="processRunner">Process runner for executing system commands. If null, a default instance is created.</param>
+    public FontInstaller(HttpDownloader? downloader = null, IProcessRunner? processRunner = null)
     {
         _downloader = downloader ?? new HttpDownloader();
         _extractor = new ArchiveExtractor();
+        _processRunner = processRunner ?? new ProcessRunner();
     }
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallContext context, CancellationToken cancellationToken = default)
-    {
-        if (context == null)
-        {
-            throw new ArgumentNullException(nameof(context));
-        }
-
-        // This method implements the interface. The actual work is done in InstallAsync with InstallBlock.
-        return new List<InstallResult>();
-    }
-
-    /// <summary>
-    /// Installs fonts from the provided install block.
-    /// </summary>
-    /// <param name="installBlock">The install block containing font specifications.</param>
-    /// <param name="context">The installation context with paths and configuration.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Installation results for each font.</returns>
     public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, CancellationToken cancellationToken = default)
     {
         if (installBlock == null)
@@ -119,8 +103,9 @@ public class FontInstaller : IInstallSource
                 // Extract font archive
                 try
                 {
-                    // Save the downloaded data to a temporary file
-                    var tempFile = Path.GetTempFileName();
+                    // Save the downloaded data to a temporary file with .zip extension
+                    // (required by ArchiveExtractor which determines format by extension)
+                    var tempFile = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.zip");
                     try
                     {
                         await File.WriteAllBytesAsync(tempFile, fontData, cancellationToken);
@@ -156,21 +141,7 @@ public class FontInstaller : IInstallSource
         {
             try
             {
-                var fcCacheProcess = new Process
-                {
-                    StartInfo = new ProcessStartInfo
-                    {
-                        FileName = "fc-cache",
-                        Arguments = "-fv",
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        CreateNoWindow = true
-                    }
-                };
-
-                fcCacheProcess.Start();
-                await fcCacheProcess.WaitForExitAsync(cancellationToken);
+                await _processRunner.RunAsync("fc-cache", "-fv", cancellationToken: cancellationToken);
             }
             catch
             {

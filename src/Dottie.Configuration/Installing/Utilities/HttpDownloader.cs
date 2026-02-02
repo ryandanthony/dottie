@@ -20,7 +20,7 @@ public class HttpDownloader
     /// <returns>The downloaded content as a byte array.</returns>
     /// <exception cref="ArgumentException">Thrown when URL is null or empty.</exception>
     /// <exception cref="HttpRequestException">Thrown when the download fails after retries.</exception>
-    public async Task<byte[]> DownloadAsync(string url, CancellationToken cancellationToken = default)
+    public virtual async Task<byte[]> DownloadAsync(string url, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(url))
         {
@@ -67,7 +67,7 @@ public class HttpDownloader
     /// <param name="url">The URL to check.</param>
     /// <param name="cancellationToken">Token to cancel the operation.</param>
     /// <returns>True if the URL is reachable; otherwise, false.</returns>
-    public async Task<bool> IsReachableAsync(string url, CancellationToken cancellationToken = default)
+    public virtual async Task<bool> IsReachableAsync(string url, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(url))
         {

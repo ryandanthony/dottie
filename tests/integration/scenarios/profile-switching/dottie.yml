@@ -1,0 +1,37 @@
+version: "1"
+
+profiles:
+  default:
+    description: "Default profile with basic configs"
+  work:
+    description: "Work-specific profile"
+  minimal:
+    description: "Minimal profile"
+
+sources:
+  - path: "."
+    priority: 1000
+
+mappings:
+  # Default profile
+  - source: "bashrc-default"
+    target: "~/.bashrc-default"
+    profile: "default"
+
+  - source: "profile-default"
+    target: "~/.profile-default"
+    profile: "default"
+
+  # Work profile
+  - source: "bashrc-work"
+    target: "~/.bashrc-work"
+    profile: "work"
+
+  - source: "vimrc-work"
+    target: "~/.vimrc-work"
+    profile: "work"
+
+  # Minimal profile
+  - source: "bashrc-minimal"
+    target: "~/.bashrc-minimal"
+    profile: "minimal"

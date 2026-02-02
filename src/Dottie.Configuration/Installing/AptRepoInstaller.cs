@@ -2,7 +2,6 @@
 
 using Dottie.Configuration.Installing.Utilities;
 using Dottie.Configuration.Models.InstallBlocks;
-using System.Diagnostics;
 
 namespace Dottie.Configuration.Installing;
 
@@ -13,6 +12,7 @@ namespace Dottie.Configuration.Installing;
 public class AptRepoInstaller : IInstallSource
 {
     private readonly HttpDownloader _downloader;
+    private readonly IProcessRunner _processRunner;
 
     /// <inheritdoc/>
     public InstallSourceType SourceType => InstallSourceType.AptRepo;
@@ -21,31 +21,14 @@ public class AptRepoInstaller : IInstallSource
     /// Creates a new instance of <see cref="AptRepoInstaller"/>.
     /// </summary>
     /// <param name="downloader">HTTP downloader for fetching GPG keys. If null, a default instance is created.</param>
-    public AptRepoInstaller(HttpDownloader? downloader = null)
+    /// <param name="processRunner">Process runner for executing system commands. If null, a default instance is created.</param>
+    public AptRepoInstaller(HttpDownloader? downloader = null, IProcessRunner? processRunner = null)
     {
         _downloader = downloader ?? new HttpDownloader();
+        _processRunner = processRunner ?? new ProcessRunner();
     }
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallContext context, CancellationToken cancellationToken = default)
-    {
-        if (context == null)
-        {
-            throw new ArgumentNullException(nameof(context));
-        }
-
-        // This method implements the interface. The actual work is done in InstallAsync with InstallBlock.
-        // For MVP, return empty to allow the orchestrator to work.
-        return new List<InstallResult>();
-    }
-
-    /// <summary>
-    /// Installs private APT repositories from the provided install block.
-    /// </summary>
-    /// <param name="installBlock">The install block containing APT repository specifications.</param>
-    /// <param name="context">The installation context with paths and configuration.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Installation results for each repository and package.</returns>
     public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, CancellationToken cancellationToken = default)
     {
         if (installBlock == null)
@@ -107,21 +90,16 @@ public class AptRepoInstaller : IInstallSource
                 var keyPath = $"/etc/apt/trusted.gpg.d/{repo.Name}.gpg";
                 try
                 {
-                    var addKeyProcess = new Process
-                    {
-                        StartInfo = new ProcessStartInfo
-                        {
-                            FileName = "bash",
-                            Arguments = $"-c \"echo '{Convert.ToBase64String(keyData)}' | base64 -d | sudo tee {keyPath} > /dev/null\"",
-                            UseShellExecute = false,
-                            RedirectStandardOutput = true,
-                            RedirectStandardError = true,
-                            CreateNoWindow = true
-                        }
-                    };
+                    var addKeyResult = await _processRunner.RunAsync(
+                        "bash",
+                        $"-c \"echo '{Convert.ToBase64String(keyData)}' | base64 -d | sudo tee {keyPath} > /dev/null\"",
+                        cancellationToken: cancellationToken);
 
-                    addKeyProcess.Start();
-                    await addKeyProcess.WaitForExitAsync(cancellationToken);
+                    if (!addKeyResult.Success)
+                    {
+                        results.Add(InstallResult.Failed(repo.Name, SourceType, $"Failed to add GPG key: exit code {addKeyResult.ExitCode}"));
+                        continue;
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -133,21 +111,16 @@ public class AptRepoInstaller : IInstallSource
                 var sourcesPath = $"/etc/apt/sources.list.d/{repo.Name}.list";
                 try
                 {
-                    var addSourceProcess = new Process
-                    {
-                        StartInfo = new ProcessStartInfo
-                        {
-                            FileName = "bash",
-                            Arguments = $"-c \"echo '{repo.Repo}' | sudo tee {sourcesPath} > /dev/null\"",
-                            UseShellExecute = false,
-                            RedirectStandardOutput = true,
-                            RedirectStandardError = true,
-                            CreateNoWindow = true
-                        }
-                    };
+                    var addSourceResult = await _processRunner.RunAsync(
+                        "bash",
+                        $"-c \"echo '{repo.Repo}' | sudo tee {sourcesPath} > /dev/null\"",
+                        cancellationToken: cancellationToken);
 
-                    addSourceProcess.Start();
-                    await addSourceProcess.WaitForExitAsync(cancellationToken);
+                    if (!addSourceResult.Success)
+                    {
+                        results.Add(InstallResult.Failed(repo.Name, SourceType, $"Failed to add repository source: exit code {addSourceResult.ExitCode}"));
+                        continue;
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -164,29 +137,18 @@ public class AptRepoInstaller : IInstallSource
                     {
                         try
                         {
-                            var installProcess = new Process
-                            {
-                                StartInfo = new ProcessStartInfo
-                                {
-                                    FileName = "sudo",
-                                    Arguments = $"apt-get install -y {package}",
-                                    UseShellExecute = false,
-                                    RedirectStandardOutput = true,
-                                    RedirectStandardError = true,
-                                    CreateNoWindow = true
-                                }
-                            };
+                            var installResult = await _processRunner.RunAsync(
+                                "sudo",
+                                $"apt-get install -y {package}",
+                                cancellationToken: cancellationToken);
 
-                            installProcess.Start();
-                            await installProcess.WaitForExitAsync(cancellationToken);
-
-                            if (installProcess.ExitCode == 0)
+                            if (installResult.Success)
                             {
                                 results.Add(InstallResult.Success(package, SourceType));
                             }
                             else
                             {
-                                results.Add(InstallResult.Failed(package, SourceType, $"apt-get install failed with exit code {installProcess.ExitCode}"));
+                                results.Add(InstallResult.Failed(package, SourceType, $"apt-get install failed with exit code {installResult.ExitCode}"));
                             }
                         }
                         catch (Exception ex)

@@ -1,5 +1,9 @@
 # Tech Debt 01 - Backlog
 
+## Quality
+
+- make sure FestinaLente.CodeStandards
+
 ## Testing
 
 - Switch from FluentAssertions to something else

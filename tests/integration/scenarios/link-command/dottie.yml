@@ -1,0 +1,15 @@
+# Integration test for the link command
+# Tests: dry-run, force, progress bar output
+
+profiles:
+  default:
+    dotfiles:
+      - source: dotfiles/bashrc
+        target: ~/.test-link-bashrc
+      - source: dotfiles/vimrc
+        target: ~/.test-link-vimrc
+
+  work:
+    dotfiles:
+      - source: dotfiles/work-config
+        target: ~/.test-work-config

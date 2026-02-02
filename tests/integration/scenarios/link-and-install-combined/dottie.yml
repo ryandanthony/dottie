@@ -1,0 +1,21 @@
+version: "1"
+
+profiles:
+  default:
+    description: "Combined link and install profile"
+    install:
+      apt:
+        - jq
+
+sources:
+  - path: "."
+    priority: 1000
+
+mappings:
+  - source: "bashrc"
+    target: "~/.bashrc-linked"
+    profile: "default"
+  
+  - source: "vimrc"
+    target: "~/.vimrc-linked"
+    profile: "default"

@@ -1,0 +1,12 @@
+version: "1"
+
+profiles:
+  default:
+    description: "Mixed install types profile"
+    install:
+      apt:
+        # Lightweight utilities for testing
+        - jq
+        - curl
+      scripts:
+        - path: "./setup-script.sh"

@@ -1,0 +1,17 @@
+version: "1"
+
+profiles:
+  default:
+    description: "Multi-run idempotency test profile"
+
+sources:
+  - path: "."
+    priority: 1000
+
+mappings:
+  - source: "testfile1.txt"
+    target: "~/.dottie-test-multi-1"
+    profile: "default"
+  - source: "testfile2.txt"
+    target: "~/.dottie-test-multi-2"
+    profile: "default"

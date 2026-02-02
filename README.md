@@ -2,6 +2,28 @@
 
 A dotfile manager and software installation tool for Linux (Ubuntu).
 
+## Installation
+
+### Quick Install (Linux)
+
+Install the latest release directly to `~/bin`:
+
+```bash
+curl -s https://raw.githubusercontent.com/ryandanthony/dottie/main/scripts/install-linux.sh | bash
+```
+
+Make sure `~/bin` is in your PATH. If not, add this to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.):
+
+```bash
+export PATH="$HOME/bin:$PATH"
+```
+
+Then run `dottie` to verify the installation worked:
+
+```bash
+dottie --help
+```
+
 ## Quick Start
 
 1. Create a `dottie.yaml` in your dotfiles repository:

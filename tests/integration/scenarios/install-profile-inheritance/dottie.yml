@@ -1,0 +1,14 @@
+# Integration test configuration for install profile inheritance
+# Tests that dottie install --profile child includes parent profile's install sources
+
+profiles:
+  default:
+    install:
+      apt:
+        - curl  # Base tool from parent profile
+
+  extended:
+    extends: default
+    install:
+      apt:
+        - wget  # Additional tool from child profile

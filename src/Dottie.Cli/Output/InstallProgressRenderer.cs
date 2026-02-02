@@ -92,4 +92,29 @@ public sealed class InstallProgressRenderer : IInstallProgressRenderer
     {
         AnsiConsole.MarkupLine($"[red]Error:[/] {message}");
     }
+
+    /// <inheritdoc/>
+    public void RenderGroupedFailures(IEnumerable<InstallResult> results)
+    {
+        var failures = results.Where(r => r.Status == InstallStatus.Failed).ToList();
+        if (failures.Count == 0)
+        {
+            return;
+        }
+
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine("[bold red]Failed Installations:[/]");
+
+        // Group failures by source type
+        var groupedFailures = failures.GroupBy(r => r.SourceType);
+
+        foreach (var group in groupedFailures)
+        {
+            foreach (var failure in group)
+            {
+                var message = string.IsNullOrEmpty(failure.Message) ? "Unknown error" : failure.Message;
+                AnsiConsole.MarkupLine($"  [dim][[{group.Key}]][/] {failure.ItemName}: {Markup.Escape(message)}");
+            }
+        }
+    }
 }

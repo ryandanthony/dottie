@@ -6,6 +6,7 @@
 
 using Dottie.Cli.Output;
 using Dottie.Cli.Utilities;
+using Dottie.Configuration.Inheritance;
 using Dottie.Configuration.Installing;
 using Dottie.Configuration.Installing.Utilities;
 using Dottie.Configuration.Models;
@@ -61,10 +62,19 @@ public sealed class InstallCommand : AsyncCommand<InstallCommandSettings>
             return 1;
         }
 
-        var profile = GetProfile(loadResult.Configuration, settings.ProfileName ?? "default");
-        if (profile?.Install is null)
+        var profileName = settings.ProfileName ?? "default";
+        var resolveResult = ResolveProfile(loadResult.Configuration, profileName);
+
+        if (!resolveResult.IsSuccess)
         {
-            RenderError($"No install block found in profile '{settings.ProfileName ?? "default"}'.");
+            RenderError(resolveResult.Error!);
+            RenderAvailableProfiles(loadResult.Configuration);
+            return 1;
+        }
+
+        if (resolveResult.Profile?.Install is null)
+        {
+            RenderError($"No install block found in profile '{profileName}'.");
             return 1;
         }
 
@@ -75,16 +85,31 @@ public sealed class InstallCommand : AsyncCommand<InstallCommandSettings>
             AnsiConsole.MarkupLine("[yellow]Dry Run Mode:[/] Previewing installation without making changes");
         }
 
-        var results = await RunInstallersAsync(profile.Install, contextInfo);
+        var results = await RunInstallersAsync(resolveResult.Profile.Install, contextInfo);
 
         return RenderResultsAndGetExitCode(results);
     }
 
-    private static ConfigProfile? GetProfile(DottieConfiguration? config, string profileName)
+    private static InheritanceResolveResult ResolveProfile(DottieConfiguration? config, string profileName)
     {
-        return config?.Profiles?.ContainsKey(profileName) == true
-            ? config.Profiles[profileName]
-            : null;
+        if (config is null)
+        {
+            return InheritanceResolveResult.Failure("Configuration is null.");
+        }
+
+        var merger = new ProfileMerger(config);
+        return merger.Resolve(profileName);
+    }
+
+    private static void RenderAvailableProfiles(DottieConfiguration? config)
+    {
+        if (config?.Profiles is null || config.Profiles.Count == 0)
+        {
+            return;
+        }
+
+        var profileNames = string.Join(", ", config.Profiles.Keys.Order(StringComparer.Ordinal));
+        AnsiConsole.MarkupLine($"[dim]Available profiles: {profileNames}[/]");
     }
 
     private static InstallContext CreateInstallContext(string repoRoot, InstallCommandSettings settings)
@@ -152,6 +177,7 @@ public sealed class InstallCommand : AsyncCommand<InstallCommandSettings>
 
         var renderer = new InstallProgressRenderer();
         renderer.RenderSummary(results);
+        renderer.RenderGroupedFailures(results);
 
         return results.Exists(r => r.Status == InstallStatus.Failed) ? 1 : 0;
     }

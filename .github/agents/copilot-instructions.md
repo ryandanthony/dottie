@@ -11,6 +11,8 @@ Auto-generated from all feature plans. Last updated: 2026-01-28
 - C# / .NET 10.0 + Spectre.Console 0.50.0, Spectre.Console.Cli 0.50.0, YamlDotNet 16.3.0 (005-cli-link)
 - Filesystem (symlinks, backups) (005-cli-link)
 - Filesystem (`~/bin/` for binaries, `~/.local/share/fonts/` for fonts) (006-install-sources)
+- C# 12 / .NET 9.0 + Spectre.Console (CLI/output), Flurl.Http (HTTP), YamlDotNet (config) (007-cli-install)
+- N/A (filesystem operations only) (007-cli-install)
 
 - .NET 10 (C# 13), Native AOT / trimmed self-contained deployment (001-yaml-configuration)
 
@@ -30,9 +32,9 @@ tests/
 .NET 10 (C# 13), Native AOT / trimmed self-contained deployment: Follow standard conventions
 
 ## Recent Changes
+- 007-cli-install: Added C# 12 / .NET 9.0 + Spectre.Console (CLI/output), Flurl.Http (HTTP), YamlDotNet (config)
 - 006-install-sources: Added C# / .NET 10.0 + Spectre.Console 0.50.0, Spectre.Console.Cli 0.50.0, YamlDotNet 16.3.0
 - 005-cli-link: Added C# / .NET 10.0 + Spectre.Console 0.50.0, Spectre.Console.Cli 0.50.0, YamlDotNet 16.3.0
-- 004-conflict-handling: Added .NET 10 (C# 13), Native AOT / trimmed self-contained deployment
 
 
 <!-- MANUAL ADDITIONS START -->

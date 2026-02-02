@@ -15,7 +15,7 @@ mappings:
   - source: "bashrc"
     target: "~/.bashrc-linked"
     profile: "default"
-  
+
   - source: "vimrc"
     target: "~/.vimrc-linked"
     profile: "default"

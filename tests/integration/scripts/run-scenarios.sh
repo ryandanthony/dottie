@@ -64,12 +64,12 @@ scenarios_to_run=()
 for scenario_dir in "$SCENARIOS_DIR"/*/; do
     if [ -d "$scenario_dir" ]; then
         scenario_name=$(basename "$scenario_dir")
-        
+
         # If TEST_NAME is specified, only run that scenario
         if [ -n "$TEST_NAME" ] && [ "$scenario_name" != "$TEST_NAME" ]; then
             continue
         fi
-        
+
         scenarios_to_run+=("$scenario_dir")
     fi
 done
@@ -85,7 +85,7 @@ fi
 # Run each scenario
 for scenario_dir in "${scenarios_to_run[@]}"; do
     scenario_name=$(basename "$scenario_dir")
-    
+
     if [ "$VERBOSITY" != "Quiet" ]; then
         echo "------------------------------------------"
         echo "Running scenario: $scenario_name"
@@ -111,7 +111,7 @@ for scenario_dir in "${scenarios_to_run[@]}"; do
     # Run dottie validate
     log "  Running dottie validate..."
     verbose "  Command: dottie validate --config $test_dir/dottie.yml"
-    
+
     if dottie validate --config "$test_dir/dottie.yml" 2>&1 | while IFS= read -r line; do
         verbose "    $line"
     done; then
@@ -141,7 +141,7 @@ for scenario_dir in "${scenarios_to_run[@]}"; do
     # Cleanup
     cd /home/testuser
     rm -rf "$test_dir"
-    
+
     if [ "$VERBOSITY" != "Quiet" ]; then
         echo ""
     fi

@@ -59,19 +59,19 @@ function Write-Log {
         [string]$Level = 'Info',
         [ConsoleColor]$Color = [ConsoleColor]::White
     )
-    
+
     $levels = @{
         'Info' = 0
         'Warning' = 1
         'Error' = 2
     }
-    
+
     $verbosityLevels = @{
         'Quiet' = 2
         'Normal' = 0
         'Verbose' = -1
     }
-    
+
     if ($levels[$Level] -ge $verbosityLevels[$Verbosity]) {
         Write-Host $Message -ForegroundColor $Color
     }
@@ -98,7 +98,7 @@ try {
     # Step 1: Build the Linux binary
     if (-not $NoBuild) {
         Write-Log "[1/3] Building Dottie CLI for Linux..." -Color Yellow
-        
+
         $publishArgs = @(
             "publish"
             "src/Dottie.Cli/Dottie.Cli.csproj"
@@ -108,26 +108,26 @@ try {
             "--output", "./publish/linux-x64"
             "/p:PublishSingleFile=true"
         )
-        
+
         if ($Verbosity -eq 'Verbose') {
             Write-Host "  Command: dotnet $(($publishArgs) -join ' ')" -ForegroundColor DarkGray
         }
-        
+
         & dotnet @publishArgs 2>&1 | ForEach-Object {
             if ($Verbosity -eq 'Verbose') {
                 Write-Host $_
             }
         }
-        
+
         if ($LASTEXITCODE -ne 0) {
             throw "dotnet publish failed with exit code $LASTEXITCODE"
         }
-        
+
         Write-Log "  ✓ Build complete" -Color Green
     }
     else {
         Write-Log "[1/3] Skipping build (using existing binary)" -Color DarkGray
-        
+
         if (-not (Test-Path "./publish/linux-x64/dottie")) {
             throw "No binary found at ./publish/linux-x64/dottie. Run without -NoBuild first."
         }
@@ -137,26 +137,26 @@ try {
     # Step 2: Build Docker image
     if (-not $NoImageBuild) {
         Write-Log "[2/3] Building Docker test image..." -Color Yellow
-        
+
         if ($Verbosity -eq 'Verbose') {
             Write-Host "  Command: docker build -t dottie-integration-test -f tests/integration/Dockerfile ." -ForegroundColor DarkGray
         }
-        
+
         & docker build -t dottie-integration-test -f tests/integration/Dockerfile . 2>&1 | ForEach-Object {
             if ($Verbosity -eq 'Verbose') {
                 Write-Host $_
             }
         }
-        
+
         if ($LASTEXITCODE -ne 0) {
             throw "docker build failed with exit code $LASTEXITCODE"
         }
-        
+
         Write-Log "  ✓ Image built" -Color Green
     }
     else {
         Write-Log "[2/3] Skipping image build (using existing image)" -Color DarkGray
-        
+
         $imageExists = docker images -q dottie-integration-test 2>$null
         if (-not $imageExists) {
             throw "No Docker image found. Run without -NoImageBuild first."
@@ -173,7 +173,7 @@ try {
         Write-Host "  Command: docker run --rm --env TEST_NAME=$TestName --env VERBOSITY=$Verbosity dottie-integration-test" -ForegroundColor DarkGray
     }
     Write-Log ""
-    
+
     $dockerArgs = @('run', '--rm')
     if ($TestName) {
         $dockerArgs += @('--env', "TEST_NAME=$TestName")
@@ -182,12 +182,12 @@ try {
         $dockerArgs += @('--env', "VERBOSITY=$Verbosity")
     }
     $dockerArgs += 'dottie-integration-test'
-    
+
     & docker @dockerArgs
     $testExitCode = $LASTEXITCODE
-    
+
     Write-Log ""
-    
+
     if ($testExitCode -eq 0) {
         if ($Verbosity -ne 'Quiet') {
             Write-Host "========================================" -ForegroundColor Green

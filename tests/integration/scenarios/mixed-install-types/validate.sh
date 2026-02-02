@@ -70,7 +70,7 @@ if command -v dpkg &> /dev/null; then
             apt_installed=$((apt_installed + 1))
         fi
     done
-    
+
     if [ $apt_installed -gt 0 ]; then
         echo "  PASS: At least one APT package installed"
     else

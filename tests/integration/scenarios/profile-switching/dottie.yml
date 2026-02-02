@@ -17,20 +17,20 @@ mappings:
   - source: "bashrc-default"
     target: "~/.bashrc-default"
     profile: "default"
-  
+
   - source: "profile-default"
     target: "~/.profile-default"
     profile: "default"
-  
+
   # Work profile
   - source: "bashrc-work"
     target: "~/.bashrc-work"
     profile: "work"
-  
+
   - source: "vimrc-work"
     target: "~/.vimrc-work"
     profile: "work"
-  
+
   # Minimal profile
   - source: "bashrc-minimal"
     target: "~/.bashrc-minimal"

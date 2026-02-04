@@ -18,10 +18,9 @@
   </PropertyGroup>
 
   <!-- FestinaLente.CodeStandards - Required by constitution v1.6.0 -->
-  <!-- Temporarily disabled for testing without GitHub authentication -->
-  <!--<ItemGroup>
+  <ItemGroup>
     <PackageReference Include="FestinaLente.CodeStandards" Version="*" />
-  </ItemGroup>-->
+  </ItemGroup>
 
   <!-- StyleCop configuration -->
   <ItemGroup>

@@ -141,36 +141,64 @@ public sealed class ApplyCommand : AsyncCommand<ApplyCommandSettings>
 
     private static async Task<ApplyResult> ExecuteApplyAsync(ResolvedProfile profile, string repoRoot, bool force)
     {
-        // Phase 1: Link dotfiles
-        var linkPhase = ExecuteLinkPhase(profile, repoRoot, force);
+        var dotfileCount = profile.Dotfiles.Count;
+        var installCount = InstallerProgressHelper.GetTotalItemCount(profile.Install);
+        var totalItems = dotfileCount + installCount;
 
-        // If blocked by conflicts, don't proceed to install
-        if (linkPhase.WasBlocked)
-        {
-            return new ApplyResult
+        LinkPhaseResult? linkPhase = null;
+        InstallPhaseResult? installPhase = null;
+
+        await AnsiConsole.Progress()
+            .AutoClear(false)
+            .HideCompleted(false)
+            .Columns(
+                new TaskDescriptionColumn(),
+                new ProgressBarColumn(),
+                new PercentageColumn(),
+                new RemainingTimeColumn(),
+                new SpinnerColumn())
+            .StartAsync(async ctx =>
             {
-                LinkPhase = linkPhase,
-                InstallPhase = InstallPhaseResult.NotExecuted(),
-            };
-        }
+                var task = ctx.AddTask("[green]Applying configuration[/]", maxValue: totalItems);
 
-        // Phase 2: Install software
-        var installPhase = await ExecuteInstallPhaseAsync(profile, repoRoot);
+                // Phase 1: Link dotfiles
+                if (dotfileCount > 0)
+                {
+                    task.Description = "[green]Linking dotfiles[/]";
+                    linkPhase = ExecuteLinkPhaseInternal(profile, repoRoot, force);
+                    task.Increment(dotfileCount);
+                }
+                else
+                {
+                    linkPhase = LinkPhaseResult.NotExecuted();
+                }
+
+                // If blocked by conflicts, don't proceed to install
+                if (linkPhase.WasBlocked)
+                {
+                    task.Description = "[red]Blocked by conflicts[/]";
+                    return;
+                }
+
+                // Phase 2: Install software
+                installPhase = profile.Install is not null && installCount > 0
+                    ? await ExecuteInstallPhaseWithProgressAsync(profile, repoRoot, task)
+                    : InstallPhaseResult.NotExecuted();
+
+                task.Description = "[green]Apply complete[/]";
+            });
+
+        AnsiConsole.WriteLine();
 
         return new ApplyResult
         {
-            LinkPhase = linkPhase,
-            InstallPhase = installPhase,
+            LinkPhase = linkPhase ?? LinkPhaseResult.NotExecuted(),
+            InstallPhase = installPhase ?? InstallPhaseResult.NotExecuted(),
         };
     }
 
-    private static LinkPhaseResult ExecuteLinkPhase(ResolvedProfile profile, string repoRoot, bool force)
+    private static LinkPhaseResult ExecuteLinkPhaseInternal(ResolvedProfile profile, string repoRoot, bool force)
     {
-        if (profile.Dotfiles.Count == 0)
-        {
-            return LinkPhaseResult.NotExecuted();
-        }
-
         var orchestrator = new LinkingOrchestrator();
         var result = orchestrator.ExecuteLink(profile, repoRoot, force);
 
@@ -182,15 +210,35 @@ public sealed class ApplyCommand : AsyncCommand<ApplyCommandSettings>
         return LinkPhaseResult.Executed(result);
     }
 
-    private static async Task<InstallPhaseResult> ExecuteInstallPhaseAsync(ResolvedProfile profile, string repoRoot)
+    private static async Task<InstallPhaseResult> ExecuteInstallPhaseWithProgressAsync(
+        ResolvedProfile profile,
+        string repoRoot,
+        ProgressTask task)
     {
+        var context = CreateInstallContext(repoRoot);
+        var results = new List<InstallResult>();
+
         if (profile.Install is null)
         {
             return InstallPhaseResult.NotExecuted();
         }
 
-        var context = CreateInstallContext(repoRoot);
-        var results = await RunInstallersAsync(profile.Install, context);
+        var installerItems = InstallerProgressHelper.GetInstallerItems(profile.Install);
+
+        foreach (var item in installerItems)
+        {
+            if (item.Count == 0)
+            {
+                continue;
+            }
+
+            task.Description = $"[green]Installing {item.Name}[/]";
+
+            var installerResults = await ExecuteInstallerAsync(item.Installer, profile.Install, context);
+            results.AddRange(installerResults);
+
+            task.Increment(item.Count);
+        }
 
         return InstallPhaseResult.Executed(results);
     }
@@ -204,31 +252,6 @@ public sealed class ApplyCommand : AsyncCommand<ApplyCommandSettings>
             HasSudo = sudoChecker.IsSudoAvailable(),
             DryRun = false,
         };
-    }
-
-    private static async Task<IReadOnlyList<InstallResult>> RunInstallersAsync(InstallBlock installBlock, InstallContext context)
-    {
-        // Installers in priority order per FR-007
-        var installers = new List<IInstallSource>
-        {
-            new GithubReleaseInstaller(),   // 1. GitHub Releases
-            new AptPackageInstaller(),      // 2. APT Packages
-            new AptRepoInstaller(),         // 3. Private APT Repos
-            new ScriptRunner(),             // 4. Shell Scripts
-            new FontInstaller(),            // 5. Fonts
-            new SnapPackageInstaller(),     // 6. Snap Packages
-        };
-
-        var results = new List<InstallResult>();
-
-        foreach (var installer in installers)
-        {
-            // Fail-soft: continue even if individual installers fail
-            var installerResults = await ExecuteInstallerAsync(installer, installBlock, context);
-            results.AddRange(installerResults);
-        }
-
-        return results;
     }
 
     private static async Task<IEnumerable<InstallResult>> ExecuteInstallerAsync(

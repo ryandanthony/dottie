@@ -87,4 +87,125 @@ public class ArchitectureDetectorTests
         patterns.Should().NotBeEmpty();
         patterns.Should().AllSatisfy(p => p.Should().Contain("*", "Patterns should be glob patterns"));
     }
+
+    [Fact]
+    public void MatchesPattern_CaseInsensitive_ReturnsTrue()
+    {
+        // Arrange
+        var pattern = "*AMD64*";
+        var filename = "tool-linux-amd64.tar.gz";
+
+        // Act
+        var result = ArchitectureDetector.MatchesPattern(filename, pattern);
+
+        // Assert
+        result.Should().BeTrue("Pattern matching should be case-insensitive");
+    }
+
+    [Fact]
+    public void MatchesPattern_MultipleWildcards_ReturnsTrue()
+    {
+        // Arrange
+        var pattern = "*linux*amd64*";
+        var filename = "fzf-0.45.0-linux_x86_64_amd64.tar.gz";
+
+        // Act
+        var result = ArchitectureDetector.MatchesPattern(filename, pattern);
+
+        // Assert
+        result.Should().BeTrue("Pattern with multiple wildcards should match");
+    }
+
+    [Fact]
+    public void MatchesPattern_ExactMatch_ReturnsTrue()
+    {
+        // Arrange
+        var pattern = "tool-amd64.tar.gz";
+        var filename = "tool-amd64.tar.gz";
+
+        // Act
+        var result = ArchitectureDetector.MatchesPattern(filename, pattern);
+
+        // Assert
+        result.Should().BeTrue("Exact filename should match pattern");
+    }
+
+    [Fact]
+    public void MatchesPattern_NoWildcard_ReturnsFalse()
+    {
+        // Arrange
+        var pattern = "tool-amd64.tar.gz";
+        var filename = "tool-x86.tar.gz";
+
+        // Act
+        var result = ArchitectureDetector.MatchesPattern(filename, pattern);
+
+        // Assert
+        result.Should().BeFalse("Different filename should not match pattern");
+    }
+
+    [Fact]
+    public void MatchesPattern_X86Patterns_ReturnsTrue()
+    {
+        // Arrange
+        var testCases = new (string Filename, string Pattern)[]
+        {
+            ("app-i386-linux.tar.gz", "*i386*"),
+            ("tool-i686-gnu.tar.gz", "*i686*"),
+            ("binary-x86.exe", "*x86*"),
+        };
+
+        // Act & Assert
+        foreach (var (filename, pattern) in testCases)
+        {
+            var result = ArchitectureDetector.MatchesPattern(filename, pattern);
+            result.Should().BeTrue($"Pattern '{pattern}' should match '{filename}'");
+        }
+    }
+
+    [Fact]
+    public void MatchesPattern_ArmPatterns_ReturnsTrue()
+    {
+        // Arrange
+        var testCases = new (string Filename, string Pattern)[]
+        {
+            ("app-armv7-linux.tar.gz", "*armv7*"),
+            ("tool-armhf.tar.gz", "*armhf*"),
+            ("binary-arm64.exe", "*arm64*"),
+            ("release-aarch64.tar.gz", "*aarch64*"),
+        };
+
+        // Act & Assert
+        foreach (var (filename, pattern) in testCases)
+        {
+            var result = ArchitectureDetector.MatchesPattern(filename, pattern);
+            result.Should().BeTrue($"Pattern '{pattern}' should match '{filename}'");
+        }
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void MatchesPattern_NullOrWhitespaceFilename_ThrowsArgumentException(string filename)
+    {
+        // Arrange
+        var pattern = "*amd64*";
+
+        // Act & Assert
+        var action = () => ArchitectureDetector.MatchesPattern(filename, pattern);
+        action.Should().Throw<ArgumentException>();
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void MatchesPattern_NullOrWhitespacePattern_ThrowsArgumentException(string pattern)
+    {
+        // Arrange
+        var filename = "tool-amd64.tar.gz";
+
+        // Act & Assert
+        var action = () => ArchitectureDetector.MatchesPattern(filename, pattern);
+        action.Should().Throw<ArgumentException>();
+    }
 }

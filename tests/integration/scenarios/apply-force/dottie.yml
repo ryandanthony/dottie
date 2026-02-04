@@ -1,0 +1,5 @@
+profiles:
+  default:
+    dotfiles:
+      - source: dotfiles/bashrc
+        target: ~/.bashrc-force-test

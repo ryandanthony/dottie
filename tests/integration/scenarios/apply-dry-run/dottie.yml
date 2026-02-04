@@ -1,0 +1,10 @@
+profiles:
+  default:
+    dotfiles:
+      - source: dotfiles/bashrc
+        target: ~/.bashrc-dry-run-test
+      - source: dotfiles/vimrc
+        target: ~/.vimrc-dry-run-test
+    install:
+      apt:
+        - jq

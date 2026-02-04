@@ -1,0 +1,261 @@
+// -----------------------------------------------------------------------
+// <copyright file="ApplyCommand.cs" company="Ryan Anthony">
+// Copyright (c) Ryan Anthony. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+using Dottie.Cli.Models;
+using Dottie.Cli.Output;
+using Dottie.Cli.Utilities;
+using Dottie.Configuration.Inheritance;
+using Dottie.Configuration.Installing;
+using Dottie.Configuration.Installing.Utilities;
+using Dottie.Configuration.Linking;
+using Dottie.Configuration.Models.InstallBlocks;
+using Dottie.Configuration.Parsing;
+using Dottie.Configuration.Validation;
+using Spectre.Console;
+using Spectre.Console.Cli;
+
+namespace Dottie.Cli.Commands;
+
+/// <summary>
+/// Command to apply profile configuration: link dotfiles and install software.
+/// </summary>
+/// <remarks>
+/// S1200 is suppressed because CLI command classes inherently coordinate multiple components.
+/// This is an orchestration class that delegates work to specialized services.
+/// </remarks>
+[System.Diagnostics.CodeAnalysis.SuppressMessage(
+    "Major Code Smell",
+    "S1200:Classes should not be coupled to too many other classes (Single Responsibility Principle)",
+    Justification = "CLI command classes inherently orchestrate multiple components. This command coordinates linking and installation services.")]
+public sealed class ApplyCommand : AsyncCommand<ApplyCommandSettings>
+{
+    private readonly IApplyProgressRenderer _renderer;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ApplyCommand"/> class.
+    /// </summary>
+    /// <param name="renderer">Optional custom renderer for testing.</param>
+    public ApplyCommand(IApplyProgressRenderer? renderer = null)
+    {
+        _renderer = renderer ?? new ApplyProgressRenderer();
+    }
+
+    /// <inheritdoc/>
+    public override async Task<int> ExecuteAsync(CommandContext context, ApplyCommandSettings settings)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+
+        var repoRoot = FindRepoRoot();
+        if (repoRoot is null)
+        {
+            return 1;
+        }
+
+        var profile = LoadAndResolveProfile(settings, repoRoot, out var exitCode);
+        if (profile is null)
+        {
+            return exitCode;
+        }
+
+        var profileName = settings.ProfileName ?? "default";
+
+        if (settings.DryRun)
+        {
+            _renderer.RenderDryRunPreview(profile, repoRoot);
+            return 0;
+        }
+
+        var result = await ExecuteApplyAsync(profile, repoRoot, settings.Force);
+        _renderer.RenderVerboseSummary(result, profileName);
+
+        return result.OverallSuccess ? 0 : 1;
+    }
+
+    private static string? FindRepoRoot()
+    {
+        var repoRoot = RepoRootFinder.Find();
+        if (repoRoot is null)
+        {
+            AnsiConsole.MarkupLine("[red]Error:[/] Could not find git repository root.");
+            AnsiConsole.MarkupLine("[yellow]Hint:[/] Make sure you're running from within a git repository.");
+        }
+
+        return repoRoot;
+    }
+
+    private ResolvedProfile? LoadAndResolveProfile(ApplyCommandSettings settings, string repoRoot, out int exitCode)
+    {
+        var configPath = settings.ConfigPath ?? Path.Combine(repoRoot, "dottie.yaml");
+        if (!File.Exists(configPath))
+        {
+            _renderer.RenderError("Could not find dottie.yaml in the repository root.");
+            exitCode = 1;
+            return null;
+        }
+
+        var loader = new ConfigurationLoader();
+        var loadResult = loader.Load(configPath);
+
+        if (!loadResult.IsSuccess)
+        {
+            ErrorFormatter.WriteErrors(loadResult.Errors.ToList());
+            exitCode = 1;
+            return null;
+        }
+
+        var validator = new ConfigurationValidator();
+        var validationResult = validator.Validate(loadResult.Configuration!);
+
+        if (!validationResult.IsValid)
+        {
+            ErrorFormatter.WriteErrors(validationResult.Errors.ToList());
+            exitCode = 1;
+            return null;
+        }
+
+        var profileName = settings.ProfileName ?? "default";
+        var merger = new ProfileMerger(loadResult.Configuration!);
+        var mergeResult = merger.Resolve(profileName);
+
+        if (!mergeResult.IsSuccess)
+        {
+            _renderer.RenderError(mergeResult.Error!);
+            exitCode = 1;
+            return null;
+        }
+
+        // Profile must have either dotfiles or install block
+        if (mergeResult.Profile!.Dotfiles.Count == 0 && mergeResult.Profile.Install is null)
+        {
+            _renderer.RenderError($"Profile '{profileName}' has no dotfiles or install block configured.");
+            exitCode = 1;
+            return null;
+        }
+
+        exitCode = 0;
+        return mergeResult.Profile;
+    }
+
+    private static async Task<ApplyResult> ExecuteApplyAsync(ResolvedProfile profile, string repoRoot, bool force)
+    {
+        // Phase 1: Link dotfiles
+        var linkPhase = ExecuteLinkPhase(profile, repoRoot, force);
+
+        // If blocked by conflicts, don't proceed to install
+        if (linkPhase.WasBlocked)
+        {
+            return new ApplyResult
+            {
+                LinkPhase = linkPhase,
+                InstallPhase = InstallPhaseResult.NotExecuted(),
+            };
+        }
+
+        // Phase 2: Install software
+        var installPhase = await ExecuteInstallPhaseAsync(profile, repoRoot);
+
+        return new ApplyResult
+        {
+            LinkPhase = linkPhase,
+            InstallPhase = installPhase,
+        };
+    }
+
+    private static LinkPhaseResult ExecuteLinkPhase(ResolvedProfile profile, string repoRoot, bool force)
+    {
+        if (profile.Dotfiles.Count == 0)
+        {
+            return LinkPhaseResult.NotExecuted();
+        }
+
+        var orchestrator = new LinkingOrchestrator();
+        var result = orchestrator.ExecuteLink(profile, repoRoot, force);
+
+        if (result.IsBlocked)
+        {
+            return LinkPhaseResult.Blocked(result);
+        }
+
+        return LinkPhaseResult.Executed(result);
+    }
+
+    private static async Task<InstallPhaseResult> ExecuteInstallPhaseAsync(ResolvedProfile profile, string repoRoot)
+    {
+        if (profile.Install is null)
+        {
+            return InstallPhaseResult.NotExecuted();
+        }
+
+        var context = CreateInstallContext(repoRoot);
+        var results = await RunInstallersAsync(profile.Install, context);
+
+        return InstallPhaseResult.Executed(results);
+    }
+
+    private static InstallContext CreateInstallContext(string repoRoot)
+    {
+        var sudoChecker = new SudoChecker();
+        return new InstallContext
+        {
+            RepoRoot = repoRoot,
+            HasSudo = sudoChecker.IsSudoAvailable(),
+            DryRun = false,
+        };
+    }
+
+    private static async Task<IReadOnlyList<InstallResult>> RunInstallersAsync(InstallBlock installBlock, InstallContext context)
+    {
+        // Installers in priority order per FR-007
+        var installers = new List<IInstallSource>
+        {
+            new GithubReleaseInstaller(),   // 1. GitHub Releases
+            new AptPackageInstaller(),      // 2. APT Packages
+            new AptRepoInstaller(),         // 3. Private APT Repos
+            new ScriptRunner(),             // 4. Shell Scripts
+            new FontInstaller(),            // 5. Fonts
+            new SnapPackageInstaller(),     // 6. Snap Packages
+        };
+
+        var results = new List<InstallResult>();
+
+        foreach (var installer in installers)
+        {
+            // Fail-soft: continue even if individual installers fail
+            var installerResults = await ExecuteInstallerAsync(installer, installBlock, context);
+            results.AddRange(installerResults);
+        }
+
+        return results;
+    }
+
+    private static async Task<IEnumerable<InstallResult>> ExecuteInstallerAsync(
+        IInstallSource installer,
+        InstallBlock installBlock,
+        InstallContext context)
+    {
+        try
+        {
+            return installer.SourceType switch
+            {
+                InstallSourceType.GithubRelease => await ((GithubReleaseInstaller)installer).InstallAsync(installBlock, context),
+                InstallSourceType.AptPackage => await ((AptPackageInstaller)installer).InstallAsync(installBlock, context),
+                InstallSourceType.AptRepo => await ((AptRepoInstaller)installer).InstallAsync(installBlock, context),
+                InstallSourceType.Script => await ((ScriptRunner)installer).InstallAsync(installBlock, context),
+                InstallSourceType.Font => await ((FontInstaller)installer).InstallAsync(installBlock, context),
+                InstallSourceType.SnapPackage => await ((SnapPackageInstaller)installer).InstallAsync(installBlock, context),
+                _ => [],
+            };
+        }
+        catch (Exception ex)
+        {
+            // Log the failure but continue with other installers (fail-soft)
+            return [InstallResult.Failed(
+                installer.SourceType.ToString(),
+                installer.SourceType,
+                $"Installer error: {ex.Message}")];
+        }
+    }
+}

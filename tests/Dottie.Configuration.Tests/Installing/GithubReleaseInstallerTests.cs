@@ -783,4 +783,273 @@ public class GithubReleaseInstallerTests : IDisposable
         results.First().Status.Should().Be(InstallStatus.Failed);
         results.First().Message.Should().Contain("not found");
     }
+
+    #region Binary Existence Detection Tests (T003, T013-T015)
+
+    /// <summary>
+    /// Tests that IsBinaryInstalled returns true when the binary exists in ~/bin/.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
+    [Fact]
+    public async Task InstallAsync_WhenBinaryExistsInBinDirectory_SkipsInstallationAsync()
+    {
+        // Arrange
+        var tempBinDir = Path.Combine(Path.GetTempPath(), $"dottie-test-bin-{Guid.NewGuid():N}");
+        try
+        {
+            Directory.CreateDirectory(tempBinDir);
+            var binaryPath = Path.Combine(tempBinDir, "mybin");
+            await File.WriteAllTextAsync(binaryPath, "binary content");
+
+            var processRunner = new FakeProcessRunner();
+            var installer = new GithubReleaseInstaller(processRunner: processRunner);
+            var installBlock = new InstallBlock
+            {
+                Github = new List<GithubReleaseItem>
+                {
+                    new GithubReleaseItem
+                    {
+                        Repo = "owner/repo",
+                        Asset = "*.tar.gz",
+                        Binary = "mybin",
+                    },
+                },
+            };
+            var context = new InstallContext { RepoRoot = "/repo", BinDirectory = tempBinDir, DryRun = false };
+
+            // Act
+            var results = await installer.InstallAsync(installBlock, context);
+
+            // Assert
+            results.Should().HaveCount(1);
+            results.First().Status.Should().Be(InstallStatus.Skipped);
+            results.First().Message.Should().Contain("Already installed");
+        }
+        finally
+        {
+            if (Directory.Exists(tempBinDir))
+            {
+                Directory.Delete(tempBinDir, recursive: true);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Tests that IsBinaryInstalled returns true when binary is found via PATH (using which command).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
+    [Fact]
+    public async Task InstallAsync_WhenBinaryExistsInPath_SkipsInstallationAsync()
+    {
+        // Arrange
+        var tempBinDir = Path.Combine(Path.GetTempPath(), $"dottie-test-bin-{Guid.NewGuid():N}");
+        try
+        {
+            Directory.CreateDirectory(tempBinDir);
+            // Binary NOT in ~/bin/ but will be found via 'which'
+
+            var processRunner = new FakeProcessRunner()
+                .WithResult(ProcessResult.Succeeded("/usr/local/bin/mybin")); // which returns path
+
+            var installer = new GithubReleaseInstaller(processRunner: processRunner);
+            var installBlock = new InstallBlock
+            {
+                Github = new List<GithubReleaseItem>
+                {
+                    new GithubReleaseItem
+                    {
+                        Repo = "owner/repo",
+                        Asset = "*.tar.gz",
+                        Binary = "mybin",
+                    },
+                },
+            };
+            var context = new InstallContext { RepoRoot = "/repo", BinDirectory = tempBinDir, DryRun = false };
+
+            // Act
+            var results = await installer.InstallAsync(installBlock, context);
+
+            // Assert
+            results.Should().HaveCount(1);
+            results.First().Status.Should().Be(InstallStatus.Skipped);
+            results.First().Message.Should().Contain("Already installed");
+        }
+        finally
+        {
+            if (Directory.Exists(tempBinDir))
+            {
+                Directory.Delete(tempBinDir, recursive: true);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Tests that installation proceeds when binary is not found anywhere.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
+    [Fact]
+    public async Task InstallAsync_WhenBinaryNotFound_ProceedsWithInstallationAsync()
+    {
+        // Arrange
+        _httpTest = new HttpTest();
+        _httpTest.RespondWithJson(new
+        {
+            assets = new[]
+            {
+                new { name = "app-linux-amd64.tar.gz", browser_download_url = "https://example.com/app.tar.gz" },
+            },
+        });
+
+        var tempBinDir = Path.Combine(Path.GetTempPath(), $"dottie-test-bin-{Guid.NewGuid():N}");
+        try
+        {
+            Directory.CreateDirectory(tempBinDir);
+            // Binary NOT in ~/bin/
+
+            var processRunner = new FakeProcessRunner()
+                .WithResult(ProcessResult.Failed(1, "not found")); // which returns non-zero
+
+            var mockDownloader = new Mock<HttpDownloader>();
+            mockDownloader
+                .Setup(d => d.DownloadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new HttpRequestException("Simulated download for test"));
+
+            var installer = new GithubReleaseInstaller(mockDownloader.Object, processRunner);
+            var installBlock = new InstallBlock
+            {
+                Github = new List<GithubReleaseItem>
+                {
+                    new GithubReleaseItem
+                    {
+                        Repo = "owner/repo",
+                        Asset = "*.tar.gz",
+                        Binary = "mybin",
+                    },
+                },
+            };
+            var context = new InstallContext { RepoRoot = "/repo", BinDirectory = tempBinDir, DryRun = false };
+
+            // Act
+            var results = await installer.InstallAsync(installBlock, context);
+
+            // Assert - It should attempt to download (and fail due to mock), proving it didn't skip
+            results.Should().HaveCount(1);
+            results.First().Status.Should().Be(InstallStatus.Failed);
+            results.First().Message.Should().Contain("download");
+        }
+        finally
+        {
+            if (Directory.Exists(tempBinDir))
+            {
+                Directory.Delete(tempBinDir, recursive: true);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Tests that dry-run checks system state and shows "would skip" for already-installed binaries.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
+    [Fact]
+    public async Task InstallAsync_DryRun_WhenBinaryAlreadyInstalled_ShowsWouldSkipAsync()
+    {
+        // Arrange
+        _httpTest = new HttpTest();
+        _httpTest.RespondWith(status: 200);
+
+        var tempBinDir = Path.Combine(Path.GetTempPath(), $"dottie-test-bin-{Guid.NewGuid():N}");
+        try
+        {
+            Directory.CreateDirectory(tempBinDir);
+            var binaryPath = Path.Combine(tempBinDir, "mybin");
+            await File.WriteAllTextAsync(binaryPath, "binary content");
+
+            var processRunner = new FakeProcessRunner();
+            var installer = new GithubReleaseInstaller(processRunner: processRunner);
+            var installBlock = new InstallBlock
+            {
+                Github = new List<GithubReleaseItem>
+                {
+                    new GithubReleaseItem
+                    {
+                        Repo = "owner/repo",
+                        Asset = "*.tar.gz",
+                        Binary = "mybin",
+                        Version = "v1.0.0",
+                    },
+                },
+            };
+            var context = new InstallContext { RepoRoot = "/repo", BinDirectory = tempBinDir, DryRun = true };
+
+            // Act
+            var results = await installer.InstallAsync(installBlock, context);
+
+            // Assert
+            results.Should().HaveCount(1);
+            results.First().Status.Should().Be(InstallStatus.Skipped);
+            results.First().Message.Should().Contain("Already installed");
+        }
+        finally
+        {
+            if (Directory.Exists(tempBinDir))
+            {
+                Directory.Delete(tempBinDir, recursive: true);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Tests that dry-run checks system state and shows "would install" for binaries not found.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
+    [Fact]
+    public async Task InstallAsync_DryRun_WhenBinaryNotInstalled_ShowsWouldInstallAsync()
+    {
+        // Arrange
+        _httpTest = new HttpTest();
+        _httpTest.RespondWith(status: 200);
+
+        var tempBinDir = Path.Combine(Path.GetTempPath(), $"dottie-test-bin-{Guid.NewGuid():N}");
+        try
+        {
+            Directory.CreateDirectory(tempBinDir);
+            // Binary NOT in ~/bin/
+
+            var processRunner = new FakeProcessRunner()
+                .WithResult(ProcessResult.Failed(1, "not found")); // which returns non-zero
+
+            var installer = new GithubReleaseInstaller(processRunner: processRunner);
+            var installBlock = new InstallBlock
+            {
+                Github = new List<GithubReleaseItem>
+                {
+                    new GithubReleaseItem
+                    {
+                        Repo = "owner/repo",
+                        Asset = "*.tar.gz",
+                        Binary = "mybin",
+                        Version = "v1.0.0",
+                    },
+                },
+            };
+            var context = new InstallContext { RepoRoot = "/repo", BinDirectory = tempBinDir, DryRun = true };
+
+            // Act
+            var results = await installer.InstallAsync(installBlock, context);
+
+            // Assert
+            results.Should().HaveCount(1);
+            results.First().Status.Should().Be(InstallStatus.Success);
+            results.First().Message.Should().Contain("would be installed");
+        }
+        finally
+        {
+            if (Directory.Exists(tempBinDir))
+            {
+                Directory.Delete(tempBinDir, recursive: true);
+            }
+        }
+    }
+
+    #endregion
 }

@@ -186,6 +186,78 @@ Would skip 1 file(s) (already linked):
   • ~/.zshrc
 ```
 
+### Install Software
+
+Install software packages defined in your configuration's install block.
+
+```bash
+# Install software using default profile
+dottie install
+
+# Install using a specific profile
+dottie install --profile work
+dottie install -p work
+
+# Preview what would be installed (dry-run)
+dottie install --dry-run
+
+# Use custom config path
+dottie install --config /path/to/dottie.yaml
+dottie install -c /path/to/dottie.yaml
+```
+
+**Options:**
+
+| Option | Short | Description |
+|--------|-------|-------------|
+| `--profile` | `-p` | Profile to use (default: "default") |
+| `--config` | `-c` | Path to configuration file |
+| `--dry-run` | | Preview installation without making changes |
+
+**Installation Priority Order:**
+
+1. GitHub Releases (binaries downloaded to `~/bin/`)
+2. APT Packages
+3. APT Repositories (added before package installation)
+4. Scripts (custom setup scripts)
+5. Fonts (installed to `~/.local/share/fonts/`)
+6. Snap Packages
+
+**Idempotency:** Already-installed tools are automatically detected and skipped.
+
+**Output Examples:**
+
+```bash
+# Successful installation
+✓ rg Success (GithubRelease) - Installed to ~/bin/rg
+⊘ git Skipped (AptPackage) - Already installed
+✓ curl Success (AptPackage)
+
+Installation Summary:
+  ✓ Succeeded: 2
+  ⊘ Skipped: 1
+
+# Dry-run preview
+Dry Run Mode: Previewing installation without making changes
+✓ rg Success (GithubRelease) - GitHub release BurntSushi/ripgrep@latest would be installed
+⊘ fd Skipped (GithubRelease) - Already installed in ~/bin/
+
+Installation Summary:
+  ✓ Succeeded: 1
+  ⊘ Skipped: 1
+
+# With failures
+✓ rg Success (GithubRelease)
+✗ nonexistent Failed (GithubRelease) - Version 99.0.0 not found
+
+Installation Summary:
+  ✓ Succeeded: 1
+  ✗ Failed: 1
+
+Failed Installations:
+  [GithubRelease] nonexistent: Version 99.0.0 not found
+```
+
 ## Building from Source
 
 ```bash

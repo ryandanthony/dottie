@@ -27,4 +27,11 @@ public interface IInstallProgressRenderer
     /// Renders an error message.
     /// </summary>
     void RenderError(string message);
+
+    /// <summary>
+    /// Renders a grouped summary of failed installations.
+    /// Failures are grouped by source type for easier troubleshooting.
+    /// </summary>
+    /// <param name="results">All installation results (will filter to failures).</param>
+    void RenderGroupedFailures(IEnumerable<InstallResult> results);
 }

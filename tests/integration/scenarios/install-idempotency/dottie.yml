@@ -1,0 +1,11 @@
+# Integration test configuration for install idempotency
+# Tests that running dottie install multiple times skips already-installed binaries
+
+profiles:
+  default:
+    install:
+      github:
+        # Using jq as it's small and commonly available
+        - repo: jqlang/jq
+          asset: "jq-linux-amd64"
+          binary: jq

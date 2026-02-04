@@ -80,12 +80,81 @@ public class GithubReleaseInstaller : IInstallSource
 
     private async Task<InstallResult> InstallGithubReleaseItemAsync(GithubReleaseItem item, InstallContext context, CancellationToken cancellationToken)
     {
+        // Check if binary is already installed (idempotency)
+        var installedCheck = await CheckBinaryInstalledAsync(item.Binary, context, cancellationToken);
+        if (installedCheck != null)
+        {
+            return installedCheck;
+        }
+
         if (context.DryRun)
         {
             return await ValidateReleaseExistsAsync(item, cancellationToken);
         }
 
         return await DownloadAndInstallReleaseAsync(item, context, cancellationToken);
+    }
+
+    /// <summary>
+    /// Checks if the binary is already installed in ~/bin/ or PATH.
+    /// </summary>
+    /// <param name="binaryName">Name of the binary to check.</param>
+    /// <param name="context">Install context with bin directory.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Skipped result if installed, null if not installed.</returns>
+    private async Task<InstallResult?> CheckBinaryInstalledAsync(string binaryName, InstallContext context, CancellationToken cancellationToken)
+    {
+        // Check ~/bin/ first (dottie's install location)
+        var binPath = Path.Combine(context.BinDirectory, binaryName);
+        if (File.Exists(binPath))
+        {
+            return InstallResult.Skipped(binaryName, SourceType, $"Already installed in {context.BinDirectory}");
+        }
+
+        // On Windows, also check with .exe extension
+        if (OperatingSystem.IsWindows())
+        {
+            var exePath = binPath + ".exe";
+            if (File.Exists(exePath))
+            {
+                return InstallResult.Skipped(binaryName, SourceType, $"Already installed in {context.BinDirectory}");
+            }
+        }
+
+        // Fall back to PATH check using 'which' (Linux/macOS) or 'where' (Windows)
+        var pathCheck = await CheckPathForBinaryAsync(binaryName, cancellationToken);
+        if (pathCheck != null)
+        {
+            return InstallResult.Skipped(binaryName, SourceType, $"Already installed at {pathCheck}");
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Checks if the binary exists in PATH using the system's 'which' or 'where' command.
+    /// </summary>
+    /// <param name="binaryName">Name of the binary to check.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Path to binary if found, null otherwise.</returns>
+    private async Task<string?> CheckPathForBinaryAsync(string binaryName, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var command = OperatingSystem.IsWindows() ? "where" : "which";
+            var result = await _processRunner.RunAsync(command, binaryName, cancellationToken: cancellationToken);
+
+            if (result.ExitCode == 0 && !string.IsNullOrWhiteSpace(result.StandardOutput))
+            {
+                return result.StandardOutput.Trim().Split('\n')[0].Trim();
+            }
+        }
+        catch
+        {
+            // Ignore errors from which/where command - just means not found
+        }
+
+        return null;
     }
 
     private async Task<InstallResult> ValidateReleaseExistsAsync(GithubReleaseItem item, CancellationToken cancellationToken)

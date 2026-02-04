@@ -166,7 +166,7 @@ public sealed class ApplyCommand : AsyncCommand<ApplyCommandSettings>
         };
     }
 
-    private static async Task<(LinkPhaseResult Link, InstallPhaseResult Install)> ExecuteWithProgressAsync(
+    private static async Task<(LinkPhaseResult link, InstallPhaseResult install)> ExecuteWithProgressAsync(
         ResolvedProfile profile,
         string repoRoot,
         bool force,
@@ -208,7 +208,7 @@ public sealed class ApplyCommand : AsyncCommand<ApplyCommandSettings>
         return (linkPhase ?? LinkPhaseResult.NotExecuted(), installPhase ?? InstallPhaseResult.NotExecuted());
     }
 
-    private static async Task<(LinkPhaseResult Link, InstallPhaseResult Install)> ExecuteWithoutProgressAsync(
+    private static async Task<(LinkPhaseResult link, InstallPhaseResult install)> ExecuteWithoutProgressAsync(
         ResolvedProfile profile,
         string repoRoot,
         bool force,

@@ -13,6 +13,7 @@ Auto-generated from all feature plans. Last updated: 2026-01-28
 - Filesystem (`~/bin/` for binaries, `~/.local/share/fonts/` for fonts) (006-install-sources)
 - C# 12 / .NET 9.0 + Spectre.Console (CLI/output), Flurl.Http (HTTP), YamlDotNet (config) (007-cli-install)
 - N/A (filesystem operations only) (007-cli-install)
+- C# 13.0 / .NET 10.0 + Spectre.Console, Spectre.Console.Cli (009-cli-apply)
 - C# 12 / .NET 9.0 + Spectre.Console (CLI/output), YamlDotNet (config parsing) (010-cli-status)
 - N/A (read-only filesystem inspection) (010-cli-status)
 
@@ -35,6 +36,7 @@ tests/
 
 ## Recent Changes
 - 010-cli-status: Added C# 12 / .NET 9.0 + Spectre.Console (CLI/output), YamlDotNet (config parsing)
+- 009-cli-apply: Added C# 13.0 / .NET 10.0 + Spectre.Console, Spectre.Console.Cli
 - 007-cli-install: Added C# 12 / .NET 9.0 + Spectre.Console (CLI/output), Flurl.Http (HTTP), YamlDotNet (config)
 - 006-install-sources: Added C# / .NET 10.0 + Spectre.Console 0.50.0, Spectre.Console.Cli 0.50.0, YamlDotNet 16.3.0
 

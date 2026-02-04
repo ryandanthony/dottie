@@ -143,71 +143,18 @@ public sealed class ApplyCommand : AsyncCommand<ApplyCommandSettings>
     {
         var dotfileCount = profile.Dotfiles.Count;
         var installCount = InstallerProgressHelper.GetTotalItemCount(profile.Install);
-        var totalItems = dotfileCount + installCount;
 
         LinkPhaseResult? linkPhase = null;
         InstallPhaseResult? installPhase = null;
 
         try
         {
-            await AnsiConsole.Progress()
-                .AutoClear(false)
-                .HideCompleted(false)
-                .Columns(
-                    new TaskDescriptionColumn(),
-                    new ProgressBarColumn(),
-                    new PercentageColumn(),
-                    new RemainingTimeColumn(),
-                    new SpinnerColumn())
-                .StartAsync(async ctx =>
-                {
-                    var task = ctx.AddTask("[green]Applying configuration[/]", maxValue: totalItems);
-
-                    // Phase 1: Link dotfiles
-                    if (dotfileCount > 0)
-                    {
-                        task.Description = "[green]Linking dotfiles[/]";
-                        linkPhase = ExecuteLinkPhaseInternal(profile, repoRoot, force);
-                        task.Increment(dotfileCount);
-                    }
-                    else
-                    {
-                        linkPhase = LinkPhaseResult.NotExecuted();
-                    }
-
-                    // If blocked by conflicts, don't proceed to install
-                    if (linkPhase.WasBlocked)
-                    {
-                        task.Description = "[red]Blocked by conflicts[/]";
-                        return;
-                    }
-
-                    // Phase 2: Install software
-                    installPhase = profile.Install is not null && installCount > 0
-                        ? await ExecuteInstallPhaseWithProgressAsync(profile, repoRoot, task)
-                        : InstallPhaseResult.NotExecuted();
-
-                    task.Description = "[green]Apply complete[/]";
-                });
+            (linkPhase, installPhase) = await ExecuteWithProgressAsync(profile, repoRoot, force, dotfileCount, installCount);
         }
         catch (InvalidOperationException)
         {
-            // Progress display not allowed (e.g., another interactive operation is running or in test environment)
-            // Fall back to running without progress bar
-            linkPhase = dotfileCount > 0
-                ? ExecuteLinkPhaseInternal(profile, repoRoot, force)
-                : LinkPhaseResult.NotExecuted();
-
-            if (!linkPhase.WasBlocked)
-            {
-                installPhase = profile.Install is not null && installCount > 0
-                    ? await ExecuteInstallPhaseWithoutProgressAsync(profile)
-                    : InstallPhaseResult.NotExecuted();
-            }
-            else
-            {
-                installPhase = InstallPhaseResult.NotExecuted();
-            }
+            // Progress display not allowed (e.g., in test environment)
+            (linkPhase, installPhase) = await ExecuteWithoutProgressAsync(profile, repoRoot, force, dotfileCount, installCount);
         }
 
         AnsiConsole.WriteLine();
@@ -217,6 +164,79 @@ public sealed class ApplyCommand : AsyncCommand<ApplyCommandSettings>
             LinkPhase = linkPhase ?? LinkPhaseResult.NotExecuted(),
             InstallPhase = installPhase ?? InstallPhaseResult.NotExecuted(),
         };
+    }
+
+    private static async Task<(LinkPhaseResult Link, InstallPhaseResult Install)> ExecuteWithProgressAsync(
+        ResolvedProfile profile,
+        string repoRoot,
+        bool force,
+        int dotfileCount,
+        int installCount)
+    {
+        var totalItems = dotfileCount + installCount;
+        LinkPhaseResult? linkPhase = null;
+        InstallPhaseResult? installPhase = null;
+
+        await AnsiConsole.Progress()
+            .AutoClear(false)
+            .HideCompleted(false)
+            .Columns(
+                new TaskDescriptionColumn(),
+                new ProgressBarColumn(),
+                new PercentageColumn(),
+                new RemainingTimeColumn(),
+                new SpinnerColumn())
+            .StartAsync(async ctx =>
+            {
+                var task = ctx.AddTask("[green]Applying configuration[/]", maxValue: totalItems);
+
+                linkPhase = ExecuteLinkPhase(profile, repoRoot, force, dotfileCount, task);
+
+                if (linkPhase.WasBlocked)
+                {
+                    task.Description = "[red]Blocked by conflicts[/]";
+                    return;
+                }
+
+                installPhase = profile.Install is not null && installCount > 0
+                    ? await ExecuteInstallPhaseWithProgressAsync(profile, repoRoot, task)
+                    : InstallPhaseResult.NotExecuted();
+
+                task.Description = "[green]Apply complete[/]";
+            });
+
+        return (linkPhase ?? LinkPhaseResult.NotExecuted(), installPhase ?? InstallPhaseResult.NotExecuted());
+    }
+
+    private static async Task<(LinkPhaseResult Link, InstallPhaseResult Install)> ExecuteWithoutProgressAsync(
+        ResolvedProfile profile,
+        string repoRoot,
+        bool force,
+        int dotfileCount,
+        int installCount)
+    {
+        var linkPhase = dotfileCount > 0
+            ? ExecuteLinkPhaseInternal(profile, repoRoot, force)
+            : LinkPhaseResult.NotExecuted();
+
+        var installPhase = !linkPhase.WasBlocked && profile.Install is not null && installCount > 0
+            ? await ExecuteInstallPhaseWithoutProgressAsync(profile)
+            : InstallPhaseResult.NotExecuted();
+
+        return (linkPhase, installPhase);
+    }
+
+    private static LinkPhaseResult ExecuteLinkPhase(ResolvedProfile profile, string repoRoot, bool force, int dotfileCount, ProgressTask task)
+    {
+        if (dotfileCount > 0)
+        {
+            task.Description = "[green]Linking dotfiles[/]";
+            var result = ExecuteLinkPhaseInternal(profile, repoRoot, force);
+            task.Increment(dotfileCount);
+            return result;
+        }
+
+        return LinkPhaseResult.NotExecuted();
     }
 
     private static LinkPhaseResult ExecuteLinkPhaseInternal(ResolvedProfile profile, string repoRoot, bool force)

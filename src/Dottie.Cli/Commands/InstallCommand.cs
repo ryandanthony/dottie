@@ -143,60 +143,73 @@ public sealed class InstallCommand : AsyncCommand<InstallCommandSettings>
 
         try
         {
-            await AnsiConsole.Progress()
-                .AutoClear(false)
-                .HideCompleted(false)
-                .Columns(
-                    new TaskDescriptionColumn(),
-                    new ProgressBarColumn(),
-                    new PercentageColumn(),
-                    new RemainingTimeColumn(),
-                    new SpinnerColumn())
-                .StartAsync(async ctx =>
-                {
-                    var task = ctx.AddTask("[green]Installing software[/]", maxValue: totalItems);
-
-                    var installerItems = InstallerProgressHelper.GetInstallerItems(installBlock);
-
-                    foreach (var item in installerItems)
-                    {
-                        if (item.Count == 0)
-                        {
-                            continue;
-                        }
-
-                        task.Description = $"[green]Installing {item.Name}[/]";
-
-                        var installerResults = await ExecuteInstallerAsync(item.Installer, installBlock, context);
-                        results.AddRange(installerResults);
-
-                        task.Increment(item.Count);
-                    }
-
-                    task.Description = "[green]Installation complete[/]";
-                });
+            await ExecuteInstallersWithProgressAsync(installBlock, context, totalItems, results);
         }
         catch (InvalidOperationException)
         {
-            // Progress display not allowed (e.g., another interactive operation is running or in test environment)
-            // Fall back to running without progress bar
-            var installerItems = InstallerProgressHelper.GetInstallerItems(installBlock);
-
-            foreach (var item in installerItems)
-            {
-                if (item.Count == 0)
-                {
-                    continue;
-                }
-
-                var installerResults = await ExecuteInstallerAsync(item.Installer, installBlock, context);
-                results.AddRange(installerResults);
-            }
+            // Progress display not allowed (e.g., in test environment)
+            await ExecuteInstallersWithoutProgressAsync(installBlock, context, results);
         }
 
         AnsiConsole.WriteLine();
 
         return results;
+    }
+
+    private static async Task ExecuteInstallersWithProgressAsync(
+        InstallBlock installBlock,
+        InstallContext context,
+        int totalItems,
+        List<InstallResult> results)
+    {
+        await AnsiConsole.Progress()
+            .AutoClear(false)
+            .HideCompleted(false)
+            .Columns(
+                new TaskDescriptionColumn(),
+                new ProgressBarColumn(),
+                new PercentageColumn(),
+                new RemainingTimeColumn(),
+                new SpinnerColumn())
+            .StartAsync(async ctx =>
+            {
+                var task = ctx.AddTask("[green]Installing software[/]", maxValue: totalItems);
+                var installerItems = InstallerProgressHelper.GetInstallerItems(installBlock);
+
+                foreach (var item in installerItems)
+                {
+                    if (item.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    task.Description = $"[green]Installing {item.Name}[/]";
+                    var installerResults = await ExecuteInstallerAsync(item.Installer, installBlock, context);
+                    results.AddRange(installerResults);
+                    task.Increment(item.Count);
+                }
+
+                task.Description = "[green]Installation complete[/]";
+            });
+    }
+
+    private static async Task ExecuteInstallersWithoutProgressAsync(
+        InstallBlock installBlock,
+        InstallContext context,
+        List<InstallResult> results)
+    {
+        var installerItems = InstallerProgressHelper.GetInstallerItems(installBlock);
+
+        foreach (var item in installerItems)
+        {
+            if (item.Count == 0)
+            {
+                continue;
+            }
+
+            var installerResults = await ExecuteInstallerAsync(item.Installer, installBlock, context);
+            results.AddRange(installerResults);
+        }
     }
 
     private static async Task<IEnumerable<InstallResult>> ExecuteInstallerAsync(IInstallSource installer, InstallBlock installBlock, InstallContext context)

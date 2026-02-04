@@ -129,24 +129,34 @@ public sealed class LinkCommand : Command<LinkCommandSettings>
         LinkExecutionResult? result = null;
         var dotfileCount = profile.Dotfiles.Count;
 
-        AnsiConsole.Progress()
-            .AutoClear(true)
-            .HideCompleted(false)
-            .Columns(
-                new TaskDescriptionColumn(),
-                new ProgressBarColumn(),
-                new PercentageColumn(),
-                new SpinnerColumn())
-            .Start(ctx =>
-            {
-                var task = ctx.AddTask("[green]Linking dotfiles[/]", maxValue: dotfileCount);
+        try
+        {
+            AnsiConsole.Progress()
+                .AutoClear(true)
+                .HideCompleted(false)
+                .Columns(
+                    new TaskDescriptionColumn(),
+                    new ProgressBarColumn(),
+                    new PercentageColumn(),
+                    new SpinnerColumn())
+                .Start(ctx =>
+                {
+                    var task = ctx.AddTask("[green]Linking dotfiles[/]", maxValue: dotfileCount);
 
-                var orchestrator = new LinkingOrchestrator();
-                result = orchestrator.ExecuteLink(profile, repoRoot, force);
+                    var orchestrator = new LinkingOrchestrator();
+                    result = orchestrator.ExecuteLink(profile, repoRoot, force);
 
-                // Update progress to 100% once linking is complete
-                task.Value = dotfileCount;
-            });
+                    // Update progress to 100% once linking is complete
+                    task.Value = dotfileCount;
+                });
+        }
+        catch (InvalidOperationException)
+        {
+            // Progress display not allowed (e.g., another interactive operation is running or in test environment)
+            // Fall back to running without progress bar
+            var orchestrator = new LinkingOrchestrator();
+            result = orchestrator.ExecuteLink(profile, repoRoot, force);
+        }
 
         if (result!.IsBlocked)
         {

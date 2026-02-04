@@ -20,6 +20,14 @@ namespace Dottie.Cli.Commands;
 /// <summary>
 /// Command to install tools from configured sources.
 /// </summary>
+/// <remarks>
+/// S1200 is suppressed because CLI command classes inherently coordinate multiple components.
+/// This is an orchestration class that delegates work to specialized installer services.
+/// </remarks>
+[System.Diagnostics.CodeAnalysis.SuppressMessage(
+    "Major Code Smell",
+    "S1200:Classes should not be coupled to too many other classes (Single Responsibility Principle)",
+    Justification = "CLI command classes inherently orchestrate multiple components. This command coordinates multiple installer services.")]
 public sealed class InstallCommand : AsyncCommand<InstallCommandSettings>
 {
     /// <inheritdoc/>
@@ -85,7 +93,7 @@ public sealed class InstallCommand : AsyncCommand<InstallCommandSettings>
             AnsiConsole.MarkupLine("[yellow]Dry Run Mode:[/] Previewing installation without making changes");
         }
 
-        var results = await RunInstallersAsync(resolveResult.Profile.Install, contextInfo);
+        var results = await RunInstallersWithProgressAsync(resolveResult.Profile.Install, contextInfo);
 
         return RenderResultsAndGetExitCode(results);
     }
@@ -123,25 +131,68 @@ public sealed class InstallCommand : AsyncCommand<InstallCommandSettings>
         };
     }
 
-    private static async Task<List<InstallResult>> RunInstallersAsync(InstallBlock installBlock, InstallContext context)
+    private static int GetTotalItemCount(InstallBlock installBlock)
     {
-        var installers = new List<IInstallSource>
+        return installBlock.Github.Count
+            + installBlock.Apt.Count
+            + installBlock.AptRepos.Count
+            + installBlock.Scripts.Count
+            + installBlock.Fonts.Count
+            + installBlock.Snaps.Count;
+    }
+
+    private static async Task<List<InstallResult>> RunInstallersWithProgressAsync(InstallBlock installBlock, InstallContext context)
+    {
+        var totalItems = GetTotalItemCount(installBlock);
+        if (totalItems == 0)
         {
-            new GithubReleaseInstaller(),
-            new AptPackageInstaller(),
-            new AptRepoInstaller(),
-            new ScriptRunner(),
-            new FontInstaller(),
-            new SnapPackageInstaller(),
-        };
+            return [];
+        }
 
         var results = new List<InstallResult>();
 
-        foreach (var installer in installers)
-        {
-            var installerResults = await ExecuteInstallerAsync(installer, installBlock, context);
-            results.AddRange(installerResults);
-        }
+        await AnsiConsole.Progress()
+            .AutoClear(false)
+            .HideCompleted(false)
+            .Columns(
+                new TaskDescriptionColumn(),
+                new ProgressBarColumn(),
+                new PercentageColumn(),
+                new RemainingTimeColumn(),
+                new SpinnerColumn())
+            .StartAsync(async ctx =>
+            {
+                var task = ctx.AddTask("[green]Installing software[/]", maxValue: totalItems);
+
+                var installerItems = new[]
+                {
+                    (Source: (IInstallSource)new GithubReleaseInstaller(), Name: "GitHub releases", Count: installBlock.Github.Count),
+                    (Source: (IInstallSource)new AptPackageInstaller(), Name: "APT packages", Count: installBlock.Apt.Count),
+                    (Source: (IInstallSource)new AptRepoInstaller(), Name: "APT repositories", Count: installBlock.AptRepos.Count),
+                    (Source: (IInstallSource)new ScriptRunner(), Name: "Scripts", Count: installBlock.Scripts.Count),
+                    (Source: (IInstallSource)new FontInstaller(), Name: "Fonts", Count: installBlock.Fonts.Count),
+                    (Source: (IInstallSource)new SnapPackageInstaller(), Name: "Snap packages", Count: installBlock.Snaps.Count),
+                };
+
+                foreach (var item in installerItems)
+                {
+                    if (item.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    task.Description = $"[green]Installing {item.Name}[/]";
+
+                    var installerResults = await ExecuteInstallerAsync(item.Source, installBlock, context);
+                    results.AddRange(installerResults);
+
+                    task.Increment(item.Count);
+                }
+
+                task.Description = "[green]Installation complete[/]";
+            });
+
+        AnsiConsole.WriteLine();
 
         return results;
     }

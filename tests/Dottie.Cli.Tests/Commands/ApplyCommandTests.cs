@@ -215,4 +215,119 @@ profiles:
         // Assert - Command should succeed (link phase runs before install phase per design)
         result.Should().Be(0);
     }
+
+    [Fact]
+    public void ExecuteAsync_WithInvalidConfigPath_ReturnsFail()
+    {
+        // Arrange
+        var invalidPath = Path.Combine(_tempDirectory, "nonexistent-config.yaml");
+        var app = new CommandApp();
+        app.Configure(config =>
+        {
+            config.PropagateExceptions();
+            config.AddCommand<ApplyCommand>("apply");
+        });
+
+        // Act
+        var result = app.Run(["apply", "-c", invalidPath]);
+
+        // Assert - Should fail with non-zero exit code
+        result.Should().NotBe(0);
+    }
+
+    [Fact]
+    public void ExecuteAsync_WithMalformedYaml_ReturnsFail()
+    {
+        // Arrange
+        var configPath = Path.Combine(_tempDirectory, "invalid.yaml");
+        File.WriteAllText(configPath, "invalid: yaml: content: [[[");
+
+        var app = new CommandApp();
+        app.Configure(config =>
+        {
+            config.PropagateExceptions();
+            config.AddCommand<ApplyCommand>("apply");
+        });
+
+        // Act
+        var result = app.Run(["apply", "-c", configPath]);
+
+        // Assert
+        result.Should().NotBe(0);
+    }
+
+    [Fact]
+    public void ExecuteAsync_WithDryRunAndForce_BothFlagsApply()
+    {
+        // Arrange - Create config with dotfiles
+        var configContent = @"
+profiles:
+  default:
+    dotfiles:
+      - source: dotfiles/bashrc
+        target: ~/.bashrc-test
+";
+        var configPath = Path.Combine(_tempDirectory, "dottie.yaml");
+        File.WriteAllText(configPath, configContent);
+
+        var dotfilesDir = Path.Combine(_tempDirectory, "dotfiles");
+        Directory.CreateDirectory(dotfilesDir);
+        File.WriteAllText(Path.Combine(dotfilesDir, "bashrc"), "# test");
+
+        var app = new CommandApp();
+        app.Configure(config =>
+        {
+            config.PropagateExceptions();
+            config.AddCommand<ApplyCommand>("apply");
+        });
+
+        // Act - Both --dry-run and --force together
+        var result = app.Run(["apply", "-c", configPath, "--dry-run", "--force"]);
+
+        // Assert - Should succeed
+        result.Should().Be(0);
+    }
+
+    [Fact]
+    public void ExecuteAsync_WithEmptyDotfilesAndNoInstall_ReturnsErrorCode()
+    {
+        // Arrange - Config with empty dotfiles list and no install
+        // This is treated as a configuration error since there's nothing to apply
+        var configContent = @"
+profiles:
+  default:
+    dotfiles: []
+";
+        var configPath = Path.Combine(_tempDirectory, "dottie.yaml");
+        File.WriteAllText(configPath, configContent);
+
+        // Initialize git repo
+        using var process = new System.Diagnostics.Process
+        {
+            StartInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "git",
+                Arguments = "init -q",
+                WorkingDirectory = _tempDirectory,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                CreateNoWindow = true,
+            },
+        };
+        process.Start();
+        process.WaitForExit();
+
+        var app = new CommandApp();
+        app.Configure(config =>
+        {
+            config.AddCommand<ApplyCommand>("apply");
+        });
+
+        // Act
+        var result = app.Run(["apply", "-c", configPath]);
+
+        // Assert - Should return error since there's nothing to apply
+        result.Should().Be(1);
+    }
 }
+

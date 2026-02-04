@@ -66,9 +66,9 @@ public sealed class ApplyCommandSettingsTests
     }
 
     [Fact]
-    public void Validate_WithDryRunAndForce_ReturnsError()
+    public void Validate_WithDryRunAndForce_ReturnsSuccess()
     {
-        // Arrange
+        // Arrange - Both flags can be used together (dry-run shows what force would do)
         var settings = new ApplyCommandSettings
         {
             DryRun = true,
@@ -78,11 +78,8 @@ public sealed class ApplyCommandSettingsTests
         // Act
         var result = settings.Validate();
 
-        // Assert
-        result.Successful.Should().BeFalse();
-        result.Message.Should().Contain("--dry-run");
-        result.Message.Should().Contain("--force");
-        result.Message.Should().Contain("cannot be used together");
+        // Assert - Both flags are allowed together
+        result.Successful.Should().BeTrue();
     }
 
     [Fact]

@@ -153,6 +153,92 @@ public class ArchiveExtractorTests
         File.Exists(Path.Combine(extractDir, "subdir", "nested.txt")).Should().BeTrue();
     }
 
+    [Fact]
+    public void Extract_WithUnsupportedExtension_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var unsupportedPath = Path.Combine(_testDir, "test.rar");
+        File.WriteAllText(unsupportedPath, "fake rar content");
+        var extractDir = Path.Combine(_testDir, "extracted-unsupported");
+
+        // Act & Assert
+        FluentActions.Invoking(() => _extractor.Extract(unsupportedPath, extractDir))
+            .Should()
+            .Throw<InvalidOperationException>()
+            .WithMessage("*Unsupported archive format*");
+    }
+
+    [Fact]
+    public void Extract_WithNullArchivePath_ThrowsArgumentNullException()
+    {
+        // Arrange
+        string? archivePath = null;
+        var extractDir = Path.Combine(_testDir, "extracted");
+
+        // Act & Assert
+        FluentActions.Invoking(() => _extractor.Extract(archivePath!, extractDir))
+            .Should()
+            .Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void Extract_WithNullExtractPath_ThrowsArgumentNullException()
+    {
+        // Arrange
+        var zipPath = Path.Combine(_testDir, "test.zip");
+        CreateTestZipFile(zipPath);
+        string? extractDir = null;
+
+        // Act & Assert
+        FluentActions.Invoking(() => _extractor.Extract(zipPath, extractDir!))
+            .Should()
+            .Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void Extract_WithZipSlipAttempt_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var zipPath = Path.Combine(_testDir, "malicious.zip");
+        var extractDir = Path.Combine(_testDir, "safe-extract");
+        CreateMaliciousZipFile(zipPath);
+
+        // Act & Assert
+        FluentActions.Invoking(() => _extractor.Extract(zipPath, extractDir))
+            .Should()
+            .Throw<InvalidOperationException>()
+            .WithMessage("*zip slip detected*");
+    }
+
+    [Fact]
+    public void Extract_OverwritesExistingFiles()
+    {
+        // Arrange
+        var zipPath = Path.Combine(_testDir, "test-overwrite.zip");
+        var extractDir = Path.Combine(_testDir, "extracted-overwrite");
+        Directory.CreateDirectory(extractDir);
+        
+        var existingFile = Path.Combine(extractDir, "test.txt");
+        File.WriteAllText(existingFile, "old content");
+        
+        CreateTestZipFileWithContent(zipPath, "new content");
+
+        // Act
+        _extractor.Extract(zipPath, extractDir);
+
+        // Assert
+        File.ReadAllText(existingFile).Should().Be("new content");
+    }
+
+    private void CreateMaliciousZipFile(string zipPath)
+    {
+        // Create a zip with an entry that tries to escape the extraction directory
+        using var zip = ZipFile.Open(zipPath, ZipArchiveMode.Create);
+        var entry = zip.CreateEntry("../../../evil.txt");
+        using var writer = new StreamWriter(entry.Open());
+        writer.Write("malicious content");
+    }
+
     private void CreateTestZipFile(string zipPath)
     {
         using var zip = ZipFile.Open(zipPath, ZipArchiveMode.Create);

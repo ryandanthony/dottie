@@ -17,6 +17,11 @@ public static class Program
     private const string ValidateCommandName = "validate";
     private const string LinkCommandName = "link";
     private const string InstallCommandName = "install";
+    private const string StatusCommandName = "status";
+    private const string ProfileOption = "--profile";
+    private const string ConfigOption = "-c";
+    private const string ProfileShortOption = "-p";
+    private const string SampleConfigPath = "./my-config.yaml";
 
     /// <summary>
     /// Main entry point.
@@ -35,22 +40,28 @@ public static class Program
             config.AddCommand<ValidateCommand>(ValidateCommandName)
                 .WithDescription("Validate the dottie.yaml configuration file")
                 .WithExample(ValidateCommandName)
-                .WithExample(ValidateCommandName, "--profile", "work")
-                .WithExample(ValidateCommandName, "-c", "./my-config.yaml", "-p", "work");
+                .WithExample(ValidateCommandName, ProfileOption, "work")
+                .WithExample(ValidateCommandName, ConfigOption, SampleConfigPath, ProfileShortOption, "work");
 
             config.AddCommand<LinkCommand>(LinkCommandName)
                 .WithDescription("Create symbolic links for dotfiles")
                 .WithExample(LinkCommandName)
-                .WithExample(LinkCommandName, "--profile", "work")
+                .WithExample(LinkCommandName, ProfileOption, "work")
                 .WithExample(LinkCommandName, "--force")
-                .WithExample(LinkCommandName, "-c", "./my-config.yaml", "-p", "work", "-f");
+                .WithExample(LinkCommandName, ConfigOption, SampleConfigPath, ProfileShortOption, "work", "-f");
 
             config.AddCommand<InstallCommand>(InstallCommandName)
                 .WithDescription("Install software from configured sources")
                 .WithExample(InstallCommandName)
-                .WithExample(InstallCommandName, "--profile", "work")
+                .WithExample(InstallCommandName, ProfileOption, "work")
                 .WithExample(InstallCommandName, "--dry-run")
-                .WithExample(InstallCommandName, "-c", "./my-config.yaml", "-p", "work", "--dry-run");
+                .WithExample(InstallCommandName, ConfigOption, SampleConfigPath, ProfileShortOption, "work", "--dry-run");
+
+            config.AddCommand<StatusCommand>(StatusCommandName)
+                .WithDescription("Display status of dotfiles and software installations")
+                .WithExample(StatusCommandName)
+                .WithExample(StatusCommandName, ProfileOption, "work")
+                .WithExample(StatusCommandName, ConfigOption, SampleConfigPath, ProfileShortOption, "work");
         });
 
         return app.Run(args);

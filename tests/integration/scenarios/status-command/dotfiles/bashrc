@@ -1,0 +1,3 @@
+# Test bashrc for status command integration test
+export EDITOR=vim
+alias ll='ls -la'

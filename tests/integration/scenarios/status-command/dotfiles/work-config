@@ -1,0 +1,3 @@
+# Test work config for status command integration test
+[default]
+region = us-west-2

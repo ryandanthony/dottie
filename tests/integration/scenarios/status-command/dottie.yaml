@@ -1,0 +1,28 @@
+# Integration test for the status command
+# Tests: dotfile status, profile resolution, inheritance display
+
+profiles:
+  default:
+    dotfiles:
+      - source: dotfiles/bashrc
+        target: ~/.test-status-bashrc
+      - source: dotfiles/vimrc
+        target: ~/.test-status-vimrc
+    install:
+      apt:
+        - git
+        - curl
+
+  work:
+    extends: default
+    dotfiles:
+      - source: dotfiles/work-config
+        target: ~/.test-status-work-config
+    install:
+      apt:
+        - awscli
+
+  minimal:
+    dotfiles:
+      - source: dotfiles/bashrc
+        target: ~/.test-status-minimal-bashrc

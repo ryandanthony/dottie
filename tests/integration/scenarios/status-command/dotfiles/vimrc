@@ -1,0 +1,3 @@
+" Test vimrc for status command integration test
+set number
+set expandtab

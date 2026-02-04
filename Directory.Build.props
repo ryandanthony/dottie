@@ -7,6 +7,16 @@
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
   </PropertyGroup>
 
+  <!-- Version properties - populated by CI via /p:Version -->
+  <PropertyGroup>
+    <!-- Default version for local builds -->
+    <Version Condition="'$(Version)' == ''">0.0.0-local</Version>
+    <!-- Propagate Version to all assembly version properties -->
+    <AssemblyVersion>$(Version.Split('-')[0]).0</AssemblyVersion>
+    <FileVersion>$(Version.Split('-')[0]).0</FileVersion>
+    <InformationalVersion>$(Version)</InformationalVersion>
+  </PropertyGroup>
+
   <!-- FestinaLente.CodeStandards - Required by constitution v1.6.0 -->
   <ItemGroup>
     <PackageReference Include="FestinaLente.CodeStandards" Version="*" />

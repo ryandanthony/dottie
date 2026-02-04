@@ -131,19 +131,9 @@ public sealed class InstallCommand : AsyncCommand<InstallCommandSettings>
         };
     }
 
-    private static int GetTotalItemCount(InstallBlock installBlock)
-    {
-        return installBlock.Github.Count
-            + installBlock.Apt.Count
-            + installBlock.AptRepos.Count
-            + installBlock.Scripts.Count
-            + installBlock.Fonts.Count
-            + installBlock.Snaps.Count;
-    }
-
     private static async Task<List<InstallResult>> RunInstallersWithProgressAsync(InstallBlock installBlock, InstallContext context)
     {
-        var totalItems = GetTotalItemCount(installBlock);
+        var totalItems = InstallerProgressHelper.GetTotalItemCount(installBlock);
         if (totalItems == 0)
         {
             return [];
@@ -164,15 +154,7 @@ public sealed class InstallCommand : AsyncCommand<InstallCommandSettings>
             {
                 var task = ctx.AddTask("[green]Installing software[/]", maxValue: totalItems);
 
-                var installerItems = new[]
-                {
-                    (Source: (IInstallSource)new GithubReleaseInstaller(), Name: "GitHub releases", Count: installBlock.Github.Count),
-                    (Source: (IInstallSource)new AptPackageInstaller(), Name: "APT packages", Count: installBlock.Apt.Count),
-                    (Source: (IInstallSource)new AptRepoInstaller(), Name: "APT repositories", Count: installBlock.AptRepos.Count),
-                    (Source: (IInstallSource)new ScriptRunner(), Name: "Scripts", Count: installBlock.Scripts.Count),
-                    (Source: (IInstallSource)new FontInstaller(), Name: "Fonts", Count: installBlock.Fonts.Count),
-                    (Source: (IInstallSource)new SnapPackageInstaller(), Name: "Snap packages", Count: installBlock.Snaps.Count),
-                };
+                var installerItems = InstallerProgressHelper.GetInstallerItems(installBlock);
 
                 foreach (var item in installerItems)
                 {
@@ -183,7 +165,7 @@ public sealed class InstallCommand : AsyncCommand<InstallCommandSettings>
 
                     task.Description = $"[green]Installing {item.Name}[/]";
 
-                    var installerResults = await ExecuteInstallerAsync(item.Source, installBlock, context);
+                    var installerResults = await ExecuteInstallerAsync(item.Installer, installBlock, context);
                     results.AddRange(installerResults);
 
                     task.Increment(item.Count);

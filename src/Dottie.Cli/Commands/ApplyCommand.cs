@@ -142,7 +142,7 @@ public sealed class ApplyCommand : AsyncCommand<ApplyCommandSettings>
     private static async Task<ApplyResult> ExecuteApplyAsync(ResolvedProfile profile, string repoRoot, bool force)
     {
         var dotfileCount = profile.Dotfiles.Count;
-        var installCount = GetTotalInstallItemCount(profile.Install);
+        var installCount = InstallerProgressHelper.GetTotalItemCount(profile.Install);
         var totalItems = dotfileCount + installCount;
 
         LinkPhaseResult? linkPhase = null;
@@ -197,21 +197,6 @@ public sealed class ApplyCommand : AsyncCommand<ApplyCommandSettings>
         };
     }
 
-    private static int GetTotalInstallItemCount(InstallBlock? installBlock)
-    {
-        if (installBlock is null)
-        {
-            return 0;
-        }
-
-        return installBlock.Github.Count
-            + installBlock.Apt.Count
-            + installBlock.AptRepos.Count
-            + installBlock.Scripts.Count
-            + installBlock.Fonts.Count
-            + installBlock.Snaps.Count;
-    }
-
     private static LinkPhaseResult ExecuteLinkPhaseInternal(ResolvedProfile profile, string repoRoot, bool force)
     {
         var orchestrator = new LinkingOrchestrator();
@@ -233,15 +218,12 @@ public sealed class ApplyCommand : AsyncCommand<ApplyCommandSettings>
         var context = CreateInstallContext(repoRoot);
         var results = new List<InstallResult>();
 
-        var installerItems = new[]
+        if (profile.Install is null)
         {
-            (Source: (IInstallSource)new GithubReleaseInstaller(), Name: "GitHub releases", Count: profile.Install!.Github.Count),
-            (Source: (IInstallSource)new AptPackageInstaller(), Name: "APT packages", Count: profile.Install.Apt.Count),
-            (Source: (IInstallSource)new AptRepoInstaller(), Name: "APT repositories", Count: profile.Install.AptRepos.Count),
-            (Source: (IInstallSource)new ScriptRunner(), Name: "Scripts", Count: profile.Install.Scripts.Count),
-            (Source: (IInstallSource)new FontInstaller(), Name: "Fonts", Count: profile.Install.Fonts.Count),
-            (Source: (IInstallSource)new SnapPackageInstaller(), Name: "Snap packages", Count: profile.Install.Snaps.Count),
-        };
+            return InstallPhaseResult.NotExecuted();
+        }
+
+        var installerItems = InstallerProgressHelper.GetInstallerItems(profile.Install);
 
         foreach (var item in installerItems)
         {
@@ -252,7 +234,7 @@ public sealed class ApplyCommand : AsyncCommand<ApplyCommandSettings>
 
             task.Description = $"[green]Installing {item.Name}[/]";
 
-            var installerResults = await ExecuteInstallerAsync(item.Source, profile.Install, context);
+            var installerResults = await ExecuteInstallerAsync(item.Installer, profile.Install, context);
             results.AddRange(installerResults);
 
             task.Increment(item.Count);

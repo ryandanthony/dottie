@@ -447,4 +447,172 @@ public class SoftwareStatusCheckerTests : IDisposable
         results[0].State.Should().Be(SoftwareInstallState.Installed);
         results[0].InstalledPath.Should().Be(pathLocation);
     }
+
+    [Fact]
+    public async Task CheckStatusAsync_WhenScriptExists_ReturnsInstalledState()
+    {
+        // Arrange
+        var scriptPath = "scripts/setup.sh";
+        var fullScriptPath = Path.Combine(_context.RepoRoot, scriptPath);
+        Directory.CreateDirectory(Path.GetDirectoryName(fullScriptPath)!);
+        await File.WriteAllTextAsync(fullScriptPath, "#!/bin/bash\necho 'setup'");
+
+        var checker = new SoftwareStatusChecker(_mockProcessRunner.Object);
+        var installBlock = new InstallBlock
+        {
+            Scripts = [scriptPath],
+        };
+
+        // Act
+        var results = await checker.CheckStatusAsync(installBlock, _context);
+
+        // Assert
+        results.Should().ContainSingle();
+        results[0].ItemName.Should().Be(scriptPath);
+        results[0].State.Should().Be(SoftwareInstallState.Installed);
+        results[0].SourceType.Should().Be(InstallSourceType.Script);
+        results[0].InstalledPath.Should().Be(fullScriptPath);
+        results[0].Message.Should().Be("Script ready to execute");
+    }
+
+    [Fact]
+    public async Task CheckStatusAsync_WhenScriptMissing_ReturnsMissingState()
+    {
+        // Arrange
+        var scriptPath = "scripts/missing.sh";
+
+        var checker = new SoftwareStatusChecker(_mockProcessRunner.Object);
+        var installBlock = new InstallBlock
+        {
+            Scripts = [scriptPath],
+        };
+
+        // Act
+        var results = await checker.CheckStatusAsync(installBlock, _context);
+
+        // Assert
+        results.Should().ContainSingle();
+        results[0].ItemName.Should().Be(scriptPath);
+        results[0].State.Should().Be(SoftwareInstallState.Missing);
+        results[0].SourceType.Should().Be(InstallSourceType.Script);
+        results[0].Message.Should().Be("Script file not found");
+    }
+
+    [Fact]
+    public async Task CheckStatusAsync_WhenAptRepoPackagesInstalled_ReturnsInstalledState()
+    {
+        // Arrange
+        var repoName = "docker-ce";
+        var packages = new[] { "docker-ce", "docker-ce-cli" };
+
+        foreach (var pkg in packages)
+        {
+            _mockProcessRunner
+                .Setup(x => x.RunAsync("dpkg", $"-s {pkg}", It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ProcessResult(0, "Package installed", string.Empty));
+        }
+
+        var checker = new SoftwareStatusChecker(_mockProcessRunner.Object);
+        var installBlock = new InstallBlock
+        {
+            AptRepos =
+            [
+                new AptRepoItem
+                {
+                    Name = repoName,
+                    KeyUrl = "https://example.com/key.gpg",
+                    Repo = "deb https://example.com/apt stable main",
+                    Packages = packages.ToList(),
+                },
+            ],
+        };
+
+        // Act
+        var results = await checker.CheckStatusAsync(installBlock, _context);
+
+        // Assert
+        results.Should().ContainSingle();
+        results[0].ItemName.Should().Be(repoName);
+        results[0].State.Should().Be(SoftwareInstallState.Installed);
+        results[0].SourceType.Should().Be(InstallSourceType.AptRepo);
+        results[0].Message.Should().Contain("docker-ce");
+        results[0].Message.Should().Contain("docker-ce-cli");
+    }
+
+    [Fact]
+    public async Task CheckStatusAsync_WhenAptRepoPackagesMissing_ReturnsMissingState()
+    {
+        // Arrange
+        var repoName = "docker-ce";
+        var packages = new[] { "docker-ce", "docker-ce-cli" };
+
+        _mockProcessRunner
+            .Setup(x => x.RunAsync("dpkg", "-s docker-ce", It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ProcessResult(1, string.Empty, "not installed"));
+
+        var checker = new SoftwareStatusChecker(_mockProcessRunner.Object);
+        var installBlock = new InstallBlock
+        {
+            AptRepos =
+            [
+                new AptRepoItem
+                {
+                    Name = repoName,
+                    KeyUrl = "https://example.com/key.gpg",
+                    Repo = "deb https://example.com/apt stable main",
+                    Packages = packages.ToList(),
+                },
+            ],
+        };
+
+        // Act
+        var results = await checker.CheckStatusAsync(installBlock, _context);
+
+        // Assert
+        results.Should().ContainSingle();
+        results[0].ItemName.Should().Be(repoName);
+        results[0].State.Should().Be(SoftwareInstallState.Missing);
+        results[0].SourceType.Should().Be(InstallSourceType.AptRepo);
+    }
+
+    [Fact]
+    public async Task CheckStatusAsync_WhenAptRepoPartiallyInstalled_ReturnsMissingState()
+    {
+        // Arrange
+        var repoName = "docker-ce";
+        var packages = new[] { "docker-ce", "docker-ce-cli" };
+
+        // First package installed, second missing
+        _mockProcessRunner
+            .Setup(x => x.RunAsync("dpkg", "-s docker-ce", It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ProcessResult(0, "installed", string.Empty));
+
+        _mockProcessRunner
+            .Setup(x => x.RunAsync("dpkg", "-s docker-ce-cli", It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ProcessResult(1, string.Empty, "not installed"));
+
+        var checker = new SoftwareStatusChecker(_mockProcessRunner.Object);
+        var installBlock = new InstallBlock
+        {
+            AptRepos =
+            [
+                new AptRepoItem
+                {
+                    Name = repoName,
+                    KeyUrl = "https://example.com/key.gpg",
+                    Repo = "deb https://example.com/apt stable main",
+                    Packages = packages.ToList(),
+                },
+            ],
+        };
+
+        // Act
+        var results = await checker.CheckStatusAsync(installBlock, _context);
+
+        // Assert
+        results.Should().ContainSingle();
+        results[0].ItemName.Should().Be(repoName);
+        results[0].State.Should().Be(SoftwareInstallState.Missing);
+        results[0].SourceType.Should().Be(InstallSourceType.AptRepo);
+    }
 }

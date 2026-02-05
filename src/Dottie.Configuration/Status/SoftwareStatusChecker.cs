@@ -50,6 +50,8 @@ public sealed partial class SoftwareStatusChecker
 
         await CheckGitHubReleasesAsync(installBlock, context, results, cancellationToken).ConfigureAwait(false);
         await CheckAptPackagesAsync(installBlock, results, cancellationToken).ConfigureAwait(false);
+        await CheckAptReposAsync(installBlock, results, cancellationToken).ConfigureAwait(false);
+        CheckScripts(installBlock, context, results);
         await CheckSnapPackagesAsync(installBlock, results, cancellationToken).ConfigureAwait(false);
         CheckFonts(installBlock, context, results);
 
@@ -107,6 +109,40 @@ public sealed partial class SoftwareStatusChecker
         foreach (var package in installBlock.Snaps)
         {
             var entry = await CheckSnapPackageAsync(package, cancellationToken).ConfigureAwait(false);
+            results.Add(entry);
+        }
+    }
+
+    private async Task CheckAptReposAsync(
+        InstallBlock installBlock,
+        List<SoftwareStatusEntry> results,
+        CancellationToken cancellationToken)
+    {
+        if (installBlock.AptRepos.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var repo in installBlock.AptRepos)
+        {
+            var entry = await CheckAptRepoAsync(repo, cancellationToken).ConfigureAwait(false);
+            results.Add(entry);
+        }
+    }
+
+    private static void CheckScripts(
+        InstallBlock installBlock,
+        InstallContext context,
+        List<SoftwareStatusEntry> results)
+    {
+        if (installBlock.Scripts.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var script in installBlock.Scripts)
+        {
+            var entry = CheckScript(script, context);
             results.Add(entry);
         }
     }
@@ -271,6 +307,51 @@ public sealed partial class SoftwareStatusChecker
         catch (Exception ex)
         {
             return CreateErrorEntry(package.Name, InstallSourceType.SnapPackage, null, ex.Message);
+        }
+    }
+
+    private async Task<SoftwareStatusEntry> CheckAptRepoAsync(AptRepoItem repo, CancellationToken cancellationToken)
+    {
+        try
+        {
+            // Check if all packages from this repo are installed
+            var allInstalled = true;
+            foreach (var package in repo.Packages)
+            {
+                var result = await _processRunner.RunAsync("dpkg", $"-s {package}", cancellationToken: cancellationToken).ConfigureAwait(false);
+                if (result.ExitCode != 0)
+                {
+                    allInstalled = false;
+                    break;
+                }
+            }
+
+            var state = allInstalled ? SoftwareInstallState.Installed : SoftwareInstallState.Missing;
+            var message = repo.Packages.Count > 0 ? $"Packages: {string.Join(", ", repo.Packages)}" : null;
+            return new SoftwareStatusEntry(repo.Name, InstallSourceType.AptRepo, state, null, null, null, message);
+        }
+        catch (Exception ex)
+        {
+            return CreateErrorEntry(repo.Name, InstallSourceType.AptRepo, null, ex.Message);
+        }
+    }
+
+    private static SoftwareStatusEntry CheckScript(string scriptPath, InstallContext context)
+    {
+        try
+        {
+            var fullPath = Path.Combine(context.RepoRoot, scriptPath);
+            var exists = File.Exists(fullPath);
+
+            // Scripts don't have a traditional "installed" state - they're either present (ready to run) or missing
+            var state = exists ? SoftwareInstallState.Installed : SoftwareInstallState.Missing;
+            var message = exists ? "Script ready to execute" : "Script file not found";
+
+            return new SoftwareStatusEntry(scriptPath, InstallSourceType.Script, state, null, null, exists ? fullPath : null, message);
+        }
+        catch (Exception ex)
+        {
+            return CreateErrorEntry(scriptPath, InstallSourceType.Script, null, ex.Message);
         }
     }
 

@@ -315,16 +315,7 @@ public sealed partial class SoftwareStatusChecker
         try
         {
             // Check if all packages from this repo are installed
-            var allInstalled = true;
-            foreach (var package in repo.Packages)
-            {
-                var result = await _processRunner.RunAsync("dpkg", $"-s {package}", cancellationToken: cancellationToken).ConfigureAwait(false);
-                if (result.ExitCode != 0)
-                {
-                    allInstalled = false;
-                    break;
-                }
-            }
+            var allInstalled = await AreAllPackagesInstalledAsync(repo.Packages, cancellationToken).ConfigureAwait(false);
 
             var state = allInstalled ? SoftwareInstallState.Installed : SoftwareInstallState.Missing;
             var message = repo.Packages.Count > 0 ? $"Packages: {string.Join(", ", repo.Packages)}" : null;
@@ -334,6 +325,20 @@ public sealed partial class SoftwareStatusChecker
         {
             return CreateErrorEntry(repo.Name, InstallSourceType.AptRepo, null, ex.Message);
         }
+    }
+
+    private async Task<bool> AreAllPackagesInstalledAsync(IList<string> packages, CancellationToken cancellationToken)
+    {
+        foreach (var package in packages)
+        {
+            var result = await _processRunner.RunAsync("dpkg", $"-s {package}", cancellationToken: cancellationToken).ConfigureAwait(false);
+            if (result.ExitCode != 0)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static SoftwareStatusEntry CheckScript(string scriptPath, InstallContext context)

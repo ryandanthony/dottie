@@ -138,6 +138,7 @@ public sealed class LinkCommand : Command<LinkCommandSettings>
                     new TaskDescriptionColumn(),
                     new ProgressBarColumn(),
                     new PercentageColumn(),
+                    new ElapsedTimeColumn(),
                     new SpinnerColumn())
                 .Start(ctx =>
                 {

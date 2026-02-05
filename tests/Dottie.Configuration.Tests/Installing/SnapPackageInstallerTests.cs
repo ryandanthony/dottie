@@ -39,7 +39,7 @@ public class SnapPackageInstallerTests
         var context = new InstallContext { RepoRoot = "/repo" };
 
         // Act
-        Func<Task> act = async () => await installer.InstallAsync(null!, context).ConfigureAwait(false);
+        Func<Task> act = async () => await installer.InstallAsync(null!, context, null).ConfigureAwait(false);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>()
@@ -58,7 +58,7 @@ public class SnapPackageInstallerTests
         var installBlock = new InstallBlock();
 
         // Act
-        Func<Task> act = async () => await installer.InstallAsync(installBlock, null!).ConfigureAwait(false);
+        Func<Task> act = async () => await installer.InstallAsync(installBlock, null!, null).ConfigureAwait(false);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>()
@@ -80,7 +80,7 @@ public class SnapPackageInstallerTests
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().BeEmpty();
@@ -99,7 +99,7 @@ public class SnapPackageInstallerTests
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context);
+        var results = await installer.InstallAsync(installBlock, context, null);
 
         // Assert
         results.Should().BeEmpty();
@@ -118,7 +118,7 @@ public class SnapPackageInstallerTests
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().BeEmpty();
@@ -146,7 +146,7 @@ public class SnapPackageInstallerTests
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true, DryRun = true };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().BeEmpty();
@@ -174,7 +174,7 @@ public class SnapPackageInstallerTests
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true, DryRun = true };
 
         // Act
-        await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         fakeRunner.Calls.Should().BeEmpty();
@@ -206,7 +206,7 @@ public class SnapPackageInstallerTests
         };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().NotBeEmpty();
@@ -240,7 +240,7 @@ public class SnapPackageInstallerTests
         };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().HaveCount(3);
@@ -275,7 +275,7 @@ public class SnapPackageInstallerTests
         };
 
         // Act
-        await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         fakeRunner.CallCount.Should().Be(0);
@@ -308,7 +308,7 @@ public class SnapPackageInstallerTests
         };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().HaveCount(1);
@@ -346,7 +346,7 @@ public class SnapPackageInstallerTests
         };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().HaveCount(3);
@@ -379,7 +379,7 @@ public class SnapPackageInstallerTests
         };
 
         // Act
-        await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         fakeRunner.CallCount.Should().Be(1);
@@ -412,7 +412,7 @@ public class SnapPackageInstallerTests
         };
 
         // Act
-        await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         fakeRunner.CallCount.Should().Be(1);
@@ -445,7 +445,7 @@ public class SnapPackageInstallerTests
         };
 
         // Act
-        await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         fakeRunner.Calls[0].Arguments.Should().NotContain("--classic");
@@ -480,7 +480,7 @@ public class SnapPackageInstallerTests
         };
 
         // Act
-        await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         fakeRunner.Calls[0].Arguments.Should().Be("snap install vlc");
@@ -515,7 +515,7 @@ public class SnapPackageInstallerTests
         };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().HaveCount(1);
@@ -553,7 +553,7 @@ public class SnapPackageInstallerTests
         };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().HaveCount(3);
@@ -592,7 +592,7 @@ public class SnapPackageInstallerTests
         };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().HaveCount(2);
@@ -624,7 +624,7 @@ public class SnapPackageInstallerTests
         };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.First().Message.Should().Contain("127");
@@ -657,7 +657,7 @@ public class SnapPackageInstallerTests
         };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().HaveCount(1);
@@ -693,7 +693,7 @@ public class SnapPackageInstallerTests
         };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().HaveCount(2);
@@ -756,7 +756,7 @@ public class SnapPackageInstallerTests
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
         // Act
-        await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert - verify calls were made in exact order
         fakeRunner.CallCount.Should().Be(5);
@@ -794,7 +794,7 @@ public class SnapPackageInstallerTests
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
         // Act
-        var results = (await installer.InstallAsync(installBlock, context, CancellationToken.None)).ToList();
+        var results = (await installer.InstallAsync(installBlock, context, null, CancellationToken.None)).ToList();
 
         // Assert - results match exact order and status
         results.Should().HaveCount(4);
@@ -833,7 +833,7 @@ public class SnapPackageInstallerTests
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
         // Act
-        await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert - each snap gets its own separate call
         fakeRunner.CallCount.Should().Be(3);
@@ -868,7 +868,7 @@ public class SnapPackageInstallerTests
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
         // Act
-        var results = (await installer.InstallAsync(installBlock, context, CancellationToken.None)).ToList();
+        var results = (await installer.InstallAsync(installBlock, context, null, CancellationToken.None)).ToList();
 
         // Assert - all snaps were attempted
         fakeRunner.CallCount.Should().Be(3);
@@ -905,7 +905,7 @@ public class SnapPackageInstallerTests
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
         // Act
-        var results = (await installer.InstallAsync(installBlock, context, CancellationToken.None)).ToList();
+        var results = (await installer.InstallAsync(installBlock, context, null, CancellationToken.None)).ToList();
 
         // Assert - all snaps were attempted despite exceptions
         fakeRunner.CallCount.Should().Be(4);
@@ -939,7 +939,7 @@ public class SnapPackageInstallerTests
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         fakeRunner.CallCount.Should().Be(1);
@@ -968,7 +968,7 @@ public class SnapPackageInstallerTests
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
         // Act
-        var results = (await installer.InstallAsync(installBlock, context, CancellationToken.None)).ToList();
+        var results = (await installer.InstallAsync(installBlock, context, null, CancellationToken.None)).ToList();
 
         // Assert
         fakeRunner.CallCount.Should().Be(10);
@@ -999,7 +999,7 @@ public class SnapPackageInstallerTests
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
         // Act
-        var results = (await installer.InstallAsync(installBlock, context, CancellationToken.None)).ToList();
+        var results = (await installer.InstallAsync(installBlock, context, null, CancellationToken.None)).ToList();
 
         // Assert - snap names are preserved exactly
         results[0].ItemName.Should().Be("my-special-snap");
@@ -1027,7 +1027,7 @@ public class SnapPackageInstallerTests
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
         // Act
-        await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         fakeRunner.Calls[0].Arguments.Should().Be("snap install visual-studio-code --classic");
@@ -1058,7 +1058,7 @@ public class SnapPackageInstallerTests
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert - all results have correct source type regardless of status
         results.Should().AllSatisfy(r => r.SourceType.Should().Be(InstallSourceType.SnapPackage));
@@ -1087,7 +1087,7 @@ public class SnapPackageInstallerTests
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = false };
 
         // Act
-        var results = (await installer.InstallAsync(installBlock, context, CancellationToken.None)).ToList();
+        var results = (await installer.InstallAsync(installBlock, context, null, CancellationToken.None)).ToList();
 
         // Assert - each snap gets a warning result
         results.Should().HaveCount(4);

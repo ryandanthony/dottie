@@ -36,7 +36,7 @@ public class FontInstaller : IInstallSource
     }
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, Action? onItemComplete, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(installBlock);
         ArgumentNullException.ThrowIfNull(context);
@@ -48,9 +48,14 @@ public class FontInstaller : IInstallSource
 
         if (!TryEnsureFontDirectory(context.FontDirectory, out var directoryError))
         {
-            return installBlock.Fonts
-                .Select(font => InstallResult.Failed(font.Name, SourceType, directoryError!))
+            var failedResults = installBlock.Fonts
+                .Select(font =>
+                {
+                    onItemComplete?.Invoke();
+                    return InstallResult.Failed(font.Name, SourceType, directoryError!);
+                })
                 .ToList();
+            return failedResults;
         }
 
         var results = new List<InstallResult>();
@@ -58,6 +63,7 @@ public class FontInstaller : IInstallSource
         {
             var result = await InstallSingleFontAsync(font, context.FontDirectory, cancellationToken);
             results.Add(result);
+            onItemComplete?.Invoke();
         }
 
         await RefreshFontCacheIfNeededAsync(results, cancellationToken);

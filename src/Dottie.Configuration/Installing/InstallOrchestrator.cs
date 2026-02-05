@@ -49,7 +49,7 @@ public class InstallOrchestrator
         {
             try
             {
-                var results = await installer.InstallAsync(installBlock, context, cancellationToken);
+                var results = await installer.InstallAsync(installBlock, context, null, cancellationToken);
                 allResults.AddRange(results);
             }
             catch (Exception ex)

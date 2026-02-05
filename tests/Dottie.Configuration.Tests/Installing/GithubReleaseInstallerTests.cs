@@ -45,7 +45,7 @@ public class GithubReleaseInstallerTests : IDisposable
         var context = new InstallContext { RepoRoot = "/repo" };
 
         // Act
-        var results = await _installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await _installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().BeEmpty();
@@ -63,7 +63,7 @@ public class GithubReleaseInstallerTests : IDisposable
         var context = new InstallContext { RepoRoot = "/repo" };
 
         // Act
-        var action = async () => await _installer.InstallAsync(installBlock, context, CancellationToken.None).ConfigureAwait(false);
+        var action = async () => await _installer.InstallAsync(installBlock, context, null, CancellationToken.None).ConfigureAwait(false);
 
         // Assert
         await action.Should().NotThrowAsync();
@@ -81,7 +81,7 @@ public class GithubReleaseInstallerTests : IDisposable
         var context = new InstallContext { RepoRoot = "/repo", DryRun = true };
 
         // Act
-        var results = await _installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await _installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().BeEmpty();
@@ -99,7 +99,7 @@ public class GithubReleaseInstallerTests : IDisposable
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = false };
 
         // Act
-        var results = await _installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await _installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().BeEmpty();
@@ -116,7 +116,7 @@ public class GithubReleaseInstallerTests : IDisposable
         var context = new InstallContext { RepoRoot = "/repo", DryRun = true };
 
         // Act
-        Func<Task> act = async () => await _installer.InstallAsync(null!, context).ConfigureAwait(false);
+        Func<Task> act = async () => await _installer.InstallAsync(null!, context, null).ConfigureAwait(false);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>()
@@ -134,7 +134,7 @@ public class GithubReleaseInstallerTests : IDisposable
         var installBlock = new InstallBlock();
 
         // Act
-        Func<Task> act = async () => await _installer.InstallAsync(installBlock, null!).ConfigureAwait(false);
+        Func<Task> act = async () => await _installer.InstallAsync(installBlock, null!, null).ConfigureAwait(false);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>()
@@ -170,7 +170,7 @@ public class GithubReleaseInstallerTests : IDisposable
         var context = new InstallContext { RepoRoot = "/repo", DryRun = true };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context);
+        var results = await installer.InstallAsync(installBlock, context, null);
 
         // Assert
         results.Should().HaveCount(1);
@@ -210,7 +210,7 @@ public class GithubReleaseInstallerTests : IDisposable
         var context = new InstallContext { RepoRoot = "/repo", DryRun = true };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context);
+        var results = await installer.InstallAsync(installBlock, context, null);
 
         // Assert
         results.Should().HaveCount(1);
@@ -247,7 +247,7 @@ public class GithubReleaseInstallerTests : IDisposable
         var context = new InstallContext { RepoRoot = "/repo", DryRun = true };
 
         // Act
-        await installer.InstallAsync(installBlock, context);
+        await installer.InstallAsync(installBlock, context, null);
 
         // Assert
         _httpTest.ShouldHaveCalled("https://api.github.com/repos/owner/repo/releases/latest")
@@ -283,7 +283,7 @@ public class GithubReleaseInstallerTests : IDisposable
         var context = new InstallContext { RepoRoot = "/repo", DryRun = true };
 
         // Act
-        await installer.InstallAsync(installBlock, context);
+        await installer.InstallAsync(installBlock, context, null);
 
         // Assert
         _httpTest.ShouldHaveCalled("https://api.github.com/repos/owner/repo/releases/tags/v2.0.0")
@@ -317,7 +317,7 @@ public class GithubReleaseInstallerTests : IDisposable
         var context = new InstallContext { RepoRoot = "/repo", DryRun = true };
 
         // Act
-        await installer.InstallAsync(installBlock, context);
+        await installer.InstallAsync(installBlock, context, null);
 
         // Assert
         _httpTest.ShouldHaveCalled("*")
@@ -352,7 +352,7 @@ public class GithubReleaseInstallerTests : IDisposable
         var context = new InstallContext { RepoRoot = "/repo", DryRun = true };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context);
+        var results = await installer.InstallAsync(installBlock, context, null);
 
         // Assert
         results.Should().HaveCount(1);
@@ -385,7 +385,7 @@ public class GithubReleaseInstallerTests : IDisposable
         var context = new InstallContext { RepoRoot = "/repo", DryRun = true };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context);
+        var results = await installer.InstallAsync(installBlock, context, null);
 
         // Assert
         results.Should().HaveCount(2);
@@ -425,7 +425,7 @@ public class GithubReleaseInstallerTests : IDisposable
         var context = new InstallContext { RepoRoot = "/repo", DryRun = false, HasSudo = true };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().HaveCount(1);
@@ -469,7 +469,7 @@ public class GithubReleaseInstallerTests : IDisposable
         var context = new InstallContext { RepoRoot = "/repo", DryRun = false, HasSudo = true };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context);
+        var results = await installer.InstallAsync(installBlock, context, null);
 
         // Assert
         results.Should().HaveCount(1);
@@ -517,7 +517,7 @@ public class GithubReleaseInstallerTests : IDisposable
         var context = new InstallContext { RepoRoot = "/repo", DryRun = false, HasSudo = true };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context);
+        var results = await installer.InstallAsync(installBlock, context, null);
 
         // Assert
         results.Should().HaveCount(1);
@@ -579,7 +579,7 @@ public class GithubReleaseInstallerTests : IDisposable
             };
 
             // Act
-            await installer.InstallAsync(installBlock, context);
+            await installer.InstallAsync(installBlock, context, null);
 
             // Assert - verify the correct asset URL was downloaded
             mockDownloader.Verify(d => d.DownloadAsync("https://example.com/linux.tar.gz", It.IsAny<CancellationToken>()), Times.Once);
@@ -649,7 +649,7 @@ public class GithubReleaseInstallerTests : IDisposable
             };
 
             // Act
-            var results = await installer.InstallAsync(installBlock, context);
+            var results = await installer.InstallAsync(installBlock, context, null);
 
             // Assert
             results.Should().HaveCount(1);
@@ -742,7 +742,7 @@ public class GithubReleaseInstallerTests : IDisposable
         var context = new InstallContext { RepoRoot = "/repo", DryRun = false, HasSudo = true };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context);
+        var results = await installer.InstallAsync(installBlock, context, null);
 
         // Assert
         results.Should().HaveCount(1);
@@ -776,7 +776,7 @@ public class GithubReleaseInstallerTests : IDisposable
         var context = new InstallContext { RepoRoot = "/repo", DryRun = false, HasSudo = true };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context);
+        var results = await installer.InstallAsync(installBlock, context, null);
 
         // Assert
         results.Should().HaveCount(1);
@@ -818,7 +818,7 @@ public class GithubReleaseInstallerTests : IDisposable
             var context = new InstallContext { RepoRoot = "/repo", BinDirectory = tempBinDir, DryRun = false };
 
             // Act
-            var results = await installer.InstallAsync(installBlock, context);
+            var results = await installer.InstallAsync(installBlock, context, null);
 
             // Assert
             results.Should().HaveCount(1);
@@ -867,7 +867,7 @@ public class GithubReleaseInstallerTests : IDisposable
             var context = new InstallContext { RepoRoot = "/repo", BinDirectory = tempBinDir, DryRun = false };
 
             // Act
-            var results = await installer.InstallAsync(installBlock, context);
+            var results = await installer.InstallAsync(installBlock, context, null);
 
             // Assert
             results.Should().HaveCount(1);
@@ -930,7 +930,7 @@ public class GithubReleaseInstallerTests : IDisposable
             var context = new InstallContext { RepoRoot = "/repo", BinDirectory = tempBinDir, DryRun = false };
 
             // Act
-            var results = await installer.InstallAsync(installBlock, context);
+            var results = await installer.InstallAsync(installBlock, context, null);
 
             // Assert - It should attempt to download (and fail due to mock), proving it didn't skip
             results.Should().HaveCount(1);
@@ -982,7 +982,7 @@ public class GithubReleaseInstallerTests : IDisposable
             var context = new InstallContext { RepoRoot = "/repo", BinDirectory = tempBinDir, DryRun = true };
 
             // Act
-            var results = await installer.InstallAsync(installBlock, context);
+            var results = await installer.InstallAsync(installBlock, context, null);
 
             // Assert
             results.Should().HaveCount(1);
@@ -1035,7 +1035,7 @@ public class GithubReleaseInstallerTests : IDisposable
             var context = new InstallContext { RepoRoot = "/repo", BinDirectory = tempBinDir, DryRun = true };
 
             // Act
-            var results = await installer.InstallAsync(installBlock, context);
+            var results = await installer.InstallAsync(installBlock, context, null);
 
             // Assert
             results.Should().HaveCount(1);

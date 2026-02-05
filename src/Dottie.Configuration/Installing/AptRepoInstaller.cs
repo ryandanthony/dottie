@@ -34,7 +34,7 @@ public class AptRepoInstaller : IInstallSource
     }
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, Action? onItemComplete, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(installBlock);
         ArgumentNullException.ThrowIfNull(context);
@@ -46,7 +46,7 @@ public class AptRepoInstaller : IInstallSource
 
         if (!context.HasSudo)
         {
-            return CreateSudoRequiredWarnings(installBlock.AptRepos.AsReadOnly());
+            return CreateSudoRequiredWarnings(installBlock.AptRepos.AsReadOnly(), onItemComplete);
         }
 
         var results = new List<InstallResult>();
@@ -54,12 +54,13 @@ public class AptRepoInstaller : IInstallSource
         {
             var repoResults = await ConfigureRepositoryAsync(repo, cancellationToken);
             results.AddRange(repoResults);
+            onItemComplete?.Invoke();
         }
 
         return results;
     }
 
-    private List<InstallResult> CreateSudoRequiredWarnings(IReadOnlyList<AptRepoItem> repos)
+    private List<InstallResult> CreateSudoRequiredWarnings(IReadOnlyList<AptRepoItem> repos, Action? onItemComplete)
     {
         var results = new List<InstallResult>();
         foreach (var repo in repos)
@@ -69,6 +70,8 @@ public class AptRepoInstaller : IInstallSource
             {
                 results.Add(InstallResult.Warning(package, SourceType, "Sudo required to install packages from APT repositories"));
             }
+
+            onItemComplete?.Invoke();
         }
 
         return results;

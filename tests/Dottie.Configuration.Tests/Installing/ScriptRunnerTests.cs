@@ -35,7 +35,7 @@ public class ScriptRunnerTests
         var context = new InstallContext { RepoRoot = "/repo" };
 
         // Act
-        var results = await _runner.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await _runner.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().BeEmpty();
@@ -53,7 +53,7 @@ public class ScriptRunnerTests
         var context = new InstallContext { RepoRoot = "/repo" };
 
         // Act
-        var action = async () => await _runner.InstallAsync(installBlock, context, CancellationToken.None).ConfigureAwait(false);
+        var action = async () => await _runner.InstallAsync(installBlock, context, null, CancellationToken.None).ConfigureAwait(false);
 
         // Assert
         await action.Should().NotThrowAsync();
@@ -81,7 +81,7 @@ public class ScriptRunnerTests
         try
         {
             // Act
-            var results = await _runner.InstallAsync(installBlock, context, CancellationToken.None);
+            var results = await _runner.InstallAsync(installBlock, context, null, CancellationToken.None);
 
             // Assert
             results.Should().HaveCount(2);
@@ -110,7 +110,7 @@ public class ScriptRunnerTests
         var context = new InstallContext { RepoRoot = "/repo" };
 
         // Act
-        var results = await _runner.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await _runner.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().NotBeEmpty();
@@ -129,7 +129,7 @@ public class ScriptRunnerTests
         var context = new InstallContext { RepoRoot = "/repo" };
 
         // Act
-        var results = await _runner.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await _runner.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().BeEmpty();
@@ -146,7 +146,7 @@ public class ScriptRunnerTests
         var context = new InstallContext { RepoRoot = "/repo" };
 
         // Act
-        Func<Task> act = async () => await _runner.InstallAsync(null!, context).ConfigureAwait(false);
+        Func<Task> act = async () => await _runner.InstallAsync(null!, context, null).ConfigureAwait(false);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>()
@@ -164,7 +164,7 @@ public class ScriptRunnerTests
         var installBlock = new InstallBlock();
 
         // Act
-        Func<Task> act = async () => await _runner.InstallAsync(installBlock, null!).ConfigureAwait(false);
+        Func<Task> act = async () => await _runner.InstallAsync(installBlock, null!, null).ConfigureAwait(false);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>()
@@ -183,7 +183,7 @@ public class ScriptRunnerTests
         var context = new InstallContext { RepoRoot = "/repo" };
 
         // Act
-        var results = await _runner.InstallAsync(installBlock, context);
+        var results = await _runner.InstallAsync(installBlock, context, null);
 
         // Assert
         results.Should().BeEmpty();

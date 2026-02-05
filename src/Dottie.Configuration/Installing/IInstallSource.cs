@@ -26,7 +26,8 @@ public interface IInstallSource
     /// </summary>
     /// <param name="installBlock">The install block containing items to install.</param>
     /// <param name="context">The shared installation context.</param>
+    /// <param name="onItemComplete">Optional callback invoked after each item is processed, for progress tracking. Can be null.</param>
     /// <param name="cancellationToken">Token to cancel the operation.</param>
     /// <returns>Collection of installation results for each item processed.</returns>
-    Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, CancellationToken cancellationToken = default);
+    Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, Action? onItemComplete, CancellationToken cancellationToken = default);
 }

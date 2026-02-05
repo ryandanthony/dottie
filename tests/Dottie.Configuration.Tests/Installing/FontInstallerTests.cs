@@ -84,7 +84,7 @@ public class FontInstallerTests : IDisposable
         var context = new InstallContext { RepoRoot = "/repo", FontDirectory = _tempDir };
 
         // Act
-        var results = await _installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await _installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().BeEmpty();
@@ -102,7 +102,7 @@ public class FontInstallerTests : IDisposable
         var context = new InstallContext { RepoRoot = "/repo", FontDirectory = _tempDir };
 
         // Act
-        var action = async () => await _installer.InstallAsync(installBlock, context, CancellationToken.None).ConfigureAwait(false);
+        var action = async () => await _installer.InstallAsync(installBlock, context, null, CancellationToken.None).ConfigureAwait(false);
 
         // Assert
         await action.Should().NotThrowAsync();
@@ -131,7 +131,7 @@ public class FontInstallerTests : IDisposable
         };
 
         // Act
-        var results = await _installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await _installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().BeEmpty();
@@ -156,7 +156,7 @@ public class FontInstallerTests : IDisposable
         };
 
         // Act
-        var results = await _installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await _installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().BeEmpty();
@@ -173,7 +173,7 @@ public class FontInstallerTests : IDisposable
         var context = new InstallContext { RepoRoot = "/repo", FontDirectory = _tempDir };
 
         // Act
-        Func<Task> act = async () => await _installer.InstallAsync(null!, context).ConfigureAwait(false);
+        Func<Task> act = async () => await _installer.InstallAsync(null!, context, null).ConfigureAwait(false);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>()
@@ -191,7 +191,7 @@ public class FontInstallerTests : IDisposable
         var installBlock = new InstallBlock();
 
         // Act
-        Func<Task> act = async () => await _installer.InstallAsync(installBlock, null!).ConfigureAwait(false);
+        Func<Task> act = async () => await _installer.InstallAsync(installBlock, null!, null).ConfigureAwait(false);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>()
@@ -214,7 +214,7 @@ public class FontInstallerTests : IDisposable
         };
 
         // Act
-        var results = await _installer.InstallAsync(installBlock, context);
+        var results = await _installer.InstallAsync(installBlock, context, null);
 
         // Assert
         results.Should().BeEmpty();
@@ -253,7 +253,7 @@ public class FontInstallerTests : IDisposable
         };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().HaveCount(1);
@@ -291,7 +291,7 @@ public class FontInstallerTests : IDisposable
         };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().HaveCount(1);
@@ -334,7 +334,7 @@ public class FontInstallerTests : IDisposable
         };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().HaveCount(3);
@@ -379,7 +379,7 @@ public class FontInstallerTests : IDisposable
         };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().HaveCount(3);
@@ -420,7 +420,7 @@ public class FontInstallerTests : IDisposable
         };
 
         // Act
-        await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         fakeRunner.CallCount.Should().Be(1);
@@ -457,7 +457,7 @@ public class FontInstallerTests : IDisposable
         };
 
         // Act
-        await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert - fc-cache should NOT be called
         fakeRunner.CallCount.Should().Be(0);
@@ -495,7 +495,7 @@ public class FontInstallerTests : IDisposable
         };
 
         // Act
-        var action = async () => await installer.InstallAsync(installBlock, context, CancellationToken.None).ConfigureAwait(false);
+        var action = async () => await installer.InstallAsync(installBlock, context, null, CancellationToken.None).ConfigureAwait(false);
 
         // Assert - should not throw even if fc-cache fails
         await action.Should().NotThrowAsync();
@@ -533,7 +533,7 @@ public class FontInstallerTests : IDisposable
         };
 
         // Act
-        await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         var fontSubDir = Path.Combine(_tempDir, "MyCustomFont");
@@ -573,7 +573,7 @@ public class FontInstallerTests : IDisposable
         };
 
         // Act
-        await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         mockDownloader.Verify(
@@ -624,7 +624,7 @@ public class FontInstallerTests : IDisposable
         };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().HaveCount(1);
@@ -660,7 +660,7 @@ public class FontInstallerTests : IDisposable
         };
 
         // Act
-        await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert - download should NOT be called in dry-run mode
         mockDownloader.Verify(
@@ -695,7 +695,7 @@ public class FontInstallerTests : IDisposable
         };
 
         // Act
-        await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert - fc-cache should NOT be called in dry-run mode
         fakeRunner.CallCount.Should().Be(0);

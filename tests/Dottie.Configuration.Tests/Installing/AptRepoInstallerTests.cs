@@ -38,7 +38,7 @@ public class AptRepoInstallerTests
         var context = new InstallContext { RepoRoot = "/repo" };
 
         // Act
-        var results = await _installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await _installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().BeEmpty();
@@ -56,7 +56,7 @@ public class AptRepoInstallerTests
         var context = new InstallContext { RepoRoot = "/repo" };
 
         // Act
-        var action = async () => await _installer.InstallAsync(installBlock, context, CancellationToken.None).ConfigureAwait(false);
+        var action = async () => await _installer.InstallAsync(installBlock, context, null, CancellationToken.None).ConfigureAwait(false);
 
         // Assert
         await action.Should().NotThrowAsync();
@@ -86,7 +86,7 @@ public class AptRepoInstallerTests
         var context = new InstallContext { RepoRoot = "/repo", DryRun = true };
 
         // Act
-        var results = await _installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await _installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().BeEmpty();
@@ -120,7 +120,7 @@ public class AptRepoInstallerTests
         };
 
         // Act
-        var results = await _installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await _installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().NotBeEmpty();
@@ -143,7 +143,7 @@ public class AptRepoInstallerTests
         };
 
         // Act
-        var results = await _installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await _installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().BeEmpty();
@@ -160,7 +160,7 @@ public class AptRepoInstallerTests
         var context = new InstallContext { RepoRoot = "/repo" };
 
         // Act
-        Func<Task> act = async () => await _installer.InstallAsync(null!, context).ConfigureAwait(false);
+        Func<Task> act = async () => await _installer.InstallAsync(null!, context, null).ConfigureAwait(false);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>()
@@ -178,7 +178,7 @@ public class AptRepoInstallerTests
         var installBlock = new InstallBlock();
 
         // Act
-        Func<Task> act = async () => await _installer.InstallAsync(installBlock, null!).ConfigureAwait(false);
+        Func<Task> act = async () => await _installer.InstallAsync(installBlock, null!, null).ConfigureAwait(false);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>()
@@ -197,7 +197,7 @@ public class AptRepoInstallerTests
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
         // Act
-        var results = await _installer.InstallAsync(installBlock, context);
+        var results = await _installer.InstallAsync(installBlock, context, null);
 
         // Assert
         results.Should().BeEmpty();
@@ -239,7 +239,7 @@ public class AptRepoInstallerTests
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         fakeRunner.Calls.Should().Contain(c => c.FileName == "bash" && c.Arguments.Contains("trusted.gpg.d"));
@@ -281,7 +281,7 @@ public class AptRepoInstallerTests
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
         // Act
-        await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         fakeRunner.Calls.Should().Contain(c => c.FileName == "bash" && c.Arguments.Contains("sources.list.d"));
@@ -323,7 +323,7 @@ public class AptRepoInstallerTests
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().HaveCount(3); // 1 repo + 2 packages
@@ -362,7 +362,7 @@ public class AptRepoInstallerTests
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().HaveCount(1);
@@ -403,7 +403,7 @@ public class AptRepoInstallerTests
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().HaveCount(1);
@@ -445,7 +445,7 @@ public class AptRepoInstallerTests
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().HaveCount(1);
@@ -488,7 +488,7 @@ public class AptRepoInstallerTests
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().HaveCount(2); // 1 repo success + 1 package failure
@@ -530,7 +530,7 @@ public class AptRepoInstallerTests
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().HaveCount(1);
@@ -584,7 +584,7 @@ public class AptRepoInstallerTests
         var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
 
         // Act
-        var results = await installer.InstallAsync(installBlock, context, CancellationToken.None);
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
 
         // Assert
         results.Should().HaveCount(4); // 2 repos + 2 packages

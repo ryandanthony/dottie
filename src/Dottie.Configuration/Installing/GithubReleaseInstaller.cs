@@ -49,7 +49,7 @@ public class GithubReleaseInstaller : IInstallSource
     }
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, Action? onItemComplete, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(installBlock);
 
@@ -73,6 +73,8 @@ public class GithubReleaseInstaller : IInstallSource
             {
                 results.Add(InstallResult.Failed(item.Binary, SourceType, $"Failed to install from {item.Repo}: {ex.Message}"));
             }
+
+            onItemComplete?.Invoke();
         }
 
         return results;

@@ -31,7 +31,7 @@ public class SnapPackageInstaller : IInstallSource
     public InstallSourceType SourceType => InstallSourceType.SnapPackage;
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, Action? onItemComplete, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(installBlock);
 
@@ -57,6 +57,7 @@ public class SnapPackageInstaller : IInstallSource
             foreach (var snap in installBlock.Snaps)
             {
                 results.Add(InstallResult.Warning(snap.Name, SourceType, "Sudo required to install snap packages"));
+                onItemComplete?.Invoke();
             }
 
             return results;
@@ -81,6 +82,8 @@ public class SnapPackageInstaller : IInstallSource
             {
                 results.Add(InstallResult.Failed(snap.Name, SourceType, $"Exception during installation: {ex.Message}"));
             }
+
+            onItemComplete?.Invoke();
         }
 
         return results;

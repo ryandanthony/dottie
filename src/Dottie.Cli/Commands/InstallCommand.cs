@@ -169,7 +169,7 @@ public sealed class InstallCommand : AsyncCommand<InstallCommandSettings>
                 new TaskDescriptionColumn(),
                 new ProgressBarColumn(),
                 new PercentageColumn(),
-                new RemainingTimeColumn(),
+                new ElapsedTimeColumn(),
                 new SpinnerColumn())
             .StartAsync(async ctx =>
             {
@@ -184,9 +184,8 @@ public sealed class InstallCommand : AsyncCommand<InstallCommandSettings>
                     }
 
                     task.Description = $"[green]Installing {item.Name}[/]";
-                    var installerResults = await ExecuteInstallerAsync(item.Installer, installBlock, context);
+                    var installerResults = await ExecuteInstallerAsync(item.Installer, installBlock, context, () => task.Increment(1));
                     results.AddRange(installerResults);
-                    task.Increment(item.Count);
                 }
 
                 task.Description = "[green]Installation complete[/]";
@@ -207,23 +206,23 @@ public sealed class InstallCommand : AsyncCommand<InstallCommandSettings>
                 continue;
             }
 
-            var installerResults = await ExecuteInstallerAsync(item.Installer, installBlock, context);
+            var installerResults = await ExecuteInstallerAsync(item.Installer, installBlock, context, null);
             results.AddRange(installerResults);
         }
     }
 
-    private static async Task<IEnumerable<InstallResult>> ExecuteInstallerAsync(IInstallSource installer, InstallBlock installBlock, InstallContext context)
+    private static async Task<IEnumerable<InstallResult>> ExecuteInstallerAsync(IInstallSource installer, InstallBlock installBlock, InstallContext context, Action? onItemComplete)
     {
         try
         {
             return installer.SourceType switch
             {
-                InstallSourceType.GithubRelease => await ((GithubReleaseInstaller)installer).InstallAsync(installBlock, context),
-                InstallSourceType.AptPackage => await ((AptPackageInstaller)installer).InstallAsync(installBlock, context),
-                InstallSourceType.AptRepo => await ((AptRepoInstaller)installer).InstallAsync(installBlock, context),
-                InstallSourceType.Script => await ((ScriptRunner)installer).InstallAsync(installBlock, context),
-                InstallSourceType.Font => await ((FontInstaller)installer).InstallAsync(installBlock, context),
-                InstallSourceType.SnapPackage => await ((SnapPackageInstaller)installer).InstallAsync(installBlock, context),
+                InstallSourceType.GithubRelease => await ((GithubReleaseInstaller)installer).InstallAsync(installBlock, context, onItemComplete),
+                InstallSourceType.AptPackage => await ((AptPackageInstaller)installer).InstallAsync(installBlock, context, onItemComplete),
+                InstallSourceType.AptRepo => await ((AptRepoInstaller)installer).InstallAsync(installBlock, context, onItemComplete),
+                InstallSourceType.Script => await ((ScriptRunner)installer).InstallAsync(installBlock, context, onItemComplete),
+                InstallSourceType.Font => await ((FontInstaller)installer).InstallAsync(installBlock, context, onItemComplete),
+                InstallSourceType.SnapPackage => await ((SnapPackageInstaller)installer).InstallAsync(installBlock, context, onItemComplete),
                 _ => [],
             };
         }

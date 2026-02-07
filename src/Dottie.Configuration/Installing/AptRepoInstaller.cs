@@ -97,6 +97,14 @@ public class AptRepoInstaller : IInstallSource
                 return results;
             }
 
+            // Update apt cache after adding the repository
+            var updateResult = await UpdateAptCacheAsync(cancellationToken);
+            if (updateResult != null)
+            {
+                results.Add(updateResult);
+                return results;
+            }
+
             results.Add(InstallResult.Success(repo.Name, SourceType));
             results.AddRange(await InstallPackagesAsync(repo, cancellationToken));
         }
@@ -123,9 +131,19 @@ public class AptRepoInstaller : IInstallSource
         var keyPath = $"/etc/apt/trusted.gpg.d/{repo.Name}.gpg";
         try
         {
+            // Check if the key is ASCII-armored (starts with "-----BEGIN PGP")
+            // If so, pipe through gpg --dearmor to convert to binary format
+            var keyBase64 = Convert.ToBase64String(keyData);
+            var isAsciiArmored = System.Text.Encoding.UTF8.GetString(keyData).TrimStart().StartsWith("-----BEGIN PGP", StringComparison.Ordinal);
+
+            // Dearmor ASCII-armored keys to binary GPG format, or write directly if already binary
+            var command = isAsciiArmored
+                ? $"-c \"echo '{keyBase64}' | base64 -d | gpg --dearmor | sudo tee {keyPath} > /dev/null\""
+                : $"-c \"echo '{keyBase64}' | base64 -d | sudo tee {keyPath} > /dev/null\"";
+
             var addKeyResult = await _processRunner.RunAsync(
                 "bash",
-                $"-c \"echo '{Convert.ToBase64String(keyData)}' | base64 -d | sudo tee {keyPath} > /dev/null\"",
+                command,
                 cancellationToken: cancellationToken);
 
             return addKeyResult.Success
@@ -155,6 +173,25 @@ public class AptRepoInstaller : IInstallSource
         catch (Exception ex)
         {
             return InstallResult.Failed(repo.Name, SourceType, $"Failed to add repository source: {ex.Message}");
+        }
+    }
+
+    private async Task<InstallResult?> UpdateAptCacheAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var updateResult = await _processRunner.RunAsync(
+                "sudo",
+                "apt-get update",
+                cancellationToken: cancellationToken);
+
+            return updateResult.Success
+                ? null
+                : InstallResult.Warning("apt-update", SourceType, $"apt-get update returned exit code {updateResult.ExitCode}");
+        }
+        catch (Exception ex)
+        {
+            return InstallResult.Warning("apt-update", SourceType, $"apt-get update failed: {ex.Message}");
         }
     }
 

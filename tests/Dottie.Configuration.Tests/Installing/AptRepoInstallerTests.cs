@@ -469,6 +469,7 @@ public class AptRepoInstallerTests
         var fakeRunner = new FakeProcessRunner()
             .WithSuccessResult() // Add GPG key
             .WithSuccessResult() // Add source
+            .WithSuccessResult() // apt-get update
             .WithFailureResult(100, "Package not found"); // Install fails
 
         var installer = new AptRepoInstaller(mockDownloader.Object, fakeRunner);
@@ -511,7 +512,8 @@ public class AptRepoInstallerTests
 
         var fakeRunner = new FakeProcessRunner()
             .WithSuccessResult() // Add GPG key
-            .WithSuccessResult(); // Add source
+            .WithSuccessResult() // Add source
+            .WithSuccessResult(); // apt-get update
 
         var installer = new AptRepoInstaller(mockDownloader.Object, fakeRunner);
         var installBlock = new InstallBlock
@@ -536,7 +538,7 @@ public class AptRepoInstallerTests
         results.Should().HaveCount(1);
         results.First().Status.Should().Be(InstallStatus.Success);
         results.First().ItemName.Should().Be("testrepo");
-        fakeRunner.CallCount.Should().Be(2); // Only GPG key and source, no package install
+        fakeRunner.CallCount.Should().Be(3); // GPG key, source, and apt-get update
     }
 
     /// <summary>

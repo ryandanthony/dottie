@@ -27,7 +27,7 @@ public sealed record AptRepoItem
     /// <value>
     /// The URL to the GPG key for repository verification.
     /// </value>
-    [YamlMember(Alias = "key_url")]
+    [YamlMember(Alias = "key_url", ApplyNamingConventions = false)]
     public required string KeyUrl { get; init; }
 
     /// <summary>

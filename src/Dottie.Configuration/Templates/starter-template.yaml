@@ -43,10 +43,12 @@ profiles:
     #     - url: https://github.com/ryanoasis/nerd-fonts/releases/download/v3.0.0/FiraCode.zip
     #
     #   # APT repositories
-    #   apt-repos:
+    #   aptRepos:
     #     - name: example-repo
-    #       key-url: https://example.com/key.gpg
-    #       repo-line: "deb https://example.com/apt stable main"
+    #       key_url: https://example.com/key.gpg
+    #       repo: "deb https://example.com/apt stable main"
+    #       packages:
+    #         - package-name
 
   # Example: Additional profile that extends default
   # work:

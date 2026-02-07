@@ -16,10 +16,13 @@ profiles:
       snap:
         - name: code
           classic: true
-      aptRepo:
+      aptRepos:
         - name: docker-ce
-          keyUrl: https://download.docker.com/linux/ubuntu/gpg
-          repoLine: "deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable"
+          key_url: https://download.docker.com/linux/ubuntu/gpg
+          repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable"
+          packages:
+            - docker-ce
+            - docker-ce-cli
       scripts:
         - scripts/setup.sh
       fonts:

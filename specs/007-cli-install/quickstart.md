@@ -63,7 +63,7 @@ profiles:
         - jq
       
       # Priority 3: Private APT Repos
-      apt-repo:
+      aptRepos:
         - name: docker
           key_url: https://download.docker.com/linux/ubuntu/gpg
           repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"

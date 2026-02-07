@@ -139,11 +139,6 @@ public sealed class StatusCommand : AsyncCommand<StatusCommandSettings>
         var context = new InstallContext
         {
             RepoRoot = repoRoot,
-            BinDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "bin"),
-            FontDirectory = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "share",
-                "fonts"),
             DryRun = true, // We're just checking status, not installing
         };
 

@@ -81,10 +81,12 @@ profiles:
           classic: true
       fonts:
         - url: https://example.com/font.zip
-      apt-repos:
+      aptRepos:
         - name: repo-name
-          key-url: https://example.com/key.gpg
-          repo-line: "deb https://example.com/apt stable main"
+          key_url: https://example.com/key.gpg
+          repo: "deb https://example.com/apt stable main"
+          packages:
+            - package-from-repo
 
   work:
     extends: default  # Inherit from another profile
@@ -109,7 +111,7 @@ profiles:
 | `github` | Download binaries from GitHub releases |
 | `snaps` | Snap packages |
 | `fonts` | Nerd Fonts or other font downloads |
-| `apt-repos` | Add APT repositories before installing packages |
+| `aptRepos` | Add APT repositories before installing packages |
 
 ## CLI Commands
 

@@ -76,7 +76,7 @@
             "minLength": 1
           }
         },
-        "apt-repo": {
+        "aptRepos": {
           "type": "array",
           "description": "Third-party apt repositories to add",
           "items": {

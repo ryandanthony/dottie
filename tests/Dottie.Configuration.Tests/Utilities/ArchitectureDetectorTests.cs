@@ -26,7 +26,7 @@ public class ArchitectureDetectorTests
             Architecture.X64 => "amd64",
             Architecture.Arm64 => "arm64",
             Architecture.X86 => "x86",
-            Architecture.Arm => "arm",
+            Architecture.Arm => "armhf",
             _ => "unknown",
         };
         arch.Should().Be(expected);
@@ -183,5 +183,42 @@ public class ArchitectureDetectorTests
 
         // Assert
         result.Should().Be(expectedMatch);
+    }
+
+    [Fact]
+    public void RawArchitecture_ReturnsNonNullNonEmptyString()
+    {
+        // Act
+        var rawArch = ArchitectureDetector.RawArchitecture;
+
+        // Assert
+        rawArch.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
+    public void RawArchitecture_ReturnsExpectedUnameStyleValue()
+    {
+        // Act
+        var rawArch = ArchitectureDetector.RawArchitecture;
+
+        // Assert
+        var expected = RuntimeInformation.OSArchitecture switch
+        {
+            Architecture.X64 => "x86_64",
+            Architecture.Arm64 => "aarch64",
+            Architecture.Arm => "armv7l",
+            _ => "unknown",
+        };
+        rawArch.Should().Be(expected);
+    }
+
+    [Fact]
+    public void RawArchitecture_MatchesOneOfExpectedValues()
+    {
+        // Act
+        var rawArch = ArchitectureDetector.RawArchitecture;
+
+        // Assert
+        rawArch.Should().BeOneOf("x86_64", "aarch64", "armv7l", "unknown");
     }
 }

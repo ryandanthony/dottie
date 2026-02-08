@@ -1,0 +1,17 @@
+profiles:
+  default:
+    dotfiles:
+      - source: dotfiles/bashrc
+        target: ~/.bashrc
+    install:
+      aptRepos:
+        - name: microsoft-prod
+          key_url: https://packages.microsoft.com/keys/microsoft.asc
+          repo: "deb [arch=${MS_ARCH}] https://packages.microsoft.com/repos/code stable main"
+          packages:
+            - code
+        - name: example-repo
+          key_url: https://example.com/${VERSION_CODENAME}/gpg.key
+          repo: "deb [arch=${MS_ARCH}] https://example.com/${VERSION_CODENAME}/prod main"
+          packages:
+            - example-${MS_ARCH}

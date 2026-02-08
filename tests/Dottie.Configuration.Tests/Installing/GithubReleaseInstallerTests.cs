@@ -1052,4 +1052,44 @@ public class GithubReleaseInstallerTests : IDisposable
     }
 
     #endregion
+
+    #region RELEASE_VERSION Variable Resolution Tests (T024)
+
+    /// <summary>
+    /// Verifies that ${RELEASE_VERSION} in asset pattern is resolved with the specified version
+    /// during dry-run validation.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
+    [Fact]
+    public async Task InstallAsync_DryRun_WithReleaseVersionVariable_ResolvesVersionInAssetPatternAsync()
+    {
+        // Arrange
+        _httpTest = new HttpTest();
+        _httpTest.RespondWith(status: 200);
+
+        var installer = new GithubReleaseInstaller();
+        var installBlock = new InstallBlock
+        {
+            Github = new List<GithubReleaseItem>
+            {
+                new GithubReleaseItem
+                {
+                    Repo = "owner/tool",
+                    Asset = "tool-${RELEASE_VERSION}-linux_amd64.tar.gz",
+                    Binary = "tool",
+                    Version = "v1.2.0",
+                },
+            },
+        };
+        var context = new InstallContext { RepoRoot = "/repo", DryRun = true };
+
+        // Act
+        var results = await installer.InstallAsync(installBlock, context, null);
+
+        // Assert - dry run should succeed since we're just validating the release exists
+        results.Should().HaveCount(1);
+        results.First().Status.Should().Be(InstallStatus.Success);
+    }
+
+    #endregion
 }

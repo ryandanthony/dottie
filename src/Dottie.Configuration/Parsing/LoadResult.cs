@@ -31,6 +31,14 @@ public sealed class LoadResult
     public IList<ValidationError> Errors { get; init; } = [];
 
     /// <summary>
+    /// Gets non-fatal warnings produced during loading (e.g., missing OS release file).
+    /// </summary>
+    /// <value>
+    /// Non-fatal warnings that don't prevent successful loading.
+    /// </value>
+    public IList<ValidationError> Warnings { get; init; } = [];
+
+    /// <summary>
     /// Gets a value indicating whether the load was successful.
     /// </summary>
     /// <value>

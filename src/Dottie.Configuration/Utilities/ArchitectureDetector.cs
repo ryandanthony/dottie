@@ -15,17 +15,33 @@ namespace Dottie.Configuration.Utilities;
 public static class ArchitectureDetector
 {
     /// <summary>
-    /// Gets the current system architecture as a standardized string.
+    /// Gets the current system architecture as a Microsoft/Debian-style standardized string.
+    /// Maps to the <c>${MS_ARCH}</c> variable.
     /// </summary>
     /// <value>
-    /// The current system architecture as a standardized string.
+    /// The current system architecture as a standardized string (e.g., <c>amd64</c>, <c>arm64</c>, <c>armhf</c>).
     /// </value>
     public static string CurrentArchitecture => RuntimeInformation.OSArchitecture switch
     {
         Architecture.X64 => "amd64",
         Architecture.Arm64 => "arm64",
         Architecture.X86 => "x86",
-        Architecture.Arm => "arm",
+        Architecture.Arm => "armhf",
+        _ => "unknown",
+    };
+
+    /// <summary>
+    /// Gets the raw system architecture matching <c>uname -m</c> output.
+    /// Maps to the <c>${ARCH}</c> variable.
+    /// </summary>
+    /// <value>
+    /// The raw architecture string (e.g., <c>x86_64</c>, <c>aarch64</c>, <c>armv7l</c>).
+    /// </value>
+    public static string RawArchitecture => RuntimeInformation.OSArchitecture switch
+    {
+        Architecture.X64 => "x86_64",
+        Architecture.Arm64 => "aarch64",
+        Architecture.Arm => "armv7l",
         _ => "unknown",
     };
 
@@ -40,7 +56,7 @@ public static class ArchitectureDetector
         "amd64" => ["*amd64*", "*x86_64*", "*x64*"],
         "arm64" => ["*arm64*", "*aarch64*"],
         "x86" => ["*i386*", "*i686*", "*x86*"],
-        "arm" => ["*armv7*", "*armhf*"],
+        "armhf" => ["*armv7*", "*armhf*"],
         _ => ["*"],
     };
 

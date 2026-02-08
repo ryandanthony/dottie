@@ -6,6 +6,7 @@
 
 using Dottie.Configuration.Installing.Utilities;
 using Dottie.Configuration.Models.InstallBlocks;
+using Dottie.Configuration.Utilities;
 using Flurl.Http;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
@@ -187,13 +188,16 @@ public class GithubReleaseInstaller : IInstallSource
             return InstallResult.Failed(item.Binary, SourceType, $"GitHub release not found (API returned null): {item.Repo}@{item.Version ?? LatestVersion}");
         }
 
-        var matchingAsset = FindMatchingAsset(release, item.Asset);
+        // Resolve ${RELEASE_VERSION} in asset and binary patterns
+        var resolvedItem = ResolveReleaseVersion(item, release);
+
+        var matchingAsset = FindMatchingAsset(release, resolvedItem.Asset);
         if (matchingAsset == null)
         {
-            return InstallResult.Failed(item.Binary, SourceType, $"No asset matching pattern '{item.Asset}' in release {item.Repo}@{item.Version ?? LatestVersion}");
+            return InstallResult.Failed(resolvedItem.Binary, SourceType, $"No asset matching pattern '{resolvedItem.Asset}' in release {item.Repo}@{item.Version ?? LatestVersion}");
         }
 
-        return await DownloadAndExtractAssetAsync(item, matchingAsset, context, cancellationToken);
+        return await DownloadAndExtractAssetAsync(resolvedItem, matchingAsset, context, cancellationToken);
     }
 
     private async Task<InstallResult> DownloadAndExtractAssetAsync(GithubReleaseItem item, GithubAsset asset, InstallContext context, CancellationToken cancellationToken)
@@ -248,6 +252,36 @@ public class GithubReleaseInstaller : IInstallSource
         }
 
         return File.Exists(assetPath) ? assetPath : null;
+    }
+
+    private static GithubReleaseItem ResolveReleaseVersion(GithubReleaseItem item, GithubRelease release)
+    {
+        // Determine the version: explicit version tag or tag from API response
+        var version = !string.IsNullOrEmpty(item.Version)
+            ? item.Version
+            : release.TagName;
+
+        if (string.IsNullOrEmpty(version))
+        {
+            return item;
+        }
+
+        // Strip leading 'v' prefix if present for the version value
+        var versionValue = version.StartsWith('v') ? version[1..] : version;
+
+        var releaseVars = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["RELEASE_VERSION"] = versionValue,
+        };
+
+        var assetResult = VariableResolver.ResolveString(item.Asset, releaseVars);
+        var binaryResult = VariableResolver.ResolveString(item.Binary, releaseVars);
+
+        return item with
+        {
+            Asset = assetResult.ResolvedValue,
+            Binary = binaryResult.ResolvedValue,
+        };
     }
 
     private static bool IsArchiveFile(string fileName)
@@ -326,27 +360,8 @@ public class GithubReleaseInstaller : IInstallSource
                 request = request.WithOAuthBearerToken(_githubToken);
             }
 
-            // Fetch the release data from GitHub API
             var responseBody = await request.GetStringAsync();
-
-            // Deserialize using JsonDocument to handle JSON safely (for AOT compatibility)
-            using (var doc = System.Text.Json.JsonDocument.Parse(responseBody))
-            {
-                var root = doc.RootElement;
-                var assetsArray = root.GetProperty("assets");
-
-                var assets = new List<GithubAsset>();
-                foreach (var asset in assetsArray.EnumerateArray())
-                {
-                    assets.Add(new GithubAsset
-                    {
-                        Name = asset.GetProperty("name").GetString() ?? string.Empty,
-                        BrowserDownloadUrl = asset.GetProperty("browser_download_url").GetString() ?? string.Empty,
-                    });
-                }
-
-                return new GithubRelease { Assets = assets };
-            }
+            return ParseGithubReleaseResponse(responseBody);
         }
         catch (HttpRequestException ex)
         {
@@ -368,6 +383,28 @@ public class GithubReleaseInstaller : IInstallSource
             System.Diagnostics.Debug.WriteLine($"Unexpected error in GitHub API: {ex.GetType().Name}: {ex.Message}");
             return null;
         }
+    }
+
+    private static GithubRelease ParseGithubReleaseResponse(string responseBody)
+    {
+        using var doc = System.Text.Json.JsonDocument.Parse(responseBody);
+        var root = doc.RootElement;
+        var tagName = root.TryGetProperty("tag_name", out var tagElement)
+            ? tagElement.GetString() ?? string.Empty
+            : string.Empty;
+        var assetsArray = root.GetProperty("assets");
+
+        var assets = new List<GithubAsset>();
+        foreach (var asset in assetsArray.EnumerateArray())
+        {
+            assets.Add(new GithubAsset
+            {
+                Name = asset.GetProperty("name").GetString() ?? string.Empty,
+                BrowserDownloadUrl = asset.GetProperty("browser_download_url").GetString() ?? string.Empty,
+            });
+        }
+
+        return new GithubRelease { TagName = tagName, Assets = assets };
     }
 
     private GithubAsset? FindMatchingAsset(GithubRelease release, string pattern)
@@ -411,6 +448,9 @@ public class GithubReleaseInstaller : IInstallSource
     // GitHub API response models
     private sealed class GithubRelease
     {
+        [JsonPropertyName("tag_name")]
+        public string TagName { get; set; } = string.Empty;
+
         [JsonPropertyName("assets")]
         public List<GithubAsset>? Assets { get; set; }
     }

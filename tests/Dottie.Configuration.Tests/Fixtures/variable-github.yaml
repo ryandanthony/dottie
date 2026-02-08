@@ -1,0 +1,11 @@
+profiles:
+  default:
+    install:
+      github:
+        - repo: owner/tool
+          asset: "tool-${MS_ARCH}-${RELEASE_VERSION}.tar.gz"
+          binary: tool
+          version: "1.2.0"
+        - repo: owner/app
+          asset: "app-${ARCH}-latest.tar.gz"
+          binary: app

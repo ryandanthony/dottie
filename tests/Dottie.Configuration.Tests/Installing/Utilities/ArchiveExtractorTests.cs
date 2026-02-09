@@ -1,8 +1,9 @@
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
+using System.Formats.Tar;
+using System.IO.Compression;
 using Dottie.Configuration.Installing.Utilities;
 using FluentAssertions;
-using System.IO.Compression;
 
 namespace Dottie.Configuration.Tests.Installing.Utilities;
 
@@ -217,10 +218,10 @@ public class ArchiveExtractorTests
         var zipPath = Path.Combine(_testDir, "test-overwrite.zip");
         var extractDir = Path.Combine(_testDir, "extracted-overwrite");
         Directory.CreateDirectory(extractDir);
-        
+
         var existingFile = Path.Combine(extractDir, "test.txt");
         File.WriteAllText(existingFile, "old content");
-        
+
         CreateTestZipFileWithContent(zipPath, "new content");
 
         // Act
@@ -228,6 +229,45 @@ public class ArchiveExtractorTests
 
         // Assert
         File.ReadAllText(existingFile).Should().Be("new content");
+    }
+
+    [Fact]
+    public void Extract_WithTarGzContainingPaxHeaders_ExtractsSuccessfully()
+    {
+        // Arrange - Create a tar.gz with PAX metadata on the entry.
+        // System.Formats.Tar writes PAX extended headers automatically when metadata
+        // requires it. The extractor should handle this transparently.
+        var tarGzPath = Path.Combine(_testDir, "pax-test.tar.gz");
+        var extractDir = Path.Combine(_testDir, "extracted-pax");
+        var fileContent = "hello from pax tar";
+        CreateTarGzWithPaxEntry(tarGzPath, "myfile.txt", fileContent);
+
+        // Act
+        _extractor.Extract(tarGzPath, extractDir);
+
+        // Assert
+        var extractedFile = Path.Combine(extractDir, "myfile.txt");
+        File.Exists(extractedFile).Should().BeTrue("the file should be extracted regardless of PAX metadata");
+        File.ReadAllText(extractedFile).Should().Be(fileContent);
+    }
+
+    [Fact]
+    public void Extract_WithTarGzContainingGnuLongNameHeader_ExtractsSuccessfully()
+    {
+        // Arrange - Create a tar.gz with a GNU-format entry (long file name).
+        // The extractor should handle GNU entries transparently.
+        var tarGzPath = Path.Combine(_testDir, "gnu-longname-test.tar.gz");
+        var extractDir = Path.Combine(_testDir, "extracted-gnu-longname");
+        var fileContent = "hello from gnu long name tar";
+        CreateTarGzWithGnuEntry(tarGzPath, "shortname.txt", fileContent);
+
+        // Act
+        _extractor.Extract(tarGzPath, extractDir);
+
+        // Assert
+        var extractedFile = Path.Combine(extractDir, "shortname.txt");
+        File.Exists(extractedFile).Should().BeTrue("the file should be extracted from a GNU-format tar");
+        File.ReadAllText(extractedFile).Should().Be(fileContent);
     }
 
     private void CreateMaliciousZipFile(string zipPath)
@@ -273,12 +313,58 @@ public class ArchiveExtractorTests
 
     private void CreateTestTarGzFile(string tarGzPath)
     {
-        // For simplicity, we'll create a gzip file with minimal tar content
-        // In production, use SharpCompress or similar
+        CreateTarGzWithContent(tarGzPath, "test.txt", "test tar content");
+    }
+
+    /// <summary>
+    /// Creates a tar.gz file containing a single file entry using <see cref="TarWriter"/>.
+    /// </summary>
+    private static void CreateTarGzWithContent(string tarGzPath, string fileName, string content)
+    {
         using var fileStream = File.Create(tarGzPath);
-        using var gzipStream = new System.IO.Compression.GZipStream(fileStream, CompressionMode.Compress);
-        var testData = System.Text.Encoding.UTF8.GetBytes("test tar content");
-        gzipStream.Write(testData, 0, testData.Length);
+        using var gzipStream = new GZipStream(fileStream, CompressionMode.Compress);
+        using var writer = new TarWriter(gzipStream, TarEntryFormat.Pax, leaveOpen: false);
+
+        var contentBytes = System.Text.Encoding.UTF8.GetBytes(content);
+        var entry = new PaxTarEntry(TarEntryType.RegularFile, fileName)
+        {
+            DataStream = new MemoryStream(contentBytes),
+        };
+        writer.WriteEntry(entry);
+    }
+
+    /// <summary>
+    /// Creates a tar.gz file with a PAX-format entry (PAX extended headers are written automatically).
+    /// </summary>
+    private static void CreateTarGzWithPaxEntry(string tarGzPath, string fileName, string content)
+    {
+        using var fileStream = File.Create(tarGzPath);
+        using var gzipStream = new GZipStream(fileStream, CompressionMode.Compress);
+        using var writer = new TarWriter(gzipStream, TarEntryFormat.Pax, leaveOpen: false);
+
+        var contentBytes = System.Text.Encoding.UTF8.GetBytes(content);
+        var entry = new PaxTarEntry(TarEntryType.RegularFile, fileName)
+        {
+            DataStream = new MemoryStream(contentBytes),
+        };
+        writer.WriteEntry(entry);
+    }
+
+    /// <summary>
+    /// Creates a tar.gz file with a GNU-format entry.
+    /// </summary>
+    private static void CreateTarGzWithGnuEntry(string tarGzPath, string fileName, string content)
+    {
+        using var fileStream = File.Create(tarGzPath);
+        using var gzipStream = new GZipStream(fileStream, CompressionMode.Compress);
+        using var writer = new TarWriter(gzipStream, TarEntryFormat.Gnu, leaveOpen: false);
+
+        var contentBytes = System.Text.Encoding.UTF8.GetBytes(content);
+        var entry = new GnuTarEntry(TarEntryType.RegularFile, fileName)
+        {
+            DataStream = new MemoryStream(contentBytes),
+        };
+        writer.WriteEntry(entry);
     }
 
     /// <summary>

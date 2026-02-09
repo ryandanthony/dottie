@@ -180,4 +180,78 @@ public class InstallBlockValidatorTests
         // Assert
         result.IsValid.Should().BeTrue();
     }
+
+    [Fact]
+    public void Validate_GithubTypeBinary_MissingBinary_ReturnsError()
+    {
+        // Arrange — type: binary requires binary field
+        var item = new GithubReleaseItem
+        {
+            Repo = "owner/repo",
+            Asset = "*.tar.gz",
+            Type = GithubReleaseAssetType.Binary,
+        };
+
+        // Act
+        var result = _validator.ValidateGithubRelease(item, "profiles.default.install.github[0]");
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Path.Contains("binary", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void Validate_GithubTypeOmitted_MissingBinary_ReturnsError()
+    {
+        // Arrange — default type (Binary) requires binary field
+        var item = new GithubReleaseItem
+        {
+            Repo = "owner/repo",
+            Asset = "*.tar.gz",
+        };
+
+        // Act
+        var result = _validator.ValidateGithubRelease(item, "profiles.default.install.github[0]");
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Path.Contains("binary", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void Validate_GithubTypeDeb_NoBinary_ReturnsSuccess()
+    {
+        // Arrange — type: deb does NOT require binary
+        var item = new GithubReleaseItem
+        {
+            Repo = "jgraph/drawio-desktop",
+            Asset = "drawio-arm64-*.deb",
+            Type = GithubReleaseAssetType.Deb,
+        };
+
+        // Act
+        var result = _validator.ValidateGithubRelease(item, "profiles.default.install.github[0]");
+
+        // Assert
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Validate_GithubTypeDeb_WithBinary_ReturnsSuccess()
+    {
+        // Arrange — type: deb with binary field present should still pass (ignored)
+        var item = new GithubReleaseItem
+        {
+            Repo = "jgraph/drawio-desktop",
+            Asset = "drawio-arm64-*.deb",
+            Type = GithubReleaseAssetType.Deb,
+            Binary = "drawio",
+        };
+
+        // Act
+        var result = _validator.ValidateGithubRelease(item, "profiles.default.install.github[0]");
+
+        // Assert
+        result.IsValid.Should().BeTrue();
+    }
 }

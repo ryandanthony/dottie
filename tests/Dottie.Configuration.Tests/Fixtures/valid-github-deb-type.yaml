@@ -1,0 +1,20 @@
+# Test fixture: GitHub release entries with type field
+# Used to test type: deb and type: binary deserialization
+profiles:
+  default:
+    install:
+      github:
+        - repo: jgraph/drawio-desktop
+          asset: "drawio-arm64-*.deb"
+          type: deb
+        - repo: jgraph/drawio-desktop
+          asset: "drawio-arm64-*.deb"
+          type: deb
+          binary: drawio
+        - repo: jqlang/jq
+          asset: "jq-linux-amd64"
+          binary: jq
+          type: binary
+        - repo: junegunn/fzf
+          asset: "fzf-*-linux_amd64.tar.gz"
+          binary: fzf

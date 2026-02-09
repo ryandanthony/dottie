@@ -1,0 +1,13 @@
+# Integration test configuration for GitHub release deb package installation
+# Tests the type: deb installer functionality with a real .deb package
+# Uses ${RELEASE_VERSION} variable which is resolved from the version/tag at runtime
+
+profiles:
+  default:
+    install:
+      github:
+        # Using GitHub CLI - publishes .deb packages for every release
+        - repo: cli/cli
+          asset: "gh_${RELEASE_VERSION}_linux_amd64.deb"
+          version: v2.86.0
+          type: deb

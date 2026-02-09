@@ -1,0 +1,11 @@
+# Integration test configuration for GitHub release deb dry-run
+# Tests that --dry-run previews deb installation without downloading or installing
+
+profiles:
+  default:
+    install:
+      github:
+        - repo: cli/cli
+          asset: "gh_${RELEASE_VERSION}_linux_amd64.deb"
+          version: v2.86.0
+          type: deb

@@ -36,7 +36,7 @@ public class InstallBlockValidator
             errors.Add(new ValidationError($"{path}.asset", "GitHub release must have an 'asset' pattern field"));
         }
 
-        if (string.IsNullOrWhiteSpace(item.Binary))
+        if (item.Type == Models.InstallBlocks.GithubReleaseAssetType.Binary && string.IsNullOrWhiteSpace(item.Binary))
         {
             errors.Add(new ValidationError($"{path}.binary", "GitHub release must have a 'binary' name field"));
         }

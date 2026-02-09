@@ -227,13 +227,19 @@ public static partial class VariableResolver
             var assetResult = ResolveString(item.Asset, variables, GithubDeferredVariables);
             CollectErrors(errors, profileName, item.Repo, "asset", assetResult);
 
-            var binaryResult = ResolveString(item.Binary, variables, GithubDeferredVariables);
-            CollectErrors(errors, profileName, item.Repo, "binary", binaryResult);
+            VariableResolutionResult? binaryResult = item.Binary is not null
+                ? ResolveString(item.Binary, variables, GithubDeferredVariables)
+                : null;
+
+            if (binaryResult is not null)
+            {
+                CollectErrors(errors, profileName, item.Repo, "binary", binaryResult);
+            }
 
             resolved.Add(item with
             {
                 Asset = assetResult.ResolvedValue,
-                Binary = binaryResult.ResolvedValue,
+                Binary = binaryResult?.ResolvedValue ?? item.Binary,
             });
         }
 

@@ -1,0 +1,17 @@
+# Integration test configuration for mixed GitHub release types
+# Tests that binary and deb type entries work together in the same profile
+
+profiles:
+  default:
+    install:
+      github:
+        # Binary type (default) — downloads standalone binary to ~/bin/
+        - repo: direnv/direnv
+          asset: "direnv.linux-amd64"
+          binary: direnv
+
+        # Deb type — installs via dpkg
+        - repo: cli/cli
+          asset: "gh_${RELEASE_VERSION}_linux_amd64.deb"
+          version: v2.86.0
+          type: deb

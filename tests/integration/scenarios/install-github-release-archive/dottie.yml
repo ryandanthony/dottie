@@ -1,0 +1,12 @@
+# Integration test configuration for GitHub release archive extraction
+# Tests the binary type installer with a compressed tar.gz asset containing PAX headers
+
+profiles:
+  default:
+    install:
+      github:
+        # fzf publishes tar.gz archives that contain PAX extended headers
+        - repo: junegunn/fzf
+          asset: "fzf-${RELEASE_VERSION}-linux_amd64.tar.gz"
+          version: v0.57.0
+          binary: fzf

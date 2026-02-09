@@ -29,11 +29,21 @@ public sealed record GithubReleaseItem
 
     /// <summary>
     /// Gets the name of the binary to extract from the archive.
+    /// Required when <see cref="Type"/> is <see cref="GithubReleaseAssetType.Binary"/>; optional otherwise.
     /// </summary>
     /// <value>
     /// The name of the binary to extract from the archive.
     /// </value>
-    public required string Binary { get; init; }
+    public string? Binary { get; init; }
+
+    /// <summary>
+    /// Gets the installation pathway for the downloaded asset.
+    /// Defaults to <see cref="GithubReleaseAssetType.Binary"/> for backward compatibility.
+    /// </summary>
+    /// <value>
+    /// The asset type controlling the installation method.
+    /// </value>
+    public GithubReleaseAssetType Type { get; init; } = GithubReleaseAssetType.Binary;
 
     /// <summary>
     /// Gets the specific version tag to download. Defaults to latest release if not specified.

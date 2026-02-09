@@ -72,7 +72,7 @@ public class GithubReleaseInstaller : IInstallSource
             }
             catch (Exception ex)
             {
-                results.Add(InstallResult.Failed(item.Binary, SourceType, $"Failed to install from {item.Repo}: {ex.Message}"));
+                results.Add(InstallResult.Failed(item.Binary ?? item.Repo, SourceType, $"Failed to install from {item.Repo}: {ex.Message}"));
             }
 
             onItemComplete?.Invoke();
@@ -83,8 +83,20 @@ public class GithubReleaseInstaller : IInstallSource
 
     private async Task<InstallResult> InstallGithubReleaseItemAsync(GithubReleaseItem item, InstallContext context, CancellationToken cancellationToken)
     {
+        if (item.Type == GithubReleaseAssetType.Deb)
+        {
+            return await InstallDebReleaseItemAsync(item, context, cancellationToken);
+        }
+
+        return await InstallBinaryReleaseItemAsync(item, context, cancellationToken);
+    }
+
+    private async Task<InstallResult> InstallBinaryReleaseItemAsync(GithubReleaseItem item, InstallContext context, CancellationToken cancellationToken)
+    {
+        var binaryName = item.Binary ?? item.Repo;
+
         // Check if binary is already installed (idempotency)
-        var installedCheck = await CheckBinaryInstalledAsync(item.Binary, context, cancellationToken);
+        var installedCheck = await CheckBinaryInstalledAsync(binaryName, context, cancellationToken);
         if (installedCheck != null)
         {
             return installedCheck;
@@ -96,6 +108,31 @@ public class GithubReleaseInstaller : IInstallSource
         }
 
         return await DownloadAndInstallReleaseAsync(item, context, cancellationToken);
+    }
+
+    private async Task<InstallResult> InstallDebReleaseItemAsync(GithubReleaseItem item, InstallContext context, CancellationToken cancellationToken)
+    {
+        var itemName = item.Repo;
+
+        // Check sudo first — required for dpkg -i
+        if (!context.HasSudo)
+        {
+            return InstallResult.Warning(itemName, SourceType, "Sudo required to install .deb packages");
+        }
+
+        // Check dpkg availability
+        var dpkgCheck = await CheckDpkgAvailableAsync(cancellationToken);
+        if (!dpkgCheck)
+        {
+            return InstallResult.Failed(itemName, SourceType, "dpkg is not available on this system");
+        }
+
+        if (context.DryRun)
+        {
+            return await ValidateDebReleaseExistsAsync(item, cancellationToken);
+        }
+
+        return await DownloadAndInstallDebAsync(item, context, cancellationToken);
     }
 
     /// <summary>
@@ -162,6 +199,7 @@ public class GithubReleaseInstaller : IInstallSource
 
     private async Task<InstallResult> ValidateReleaseExistsAsync(GithubReleaseItem item, CancellationToken cancellationToken)
     {
+        var itemName = item.Binary ?? item.Repo;
         var releaseUrl = BuildReleaseUrl(item.Repo, item.Version);
         var versionDisplay = item.Version ?? LatestVersion;
 
@@ -171,12 +209,12 @@ public class GithubReleaseInstaller : IInstallSource
             var response = await request.HeadAsync(cancellationToken: cancellationToken);
 
             return response.StatusCode >= HttpSuccessMin && response.StatusCode < HttpSuccessMax
-                ? InstallResult.Success(item.Binary, SourceType, message: $"GitHub release {item.Repo}@{versionDisplay} would be installed")
-                : InstallResult.Failed(item.Binary, SourceType, $"GitHub release not found: {item.Repo}@{versionDisplay} (HTTP {response.StatusCode})");
+                ? InstallResult.Success(itemName, SourceType, message: $"GitHub release {item.Repo}@{versionDisplay} would be installed")
+                : InstallResult.Failed(itemName, SourceType, $"GitHub release not found: {item.Repo}@{versionDisplay} (HTTP {response.StatusCode})");
         }
         catch (Exception ex)
         {
-            return InstallResult.Failed(item.Binary, SourceType, $"Failed to verify GitHub release {item.Repo}: {ex.Message}");
+            return InstallResult.Failed(itemName, SourceType, $"Failed to verify GitHub release {item.Repo}: {ex.Message}");
         }
     }
 
@@ -185,7 +223,7 @@ public class GithubReleaseInstaller : IInstallSource
         var release = await GetGithubReleaseAsync(item, cancellationToken);
         if (release == null)
         {
-            return InstallResult.Failed(item.Binary, SourceType, $"GitHub release not found (API returned null): {item.Repo}@{item.Version ?? LatestVersion}");
+            return InstallResult.Failed(item.Binary ?? item.Repo, SourceType, $"GitHub release not found (API returned null): {item.Repo}@{item.Version ?? LatestVersion}");
         }
 
         // Resolve ${RELEASE_VERSION} in asset and binary patterns
@@ -194,7 +232,7 @@ public class GithubReleaseInstaller : IInstallSource
         var matchingAsset = FindMatchingAsset(release, resolvedItem.Asset);
         if (matchingAsset == null)
         {
-            return InstallResult.Failed(resolvedItem.Binary, SourceType, $"No asset matching pattern '{resolvedItem.Asset}' in release {item.Repo}@{item.Version ?? LatestVersion}");
+            return InstallResult.Failed(resolvedItem.Binary ?? resolvedItem.Repo, SourceType, $"No asset matching pattern '{resolvedItem.Asset}' in release {item.Repo}@{item.Version ?? LatestVersion}");
         }
 
         return await DownloadAndExtractAssetAsync(resolvedItem, matchingAsset, context, cancellationToken);
@@ -209,7 +247,7 @@ public class GithubReleaseInstaller : IInstallSource
         }
         catch (Exception ex)
         {
-            return InstallResult.Failed(item.Binary, SourceType, $"Failed to download {asset.Name}: {ex.Message}");
+            return InstallResult.Failed(item.Binary ?? item.Repo, SourceType, $"Failed to download {asset.Name}: {ex.Message}");
         }
 
         return await ExtractAndInstallBinaryAsync(item, asset, assetData, context, cancellationToken);
@@ -224,17 +262,17 @@ public class GithubReleaseInstaller : IInstallSource
             var assetPath = Path.Combine(tempDir, asset.Name);
             await File.WriteAllBytesAsync(assetPath, assetData, cancellationToken);
 
-            var binaryPath = ResolveBinaryPath(assetPath, tempDir, asset.Name, item.Binary);
+            var binaryPath = ResolveBinaryPath(assetPath, tempDir, asset.Name, item.Binary ?? item.Repo);
             if (binaryPath == null)
             {
-                return InstallResult.Failed(item.Binary, SourceType, $"Binary '{item.Binary}' not found in release asset");
+                return InstallResult.Failed(item.Binary ?? item.Repo, SourceType, $"Binary '{item.Binary ?? item.Repo}' not found in release asset");
             }
 
             return await CopyBinaryToBinDirectoryAsync(item, binaryPath, context, cancellationToken);
         }
         catch (Exception ex)
         {
-            return InstallResult.Failed(item.Binary, SourceType, $"Failed to install: {ex.Message}");
+            return InstallResult.Failed(item.Binary ?? item.Repo, SourceType, $"Failed to install: {ex.Message}");
         }
         finally
         {
@@ -275,12 +313,14 @@ public class GithubReleaseInstaller : IInstallSource
         };
 
         var assetResult = VariableResolver.ResolveString(item.Asset, releaseVars);
-        var binaryResult = VariableResolver.ResolveString(item.Binary, releaseVars);
+        var binaryResult = item.Binary is not null
+            ? VariableResolver.ResolveString(item.Binary, releaseVars)
+            : null;
 
         return item with
         {
             Asset = assetResult.ResolvedValue,
-            Binary = binaryResult.ResolvedValue,
+            Binary = binaryResult?.ResolvedValue ?? item.Binary,
         };
     }
 
@@ -293,12 +333,14 @@ public class GithubReleaseInstaller : IInstallSource
 
     private async Task<InstallResult> CopyBinaryToBinDirectoryAsync(GithubReleaseItem item, string binaryPath, InstallContext context, CancellationToken cancellationToken)
     {
+        var binaryName = item.Binary ?? item.Repo;
+
         if (!Directory.Exists(context.BinDirectory))
         {
             Directory.CreateDirectory(context.BinDirectory);
         }
 
-        var destPath = Path.Combine(context.BinDirectory, item.Binary);
+        var destPath = Path.Combine(context.BinDirectory, binaryName);
         File.Copy(binaryPath, destPath, overwrite: true);
 
         if (!OperatingSystem.IsWindows())
@@ -306,7 +348,7 @@ public class GithubReleaseInstaller : IInstallSource
             await _processRunner.RunAsync("chmod", $"+x \"{destPath}\"", cancellationToken: cancellationToken);
         }
 
-        return InstallResult.Success(item.Binary, SourceType, destPath, $"from {item.Repo}");
+        return InstallResult.Success(binaryName, SourceType, destPath, $"from {item.Repo}");
     }
 
     private static void TryDeleteDirectory(string path)
@@ -318,6 +360,125 @@ public class GithubReleaseInstaller : IInstallSource
         catch
         {
             // Ignore cleanup errors
+        }
+    }
+
+    private async Task<bool> CheckDpkgAvailableAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await _processRunner.RunAsync("which", "dpkg", cancellationToken: cancellationToken);
+            return result.ExitCode == 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private async Task<InstallResult> ValidateDebReleaseExistsAsync(GithubReleaseItem item, CancellationToken cancellationToken)
+    {
+        var itemName = item.Repo;
+        var releaseUrl = BuildReleaseUrl(item.Repo, item.Version);
+        var versionDisplay = item.Version ?? LatestVersion;
+
+        try
+        {
+            var request = BuildGithubRequest(releaseUrl);
+            var response = await request.HeadAsync(cancellationToken: cancellationToken);
+
+            return response.StatusCode >= HttpSuccessMin && response.StatusCode < HttpSuccessMax
+                ? InstallResult.Skipped(itemName, SourceType, $"{item.Repo}: would be installed via dpkg")
+                : InstallResult.Failed(itemName, SourceType, $"GitHub release not found: {item.Repo}@{versionDisplay} (HTTP {response.StatusCode})");
+        }
+        catch (Exception ex)
+        {
+            return InstallResult.Failed(itemName, SourceType, $"Failed to verify GitHub release {item.Repo}: {ex.Message}");
+        }
+    }
+
+    private async Task<InstallResult> DownloadAndInstallDebAsync(GithubReleaseItem item, InstallContext context, CancellationToken cancellationToken)
+    {
+        _ = context; // Used for future extensions
+        var itemName = item.Repo;
+
+        var release = await GetGithubReleaseAsync(item, cancellationToken);
+        if (release == null)
+        {
+            return InstallResult.Failed(itemName, SourceType, $"GitHub release not found (API returned null): {item.Repo}@{item.Version ?? LatestVersion}");
+        }
+
+        // Resolve ${RELEASE_VERSION} in asset pattern
+        var resolvedItem = ResolveReleaseVersion(item, release);
+
+        var matchingAsset = FindMatchingAsset(release, resolvedItem.Asset);
+        if (matchingAsset == null)
+        {
+            return InstallResult.Failed(itemName, SourceType, $"No asset matching pattern '{resolvedItem.Asset}' in release {item.Repo}@{item.Version ?? LatestVersion}");
+        }
+
+        // Validate the asset looks like a .deb file
+        if (!matchingAsset.Name.EndsWith(".deb", StringComparison.OrdinalIgnoreCase))
+        {
+            return InstallResult.Failed(itemName, SourceType, "Asset does not appear to be a .deb package");
+        }
+
+        return await InstallDebPackageAsync(item, matchingAsset, cancellationToken);
+    }
+
+    private async Task<InstallResult> InstallDebPackageAsync(GithubReleaseItem item, GithubAsset asset, CancellationToken cancellationToken)
+    {
+        var itemName = item.Repo;
+        var tempDir = Path.Combine(Path.GetTempPath(), $"dottie-deb-{Guid.NewGuid():N}");
+
+        try
+        {
+            Directory.CreateDirectory(tempDir);
+            var debPath = Path.Combine(tempDir, asset.Name);
+
+            // Download the .deb file
+            byte[] assetData;
+            try
+            {
+                assetData = await _downloader.DownloadAsync(asset.BrowserDownloadUrl, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                return InstallResult.Failed(itemName, SourceType, $"Failed to download {asset.Name}: {ex.Message}");
+            }
+
+            await File.WriteAllBytesAsync(debPath, assetData, cancellationToken);
+
+            // Extract package name from .deb file
+            var dpkgDeb = await _processRunner.RunAsync("dpkg-deb", $"--showformat='${{Package}}' -W \"{debPath}\"", cancellationToken: cancellationToken);
+            var packageName = dpkgDeb.StandardOutput.Trim().Trim('\'');
+
+            // Check if already installed (idempotency)
+            var dpkgStatus = await _processRunner.RunAsync("dpkg", $"-s {packageName}", cancellationToken: cancellationToken);
+            if (dpkgStatus.ExitCode == 0)
+            {
+                return InstallResult.Skipped(itemName, SourceType, $"{item.Repo}: package '{packageName}' already installed");
+            }
+
+            // Install the .deb package
+            var dpkgInstall = await _processRunner.RunAsync("sudo", $"dpkg -i \"{debPath}\"", cancellationToken: cancellationToken);
+            if (dpkgInstall.ExitCode != 0)
+            {
+                return InstallResult.Failed(itemName, SourceType, $"dpkg installation failed: {dpkgInstall.StandardError}");
+            }
+
+            // Resolve dependencies
+            var aptFix = await _processRunner.RunAsync("sudo", "apt-get install -f -y", cancellationToken: cancellationToken);
+            if (aptFix.ExitCode != 0)
+            {
+                return InstallResult.Failed(itemName, SourceType, $"Dependency resolution failed: {aptFix.StandardError}");
+            }
+
+            return InstallResult.Success(itemName, SourceType, message: $"{item.Repo}: installed via dpkg");
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDir);
         }
     }
 

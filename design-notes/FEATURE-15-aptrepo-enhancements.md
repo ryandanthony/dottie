@@ -2,10 +2,11 @@
 
 ## Overview
 
-Two enhancements to the `aptRepos` install source:
+Three enhancements to the `aptRepos` install source:
 
 1. **DEB822 format support** — write `.sources` files in addition to one-line `.list` files
 2. **`${SIGNING_FILE}` variable** — expose the path where the downloaded GPG key was written, so users can reference it in `signed-by=` clauses or `Signed-By` for DEB822 
+3. Output variables on `apply`, `status`, `install`
 
 ---
 
@@ -261,3 +262,9 @@ Users can migrate incrementally:
 1. Add `signed-by=${SIGNING_FILE}` to existing `repo` lines (recommended best practice)
 2. Switch individual entries to `format: deb822` when ready
 3. No bulk migration required
+
+## 3) Output variables on `apply`, `status`, `install`
+
+### Problem
+
+Troubleshooting issues is hard when you can't see what configuration values are available. 

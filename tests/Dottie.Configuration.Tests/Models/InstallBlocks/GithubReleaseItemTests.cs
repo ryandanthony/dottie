@@ -172,4 +172,73 @@ public class GithubReleaseItemTests
         // Assert
         result.Should().Contain("junegunn/fzf");
     }
+
+    [Fact]
+    public void Type_DefaultsToBinary_WhenNotSet()
+    {
+        // Arrange & Act
+        var item = new GithubReleaseItem
+        {
+            Repo = "junegunn/fzf",
+            Asset = "fzf-*-linux_amd64.tar.gz",
+            Binary = "fzf",
+        };
+
+        // Assert
+        item.Type.Should().Be(GithubReleaseAssetType.Binary);
+    }
+
+    [Fact]
+    public void Type_CanBeSetToDeb()
+    {
+        // Arrange & Act
+        var item = new GithubReleaseItem
+        {
+            Repo = "jgraph/drawio-desktop",
+            Asset = "drawio-arm64-*.deb",
+            Type = GithubReleaseAssetType.Deb,
+        };
+
+        // Assert
+        item.Type.Should().Be(GithubReleaseAssetType.Deb);
+    }
+
+    [Fact]
+    public void Equality_IncludesType()
+    {
+        // Arrange
+        var item1 = new GithubReleaseItem
+        {
+            Repo = "jgraph/drawio-desktop",
+            Asset = "drawio-arm64-*.deb",
+            Type = GithubReleaseAssetType.Deb,
+        };
+
+        var item2 = new GithubReleaseItem
+        {
+            Repo = "jgraph/drawio-desktop",
+            Asset = "drawio-arm64-*.deb",
+            Type = GithubReleaseAssetType.Binary,
+            Binary = "drawio",
+        };
+
+        // Assert — different Type means not equal
+        item1.Should().NotBe(item2);
+    }
+
+    [Fact]
+    public void Binary_IsOptional_ForDebType()
+    {
+        // Arrange & Act — should compile and work without Binary
+        var item = new GithubReleaseItem
+        {
+            Repo = "jgraph/drawio-desktop",
+            Asset = "drawio-arm64-*.deb",
+            Type = GithubReleaseAssetType.Deb,
+        };
+
+        // Assert
+        item.Binary.Should().BeNull();
+        item.Type.Should().Be(GithubReleaseAssetType.Deb);
+    }
 }

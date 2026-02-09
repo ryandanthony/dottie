@@ -1,0 +1,16 @@
+profiles:
+  default:
+    dotfiles:
+      - source: dotfiles/${MS_ARCH}/bashrc
+        target: ~/.bashrc
+    install:
+      aptRepos:
+        - name: test-repo
+          key_url: https://packages.example.com/gpg.key
+          repo: "deb [arch=${MS_ARCH}] https://packages.example.com/stable main"
+          packages:
+            - test-${MS_ARCH}
+      github:
+        - repo: example/tool
+          asset: "tool-${MS_ARCH}-${RELEASE_VERSION}.tar.gz"
+          binary: tool

@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using Dottie.Configuration.Models;
+using Dottie.Configuration.Utilities;
 using Dottie.Configuration.Validation;
 using YamlDotNet.Core;
 
@@ -15,6 +16,17 @@ namespace Dottie.Configuration.Parsing;
 /// </summary>
 public class ConfigurationLoader
 {
+    private readonly string? _osReleasePathOverride;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ConfigurationLoader"/> class.
+    /// </summary>
+    /// <param name="osReleasePath">Optional override for the OS release file path (for testing).</param>
+    public ConfigurationLoader(string? osReleasePath = null)
+    {
+        _osReleasePathOverride = osReleasePath;
+    }
+
     /// <summary>
     /// Loads a configuration from the specified file path.
     /// </summary>
@@ -96,6 +108,44 @@ public class ConfigurationLoader
             };
         }
 
-        return new LoadResult { Configuration = configuration };
+        return ResolveVariables(configuration);
+    }
+
+    private LoadResult ResolveVariables(DottieConfiguration configuration)
+    {
+        var osReleasePath = _osReleasePathOverride;
+        var (osReleaseVars, osReleaseAvailable) = osReleasePath is not null
+            ? OsReleaseParser.TryReadFromSystem(osReleasePath)
+            : OsReleaseParser.TryReadFromSystem();
+        var variables = VariableResolver.BuildVariableSet(osReleaseVars);
+        var resolutionResult = VariableResolver.ResolveConfiguration(configuration, variables);
+
+        var warnings = new List<ValidationError>();
+
+        if (!osReleaseAvailable)
+        {
+            warnings.Add(new ValidationError("os-release", "Warning: /etc/os-release not found. OS release variables will not be available for substitution."));
+        }
+
+        if (resolutionResult.HasErrors)
+        {
+            var errors = new List<ValidationError>(warnings);
+            foreach (var error in resolutionResult.Errors)
+            {
+                errors.Add(new ValidationError(error.ProfileName, error.Message));
+            }
+
+            return new LoadResult
+            {
+                Configuration = resolutionResult.Configuration,
+                Errors = errors,
+            };
+        }
+
+        return new LoadResult
+        {
+            Configuration = resolutionResult.Configuration,
+            Warnings = warnings,
+        };
     }
 }

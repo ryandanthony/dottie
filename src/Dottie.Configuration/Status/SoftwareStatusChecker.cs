@@ -175,7 +175,7 @@ public sealed partial class SoftwareStatusChecker
         }
         catch (Exception ex)
         {
-            return CreateErrorEntry(item.Binary, InstallSourceType.GithubRelease, item.Version, ex.Message);
+            return CreateErrorEntry(item.Binary ?? item.Repo, InstallSourceType.GithubRelease, item.Version, ex.Message);
         }
     }
 
@@ -184,7 +184,7 @@ public sealed partial class SoftwareStatusChecker
         InstallContext context,
         CancellationToken cancellationToken)
     {
-        var binaryName = item.Binary;
+        var binaryName = item.Binary ?? item.Repo;
         var binPath = Path.Combine(context.BinDirectory, binaryName);
 
         var existingBinaryResult = await CheckExistingBinaryAsync(binaryName, binPath, item.Version, cancellationToken).ConfigureAwait(false);

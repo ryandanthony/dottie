@@ -4,8 +4,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Formats.Tar;
 using System.IO.Compression;
-using System.Text;
 
 namespace Dottie.Configuration.Installing.Utilities;
 
@@ -100,7 +100,8 @@ public class ArchiveExtractor
     {
         try
         {
-            using var gzipStream = new GZipStream(File.OpenRead(tarGzPath), CompressionMode.Decompress);
+            using var fileStream = File.OpenRead(tarGzPath);
+            using var gzipStream = new GZipStream(fileStream, CompressionMode.Decompress);
             ExtractTarStream(gzipStream, extractPath);
         }
         catch (InvalidDataException ex)
@@ -110,83 +111,48 @@ public class ArchiveExtractor
     }
 
     /// <summary>
-    /// Extracts files from a tar stream (used for .tar.gz and .tgz files).
+    /// Extracts files from a tar stream using <see cref="TarReader"/>.
+    /// Handles all tar formats (POSIX, PAX, GNU) including extended headers,
+    /// long file names, and base-256 encoding automatically.
     /// </summary>
     /// <param name="stream">The tar stream to extract from.</param>
     /// <param name="extractPath">Directory to extract to.</param>
     private static void ExtractTarStream(Stream stream, string extractPath)
     {
-        const int blockSize = 512;
-        var buffer = new byte[blockSize];
         var fullExtractPath = Path.GetFullPath(extractPath);
+        using var reader = new TarReader(stream);
 
-        while (TryReadTarEntry(stream, buffer, blockSize, out var entry))
+        while (reader.GetNextEntry() is { } entry)
         {
-            if (string.IsNullOrEmpty(entry.Name))
+            // Skip directories (they'll be created as needed) and non-file entries
+            if (entry.EntryType == TarEntryType.Directory
+                || string.IsNullOrEmpty(entry.Name))
             {
-                return;
+                continue;
             }
 
-            ExtractTarEntry(stream, fullExtractPath, entry, buffer, blockSize);
+            // Only extract regular files
+            if (entry.EntryType is not (TarEntryType.RegularFile
+                or TarEntryType.V7RegularFile))
+            {
+                continue;
+            }
+
+            // Sanitize path to prevent zip slip attacks
+            var targetPath = Path.GetFullPath(Path.Combine(fullExtractPath, entry.Name));
+            if (!targetPath.StartsWith(fullExtractPath, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    $"Tar entry '{entry.Name}' would extract outside of the target directory (zip slip detected)");
+            }
+
+            var targetDir = Path.GetDirectoryName(targetPath);
+            if (targetDir != null && !Directory.Exists(targetDir))
+            {
+                Directory.CreateDirectory(targetDir);
+            }
+
+            entry.ExtractToFile(targetPath, overwrite: true);
         }
     }
-
-    private static bool TryReadTarEntry(Stream stream, byte[] buffer, int blockSize, out TarEntry entry)
-    {
-        // TAR header field positions and sizes (POSIX ustar format)
-        const int NameOffset = 0;
-        const int NameLength = 100;
-        const int TypeFlagOffset = 156;
-        const int SizeOffset = 124;
-        const int SizeLength = 12;
-        const int OctalBase = 8;
-
-        entry = default;
-        if (stream.Read(buffer, 0, blockSize) != blockSize)
-        {
-            return false;
-        }
-
-        entry = new TarEntry(
-            Encoding.ASCII.GetString(buffer, NameOffset, NameLength).TrimEnd('\0'),
-            (char)buffer[TypeFlagOffset],
-            Convert.ToInt64(Encoding.ASCII.GetString(buffer, SizeOffset, SizeLength).TrimEnd('\0', ' '), OctalBase));
-
-        return true;
-    }
-
-    private static void ExtractTarEntry(Stream stream, string fullExtractPath, TarEntry entry, byte[] buffer, int blockSize)
-    {
-        // Sanitize path to prevent zip slip attacks
-        var targetPath = Path.GetFullPath(Path.Combine(fullExtractPath, entry.Name));
-        if (!targetPath.StartsWith(fullExtractPath, StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException($"Tar entry '{entry.Name}' would extract outside of the target directory (zip slip detected)");
-        }
-
-        var targetDir = Path.GetDirectoryName(targetPath);
-        if (targetDir != null && !Directory.Exists(targetDir))
-        {
-            Directory.CreateDirectory(targetDir);
-        }
-
-        if (entry.TypeFlag != '5' && entry.Size > 0)
-        {
-            WriteTarEntryToFile(stream, targetPath, entry.Size, buffer, blockSize);
-        }
-    }
-
-    private static void WriteTarEntryToFile(Stream stream, string targetPath, long size, byte[] buffer, int blockSize)
-    {
-        using var file = File.Create(targetPath);
-        var remaining = size;
-        while (remaining > 0 && stream.Read(buffer, 0, blockSize) == blockSize)
-        {
-            var toWrite = (int)Math.Min(blockSize, remaining);
-            file.Write(buffer, 0, toWrite);
-            remaining -= toWrite;
-        }
-    }
-
-    private readonly record struct TarEntry(string Name, char TypeFlag, long Size);
 }

@@ -312,4 +312,125 @@ profiles:
         profile.Install.Github[0].Asset.Should().Contain(arch);
         profile.Install.Github[0].Asset.Should().Contain("${RELEASE_VERSION}");
     }
+
+    [Fact]
+    public void LoadFromString_TypeDeb_DeserializesToDebEnum()
+    {
+        // Arrange
+        var yaml = @"
+profiles:
+  default:
+    install:
+      github:
+        - repo: jgraph/drawio-desktop
+          asset: ""drawio-arm64-*.deb""
+          type: deb
+";
+        var loader = new ConfigurationLoader();
+
+        // Act
+        var result = loader.LoadFromString(yaml);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        var github = result.Configuration!.Profiles["default"].Install!.Github;
+        github.Should().HaveCount(1);
+        github[0].Type.Should().Be(Dottie.Configuration.Models.InstallBlocks.GithubReleaseAssetType.Deb);
+        github[0].Binary.Should().BeNull();
+    }
+
+    [Fact]
+    public void LoadFromString_TypeBinary_DeserializesToBinaryEnum()
+    {
+        // Arrange
+        var yaml = @"
+profiles:
+  default:
+    install:
+      github:
+        - repo: jqlang/jq
+          asset: ""jq-linux-amd64""
+          binary: jq
+          type: binary
+";
+        var loader = new ConfigurationLoader();
+
+        // Act
+        var result = loader.LoadFromString(yaml);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        var github = result.Configuration!.Profiles["default"].Install!.Github;
+        github.Should().HaveCount(1);
+        github[0].Type.Should().Be(Dottie.Configuration.Models.InstallBlocks.GithubReleaseAssetType.Binary);
+        github[0].Binary.Should().Be("jq");
+    }
+
+    [Fact]
+    public void LoadFromString_TypeOmitted_DefaultsToBinary()
+    {
+        // Arrange
+        var yaml = @"
+profiles:
+  default:
+    install:
+      github:
+        - repo: jqlang/jq
+          asset: ""jq-linux-amd64""
+          binary: jq
+";
+        var loader = new ConfigurationLoader();
+
+        // Act
+        var result = loader.LoadFromString(yaml);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        var github = result.Configuration!.Profiles["default"].Install!.Github;
+        github.Should().HaveCount(1);
+        github[0].Type.Should().Be(Dottie.Configuration.Models.InstallBlocks.GithubReleaseAssetType.Binary);
+    }
+
+    [Fact]
+    public void Load_ValidGithubDebTypeFixture_LoadsWithoutErrors()
+    {
+        // Arrange
+        var filePath = Path.Combine(FixturesPath, "valid-github-deb-type.yaml");
+        var loader = new ConfigurationLoader();
+
+        // Act
+        var result = loader.Load(filePath);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        var github = result.Configuration!.Profiles["default"].Install!.Github;
+        github.Should().HaveCount(4);
+        github[0].Type.Should().Be(Dottie.Configuration.Models.InstallBlocks.GithubReleaseAssetType.Deb);
+        github[1].Type.Should().Be(Dottie.Configuration.Models.InstallBlocks.GithubReleaseAssetType.Deb);
+        github[2].Type.Should().Be(Dottie.Configuration.Models.InstallBlocks.GithubReleaseAssetType.Binary);
+        github[3].Type.Should().Be(Dottie.Configuration.Models.InstallBlocks.GithubReleaseAssetType.Binary); // default
+    }
+
+    [Fact]
+    public void LoadConfiguration_UnrecognizedGithubType_ReturnsUserFriendlyError()
+    {
+        // Arrange
+        var yaml = @"
+profiles:
+  default:
+    install:
+      github:
+        - repo: owner/repo
+          asset: ""app.deb""
+          type: foo
+";
+        var loader = new ConfigurationLoader();
+
+        // Act
+        var result = loader.LoadFromString(yaml);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Errors.Should().NotBeEmpty();
+    }
 }

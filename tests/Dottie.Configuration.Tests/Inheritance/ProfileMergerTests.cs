@@ -451,5 +451,51 @@ public sealed class ProfileMergerTests
 
     #endregion
 
+    #region Type Field Inheritance Tests (T040)
+
+    [Fact]
+    public void Resolve_GithubTypeField_ChildCanOverrideParentType()
+    {
+        // Arrange — inline YAML with parent having type: binary, child overriding to type: deb
+        var yaml = @"
+profiles:
+  parent:
+    install:
+      github:
+        - repo: jgraph/drawio-desktop
+          asset: ""drawio-arm64-*.tar.gz""
+          binary: drawio
+          type: binary
+  child:
+    extends: parent
+    install:
+      github:
+        - repo: jgraph/drawio-desktop
+          asset: ""drawio-arm64-*.deb""
+          type: deb
+";
+        var loader = new ConfigurationLoader();
+        var loadResult = loader.LoadFromString(yaml);
+        loadResult.IsSuccess.Should().BeTrue("fixture should load successfully");
+
+        var merger = new ProfileMerger(loadResult.Configuration!);
+
+        // Act
+        var result = merger.Resolve("child");
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Profile.Should().NotBeNull();
+        var github = result.Profile!.Install!.Github;
+
+        // The child should override the parent's github entry for the same repo
+        github.Should().HaveCount(1);
+        github[0].Repo.Should().Be("jgraph/drawio-desktop");
+        github[0].Type.Should().Be(Dottie.Configuration.Models.InstallBlocks.GithubReleaseAssetType.Deb);
+        github[0].Asset.Should().Contain(".deb");
+    }
+
+    #endregion
+
 #pragma warning restore SA1124
 }

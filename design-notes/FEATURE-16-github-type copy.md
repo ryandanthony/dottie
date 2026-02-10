@@ -1,4 +1,4 @@
-# FEATURE-15: GitHub Release Asset Type
+# FEATURE-16: GitHub Release Asset Type
 
 ## Overview
 

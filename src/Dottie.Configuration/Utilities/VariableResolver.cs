@@ -17,6 +17,7 @@ namespace Dottie.Configuration.Utilities;
 public static partial class VariableResolver
 {
     private static readonly HashSet<string> GithubDeferredVariables = new(StringComparer.Ordinal) { "RELEASE_VERSION" };
+    private static readonly HashSet<string> AptRepoDeferredVariables = new(StringComparer.Ordinal) { "SIGNING_FILE" };
 
     /// <summary>
     /// Resolves all <c>${...}</c> variable references in a single string.
@@ -194,13 +195,14 @@ public static partial class VariableResolver
 
         foreach (var item in aptRepos)
         {
-            var repoResult = ResolveString(item.Repo, variables);
+            // APT repos have SIGNING_FILE as deferred
+            var repoResult = ResolveString(item.Repo, variables, AptRepoDeferredVariables);
             CollectErrors(errors, profileName, item.Name, "repo", repoResult);
 
             var keyUrlResult = ResolveString(item.KeyUrl, variables);
             CollectErrors(errors, profileName, item.Name, "key_url", keyUrlResult);
 
-            var resolvedPackages = ResolveStringList(profileName, item.Name, "packages", item.Packages, variables, errors);
+            var resolvedPackages = ResolveAptRepoPackages(profileName, item.Name, item.Packages, variables, errors);
 
             resolved.Add(item with
             {
@@ -246,10 +248,9 @@ public static partial class VariableResolver
         return resolved;
     }
 
-    private static IList<string> ResolveStringList(
+    private static IList<string> ResolveAptRepoPackages(
         string profileName,
         string entryIdentifier,
-        string fieldName,
         IList<string> values,
         IReadOnlyDictionary<string, string> variables,
         List<VariableResolutionError> errors)
@@ -258,8 +259,8 @@ public static partial class VariableResolver
 
         foreach (var value in values)
         {
-            var result = ResolveString(value, variables);
-            CollectErrors(errors, profileName, entryIdentifier, fieldName, result);
+            var result = ResolveString(value, variables, AptRepoDeferredVariables);
+            CollectErrors(errors, profileName, entryIdentifier, "packages", result);
             resolved.Add(result.ResolvedValue);
         }
 

@@ -20,6 +20,8 @@ Auto-generated from all feature plans. Last updated: 2026-01-28
 - Filesystem (`/etc/os-release` read-only; no writes) (011-os-release-variables)
 - C# 13 / .NET 10 (SDK 10.0.100) + YamlDotNet (config deserialization), Flurl.Http (HTTP client), Spectre.Console (CLI), FestinaLente.CodeStandards (analyzers) (012-github-release-type)
 - N/A (filesystem operations only — temp files for downloads, `dpkg` for installation) (012-github-release-type)
+- TypeScript (Docusaurus config), Markdown/MDX (content), Node.js 20+ + `@docusaurus/core`, `@docusaurus/preset-classic`, `@docusaurus/theme-mermaid`, React 18, React DOM 18 (013-docs-website)
+- N/A (static site, no runtime storage) (013-docs-website)
 
 - .NET 10 (C# 13), Native AOT / trimmed self-contained deployment (001-yaml-configuration)
 
@@ -39,9 +41,9 @@ tests/
 .NET 10 (C# 13), Native AOT / trimmed self-contained deployment: Follow standard conventions
 
 ## Recent Changes
+- 013-docs-website: Added TypeScript (Docusaurus config), Markdown/MDX (content), Node.js 20+ + `@docusaurus/core`, `@docusaurus/preset-classic`, `@docusaurus/theme-mermaid`, React 18, React DOM 18
 - 012-github-release-type: Added C# 13 / .NET 10 (SDK 10.0.100) + YamlDotNet (config deserialization), Flurl.Http (HTTP client), Spectre.Console (CLI), FestinaLente.CodeStandards (analyzers)
 - 011-os-release-variables: Added C# 13.0 / .NET 10.0 + Spectre.Console 0.50.0, Spectre.Console.Cli 0.50.0, YamlDotNet 16.3.0, Flurl.Http 4.0.2
-- 010-cli-status: Added C# 12 / .NET 9.0 + Spectre.Console (CLI/output), YamlDotNet (config parsing)
 
 
 <!-- MANUAL ADDITIONS START -->

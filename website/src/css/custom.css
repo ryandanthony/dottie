@@ -1,0 +1,89 @@
+/**
+ * Dottie Documentation Theme
+ * Terminal-inspired colors per style-guide.md
+ *
+ * Color Palette:
+ * - Terminal Green: #33cc66
+ * - Background: #000000
+ * - Text: #eaeaea
+ * - Border: #cccccc
+ */
+
+/* Light mode */
+:root {
+  --ifm-color-primary: #2e8555;
+  --ifm-color-primary-dark: #29784c;
+  --ifm-color-primary-darker: #277148;
+  --ifm-color-primary-darkest: #205d3b;
+  --ifm-color-primary-light: #33925d;
+  --ifm-color-primary-lighter: #359962;
+  --ifm-color-primary-lightest: #3cad6e;
+  --ifm-code-font-size: 95%;
+  --ifm-font-family-monospace: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode - Terminal inspired */
+[data-theme='dark'] {
+  --ifm-color-primary: #33cc66;
+  --ifm-color-primary-dark: #2db85c;
+  --ifm-color-primary-darker: #2aad57;
+  --ifm-color-primary-darkest: #238f47;
+  --ifm-color-primary-light: #47d175;
+  --ifm-color-primary-lighter: #52d47d;
+  --ifm-color-primary-lightest: #70dc93;
+  --ifm-background-color: #0d1117;
+  --ifm-background-surface-color: #161b22;
+  --ifm-navbar-background-color: #0d1117;
+  --ifm-footer-background-color: #0d1117;
+  --ifm-code-background: #1a1f26;
+  --docusaurus-highlighted-code-line-bg: rgba(51, 204, 102, 0.15);
+}
+
+/* Code block styling */
+[data-theme='dark'] .prism-code {
+  background-color: #0d1117;
+}
+
+[data-theme='dark'] code {
+  background-color: #1a1f26;
+  border: 1px solid #30363d;
+}
+
+/* Hero section styling for landing page */
+.hero--primary {
+  --ifm-hero-background-color: var(--ifm-background-color);
+  --ifm-hero-text-color: var(--ifm-font-color-base);
+}
+
+[data-theme='dark'] .hero--primary {
+  background: linear-gradient(180deg, #0d1117 0%, #161b22 100%);
+}
+
+/* Navbar tweaks */
+[data-theme='dark'] .navbar {
+  border-bottom: 1px solid #30363d;
+}
+
+/* Footer tweaks */
+[data-theme='dark'] .footer {
+  border-top: 1px solid #30363d;
+}
+
+/* Sidebar tweaks */
+[data-theme='dark'] .menu__link--active {
+  color: #33cc66;
+}
+
+/* Table styling */
+[data-theme='dark'] table {
+  border-color: #30363d;
+}
+
+[data-theme='dark'] th {
+  background-color: #161b22;
+}
+
+[data-theme='dark'] tr:nth-child(2n) {
+  background-color: #0d1117;
+}

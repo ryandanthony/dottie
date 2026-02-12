@@ -14,7 +14,7 @@ This guide explains how to configure dottie to download binaries from GitHub rel
 install:
   github:
     - repo: BurntSushi/ripgrep
-      asset: ripgrep-{arch}-unknown-linux-musl.tar.gz
+      asset: ripgrep-${ARCH}-unknown-linux-musl.tar.gz
       binary: rg
 ```
 
@@ -30,18 +30,19 @@ This downloads the latest release of ripgrep, extracts it, and installs the `rg`
 
 ## Architecture Placeholders
 
-Use `{arch}` to automatically select the right architecture:
+Use `${ARCH}` to automatically select the right architecture:
 
 ```yaml
 github:
   - repo: sharkdp/fd
-    asset: fd-v{version}-{arch}-unknown-linux-musl.tar.gz
+    asset: fd-v${RELEASE_VERSION}-${ARCH}-unknown-linux-musl.tar.gz
     binary: fd
 ```
 
-| Placeholder | x86_64 | arm64 |
+| Variable | x86_64 | arm64 |
 |-------------|--------|-------|
-| `{arch}` | `x86_64` | `aarch64` |
+| `${ARCH}` | `x86_64` | `aarch64` |
+| `${MS_ARCH}` | `amd64` | `arm64` |
 
 ## Version Pinning
 
@@ -50,7 +51,7 @@ By default, dottie downloads the latest release. Pin to a specific version:
 ```yaml
 github:
   - repo: junegunn/fzf
-    asset: fzf-{version}-linux_amd64.tar.gz
+    asset: fzf-${RELEASE_VERSION}-linux_amd64.tar.gz
     binary: fzf
     version: 0.44.0  # Pinned version
 ```
@@ -70,7 +71,7 @@ ripgrep-14.1.0-aarch64-unknown-linux-musl.tar.gz
 
 Replace the version and architecture with placeholders:
 ```
-ripgrep-{arch}-unknown-linux-musl.tar.gz
+ripgrep-${ARCH}-unknown-linux-musl.tar.gz
 ```
 
 ## Common Tools
@@ -81,7 +82,7 @@ Here are configurations for popular tools:
 
 ```yaml
 - repo: BurntSushi/ripgrep
-  asset: ripgrep-{arch}-unknown-linux-musl.tar.gz
+  asset: ripgrep-${ARCH}-unknown-linux-musl.tar.gz
   binary: rg
 ```
 
@@ -89,7 +90,7 @@ Here are configurations for popular tools:
 
 ```yaml
 - repo: sharkdp/fd
-  asset: fd-v{version}-{arch}-unknown-linux-musl.tar.gz
+  asset: fd-v${RELEASE_VERSION}-${ARCH}-unknown-linux-musl.tar.gz
   binary: fd
 ```
 
@@ -97,7 +98,7 @@ Here are configurations for popular tools:
 
 ```yaml
 - repo: sharkdp/bat
-  asset: bat-v{version}-{arch}-unknown-linux-musl.tar.gz
+  asset: bat-v${RELEASE_VERSION}-${ARCH}-unknown-linux-musl.tar.gz
   binary: bat
 ```
 
@@ -105,7 +106,7 @@ Here are configurations for popular tools:
 
 ```yaml
 - repo: junegunn/fzf
-  asset: fzf-{version}-linux_amd64.tar.gz
+  asset: fzf-${RELEASE_VERSION}-linux_amd64.tar.gz
   binary: fzf
 ```
 
@@ -113,7 +114,7 @@ Here are configurations for popular tools:
 
 ```yaml
 - repo: jesseduffield/lazygit
-  asset: lazygit_{version}_Linux_{arch}.tar.gz
+  asset: lazygit_${RELEASE_VERSION}_Linux_${ARCH}.tar.gz
   binary: lazygit
 ```
 
@@ -121,7 +122,7 @@ Here are configurations for popular tools:
 
 ```yaml
 - repo: dandavison/delta
-  asset: delta-{version}-{arch}-unknown-linux-musl.tar.gz
+  asset: delta-${RELEASE_VERSION}-${ARCH}-unknown-linux-musl.tar.gz
   binary: delta
 ```
 
@@ -186,29 +187,29 @@ install:
   github:
     # Essential CLI tools
     - repo: BurntSushi/ripgrep
-      asset: ripgrep-{arch}-unknown-linux-musl.tar.gz
+      asset: ripgrep-${ARCH}-unknown-linux-musl.tar.gz
       binary: rg
 
     - repo: sharkdp/fd
-      asset: fd-v{version}-{arch}-unknown-linux-musl.tar.gz
+      asset: fd-v${RELEASE_VERSION}-${ARCH}-unknown-linux-musl.tar.gz
       binary: fd
 
     - repo: sharkdp/bat
-      asset: bat-v{version}-{arch}-unknown-linux-musl.tar.gz
+      asset: bat-v${RELEASE_VERSION}-${ARCH}-unknown-linux-musl.tar.gz
       binary: bat
 
     # Git tools
     - repo: jesseduffield/lazygit
-      asset: lazygit_{version}_Linux_{arch}.tar.gz
+      asset: lazygit_${RELEASE_VERSION}_Linux_${ARCH}.tar.gz
       binary: lazygit
 
     - repo: dandavison/delta
-      asset: delta-{version}-{arch}-unknown-linux-musl.tar.gz
+      asset: delta-${RELEASE_VERSION}-${ARCH}-unknown-linux-musl.tar.gz
       binary: delta
 
     # Pinned version example
     - repo: junegunn/fzf
-      asset: fzf-{version}-linux_amd64.tar.gz
+      asset: fzf-${RELEASE_VERSION}-linux_amd64.tar.gz
       binary: fzf
       version: 0.44.0
 ```

@@ -136,20 +136,21 @@ This happens automatically for each `aptRepos` entry.
 
 ## Ubuntu Version Codenames
 
-Many repos require the Ubuntu codename in the repo line:
-
-| Version | Codename |
-|---------|----------|
-| 20.04 LTS | focal |
-| 22.04 LTS | jammy |
-| 24.04 LTS | noble |
-
-Replace the codename based on your Ubuntu version:
+Many repos require the Ubuntu codename in the repo line. Instead of hardcoding it, use the `${VERSION_CODENAME}` variable so your config works across Ubuntu versions:
 
 ```yaml
-repo: "deb https://example.com/apt jammy main"  # For 22.04
-repo: "deb https://example.com/apt noble main"  # For 24.04
+repo: "deb [arch=${MS_ARCH}] https://download.docker.com/linux/${ID} ${VERSION_CODENAME} stable"
 ```
+
+This automatically resolves to the correct values for your system (e.g., `noble` on 24.04, `jammy` on 22.04).
+
+| Variable | Example Value | Description |
+|----------|--------------|-------------|
+| `${VERSION_CODENAME}` | `noble` | Ubuntu/Debian release codename |
+| `${MS_ARCH}` | `amd64` | Debian-style architecture |
+| `${ID}` | `ubuntu` | OS identifier |
+
+See the [Variables reference](../configuration/variables.md) for the full list of available variables.
 
 ## Idempotency
 
@@ -192,10 +193,10 @@ The repository is still configured, but packages aren't reinstalled.
 ```yaml
 install:
   aptRepos:
-    # Docker
+    # Docker - uses variables for portable config across Ubuntu versions and architectures
     - name: docker
-      key_url: https://download.docker.com/linux/ubuntu/gpg
-      repo: "deb https://download.docker.com/linux/ubuntu jammy stable"
+      key_url: https://download.docker.com/linux/${ID}/gpg
+      repo: "deb [arch=${MS_ARCH}] https://download.docker.com/linux/${ID} ${VERSION_CODENAME} stable"
       packages:
         - docker-ce
         - docker-ce-cli
@@ -203,14 +204,14 @@ install:
     # GitHub CLI
     - name: github-cli
       key_url: https://cli.github.com/packages/githubcli-archive-keyring.gpg
-      repo: "deb https://cli.github.com/packages stable main"
+      repo: "deb [arch=${MS_ARCH}] https://cli.github.com/packages stable main"
       packages:
         - gh
 
     # VS Code
     - name: vscode
       key_url: https://packages.microsoft.com/keys/microsoft.asc
-      repo: "deb https://packages.microsoft.com/repos/code stable main"
+      repo: "deb [arch=${MS_ARCH}] https://packages.microsoft.com/repos/code stable main"
       packages:
         - code
 ```

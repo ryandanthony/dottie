@@ -71,16 +71,16 @@ Download binaries from GitHub releases:
 install:
   github:
     - repo: BurntSushi/ripgrep
-      asset: ripgrep-{arch}-unknown-linux-musl.tar.gz
+      asset: ripgrep-${ARCH}-unknown-linux-musl.tar.gz
       binary: rg
 
     - repo: sharkdp/fd
-      asset: fd-v{version}-{arch}-unknown-linux-musl.tar.gz
+      asset: fd-v${RELEASE_VERSION}-${ARCH}-unknown-linux-musl.tar.gz
       binary: fd
       version: 9.0.0  # Optional: specific version
 
     - repo: junegunn/fzf
-      asset: fzf-{version}-linux_amd64.tar.gz
+      asset: fzf-${RELEASE_VERSION}-linux_amd64.tar.gz
       binary: fzf
 ```
 
@@ -93,11 +93,12 @@ install:
 
 ### Architecture Placeholders
 
-Use `{arch}` in asset names for architecture-aware downloads:
+Use `${ARCH}` in asset names for architecture-aware downloads:
 
-| Placeholder | x86_64 Value | arm64 Value |
+| Variable | x86_64 Value | arm64 Value |
 |-------------|--------------|-------------|
-| `{arch}` | `x86_64` | `aarch64` |
+| `${ARCH}` | `x86_64` | `aarch64` |
+| `${MS_ARCH}` | `amd64` | `arm64` |
 
 Binaries are installed to `~/bin/`.
 
@@ -187,13 +188,13 @@ install:
 
   github:
     - repo: BurntSushi/ripgrep
-      asset: ripgrep-{arch}-unknown-linux-musl.tar.gz
+      asset: ripgrep-${ARCH}-unknown-linux-musl.tar.gz
       binary: rg
     - repo: sharkdp/fd
-      asset: fd-v{version}-{arch}-unknown-linux-musl.tar.gz
+      asset: fd-v${RELEASE_VERSION}-${ARCH}-unknown-linux-musl.tar.gz
       binary: fd
     - repo: sharkdp/bat
-      asset: bat-v{version}-{arch}-unknown-linux-musl.tar.gz
+      asset: bat-v${RELEASE_VERSION}-${ARCH}-unknown-linux-musl.tar.gz
       binary: bat
 
   fonts:

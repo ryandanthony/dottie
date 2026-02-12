@@ -177,11 +177,15 @@ public static partial class VariableResolver
     {
         var resolvedAptRepos = ResolveAptRepoItems(profileName, installBlock.AptRepos, variables, errors);
         var resolvedGithub = ResolveGithubReleaseItems(profileName, installBlock.Github, variables, errors);
+        var resolvedScripts = ResolveStringList(profileName, "scripts", "path", installBlock.Scripts, variables, errors);
+        var resolvedApt = ResolveStringList(profileName, "apt", "package", installBlock.Apt, variables, errors);
 
         return installBlock with
         {
             AptRepos = resolvedAptRepos,
             Github = resolvedGithub,
+            Scripts = resolvedScripts,
+            Apt = resolvedApt,
         };
     }
 
@@ -261,6 +265,26 @@ public static partial class VariableResolver
         {
             var result = ResolveString(value, variables, AptRepoDeferredVariables);
             CollectErrors(errors, profileName, entryIdentifier, "packages", result);
+            resolved.Add(result.ResolvedValue);
+        }
+
+        return resolved;
+    }
+
+    private static IList<string> ResolveStringList(
+        string profileName,
+        string entryIdentifier,
+        string fieldName,
+        IList<string> values,
+        IReadOnlyDictionary<string, string> variables,
+        List<VariableResolutionError> errors)
+    {
+        var resolved = new List<string>(values.Count);
+
+        foreach (var value in values)
+        {
+            var result = ResolveString(value, variables);
+            CollectErrors(errors, profileName, entryIdentifier, fieldName, result);
             resolved.Add(result.ResolvedValue);
         }
 

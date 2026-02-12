@@ -6,6 +6,7 @@
 
 using Dottie.Configuration.Installing.Utilities;
 using Dottie.Configuration.Models.InstallBlocks;
+using Dottie.Configuration.Utilities;
 
 namespace Dottie.Configuration.Installing;
 
@@ -90,7 +91,10 @@ public class AptRepoInstaller : IInstallSource
                 return results;
             }
 
-            var sourceResult = await AddSourcesListAsync(repo, cancellationToken);
+            // Resolve ${SIGNING_FILE} to the actual GPG key path now that the key is installed
+            var resolvedRepo = ResolveSigningFile(repo);
+
+            var sourceResult = await AddSourcesListAsync(resolvedRepo, cancellationToken);
             if (sourceResult != null)
             {
                 results.Add(sourceResult);
@@ -237,5 +241,19 @@ public class AptRepoInstaller : IInstallSource
         {
             return InstallResult.Failed(package, SourceType, $"Exception during package installation: {ex.Message}");
         }
+    }
+
+    private static AptRepoItem ResolveSigningFile(AptRepoItem repo)
+    {
+        var keyPath = $"/etc/apt/trusted.gpg.d/{repo.Name}.gpg";
+        var signingVars = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["SIGNING_FILE"] = keyPath,
+        };
+
+        var result = VariableResolver.ResolveString(repo.Repo, signingVars);
+        return !string.Equals(result.ResolvedValue, repo.Repo, StringComparison.Ordinal)
+            ? repo with { Repo = result.ResolvedValue }
+            : repo;
     }
 }

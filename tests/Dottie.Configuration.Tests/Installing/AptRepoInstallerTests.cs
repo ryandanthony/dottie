@@ -658,4 +658,102 @@ public class AptRepoInstallerTests
         installer.Should().NotBeNull();
         installer.SourceType.Should().Be(InstallSourceType.AptRepo);
     }
+
+    /// <summary>
+    /// Verifies that ${SIGNING_FILE} in the repo line is resolved to the
+    /// actual GPG key path at install time.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
+    [Fact]
+    public async Task InstallAsync_WithSigningFileVariable_ResolvesToGpgKeyPathAsync()
+    {
+        // Arrange
+        var mockDownloader = new Mock<HttpDownloader>();
+        mockDownloader
+            .Setup(d => d.DownloadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new byte[] { 0x01, 0x02, 0x03 });
+
+        var fakeRunner = new FakeProcessRunner()
+            .WithSuccessResult() // Add GPG key
+            .WithSuccessResult() // Remove conflicting .sources file
+            .WithSuccessResult() // Add .list source
+            .WithSuccessResult() // apt-get update
+            .WithSuccessResult(); // Install package
+
+        var installer = new AptRepoInstaller(mockDownloader.Object, fakeRunner);
+        var installBlock = new InstallBlock
+        {
+            AptRepos = new List<AptRepoItem>
+            {
+                new AptRepoItem
+                {
+                    Name = "typora",
+                    Repo = "deb [signed-by=${SIGNING_FILE}] https://downloads.typora.io/linux ./",
+                    KeyUrl = "https://typora.io/linux/public-key.asc",
+                    Packages = new List<string> { "typora" },
+                },
+            },
+        };
+        var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
+
+        // Act
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
+
+        // Assert
+        results.Should().NotBeEmpty();
+
+        // The sources list write command should contain the resolved path, not the variable
+        fakeRunner.Calls.Should().Contain(c =>
+            c.FileName == "bash" &&
+            c.Arguments.Contains("signed-by=/etc/apt/trusted.gpg.d/typora.gpg") &&
+            !c.Arguments.Contains("${SIGNING_FILE}"));
+    }
+
+    /// <summary>
+    /// Verifies that repo lines without ${SIGNING_FILE} are written unchanged.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
+    [Fact]
+    public async Task InstallAsync_WithoutSigningFileVariable_WritesRepoUnchangedAsync()
+    {
+        // Arrange
+        var mockDownloader = new Mock<HttpDownloader>();
+        mockDownloader
+            .Setup(d => d.DownloadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new byte[] { 0x01, 0x02, 0x03 });
+
+        var fakeRunner = new FakeProcessRunner()
+            .WithSuccessResult() // Add GPG key
+            .WithSuccessResult() // Remove conflicting .sources file
+            .WithSuccessResult() // Add .list source
+            .WithSuccessResult() // apt-get update
+            .WithSuccessResult(); // Install package
+
+        var installer = new AptRepoInstaller(mockDownloader.Object, fakeRunner);
+        var installBlock = new InstallBlock
+        {
+            AptRepos = new List<AptRepoItem>
+            {
+                new AptRepoItem
+                {
+                    Name = "testrepo",
+                    Repo = "deb https://example.com/repo stable main",
+                    KeyUrl = "https://example.com/key.gpg",
+                    Packages = new List<string> { "testpkg" },
+                },
+            },
+        };
+        var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
+
+        // Act
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
+
+        // Assert
+        results.Should().NotBeEmpty();
+
+        // The sources list write command should contain the original repo line
+        fakeRunner.Calls.Should().Contain(c =>
+            c.FileName == "bash" &&
+            c.Arguments.Contains("deb https://example.com/repo stable main"));
+    }
 }

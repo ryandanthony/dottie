@@ -35,6 +35,8 @@ install:
 
 Packages already installed are automatically skipped.
 
+Supports [variable substitution](../configuration/variables.md) — all architecture and OS release variables are available in package names.
+
 ## APT Repositories
 
 Add third-party APT repositories and install their packages:
@@ -62,6 +64,8 @@ install:
 | `key_url` | Yes | URL to the GPG key |
 | `repo` | Yes | APT repository line |
 | `packages` | Yes | Packages to install from this repo |
+
+Supports [variable substitution](../configuration/variables.md) in `repo`, `key_url`, and `packages` fields — all architecture and OS release variables are available. The deferred `${SIGNING_FILE}` variable is also available in `repo` for repos that require a `signed-by` clause.
 
 ## GitHub Releases
 
@@ -91,6 +95,8 @@ install:
 | `binary` | Yes | Binary name after extraction |
 | `version` | No | Specific version (default: latest) |
 
+Supports [variable substitution](../configuration/variables.md) in `asset` and `binary` fields — all architecture and OS release variables, plus the deferred `${RELEASE_VERSION}` variable.
+
 ### Architecture Placeholders
 
 Use `${ARCH}` in asset names for architecture-aware downloads:
@@ -111,6 +117,7 @@ install:
   scripts:
     - scripts/setup-nvm.sh
     - scripts/configure-docker.sh
+    - scripts/${ID}/post-install.sh    # resolves e.g. scripts/ubuntu/post-install.sh
 ```
 
 :::caution Security
@@ -118,6 +125,8 @@ Scripts must be located within your repository. External scripts are not allowed
 :::
 
 Scripts are run from the repository root with the user's shell.
+
+Supports [variable substitution](../configuration/variables.md) — all architecture and OS release variables are available in script paths, allowing OS-specific or architecture-specific script selection.
 
 ## Fonts
 

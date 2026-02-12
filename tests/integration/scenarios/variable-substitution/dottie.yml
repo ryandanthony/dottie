@@ -1,11 +1,12 @@
 # Integration test for variable substitution (${...} templating)
-# Tests: OS release variables, architecture variables, mixed usage
+# Tests: OS release variables, architecture variables, mixed usage, deferred variables
 #
 # On Ubuntu 24.04 container:
 #   ${VERSION_CODENAME} → noble
 #   ${ID} → ubuntu
 #   ${MS_ARCH} → amd64 (or arm64)
 #   ${ARCH} → x86_64 (or aarch64)
+#   ${SIGNING_FILE} → /etc/apt/trusted.gpg.d/<name>.gpg (deferred, resolved at install time)
 
 profiles:
   default:
@@ -24,3 +25,10 @@ profiles:
           repo: "deb [arch=${MS_ARCH}] https://packages.microsoft.com/repos/code stable main"
           packages:
             - doesnotexist-${MS_ARCH}
+
+        # Apt repo uses ${SIGNING_FILE} deferred variable
+        - name: signing-file-test
+          key_url: https://packages.microsoft.com/keys/microsoft.asc
+          repo: "deb [signed-by=${SIGNING_FILE}] https://packages.microsoft.com/repos/code stable main"
+          packages:
+            - doesnotexist-signtest

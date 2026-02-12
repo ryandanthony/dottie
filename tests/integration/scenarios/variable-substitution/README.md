@@ -12,6 +12,7 @@ Tests that `${VARIABLE_NAME}` substitution works end-to-end when loading and app
 | `${ID}` | `ubuntu` | dotfile source path |
 | `${MS_ARCH}` | `amd64` or `arm64` | apt repo URL, package name |
 | `${ARCH}` | `x86_64` or `aarch64` | (available but not directly tested) |
+| `${SIGNING_FILE}` | `/etc/apt/trusted.gpg.d/signing-file-test.gpg` | apt repo `repo` field (deferred) |
 
 ## Configuration
 
@@ -19,6 +20,7 @@ The `dottie.yml` file uses variables in:
 - **Dotfile source paths**: `dotfiles/${VERSION_CODENAME}/bashrc` → `dotfiles/noble/bashrc`
 - **Dotfile source paths**: `dotfiles/${ID}/profile` → `dotfiles/ubuntu/profile`
 - **Apt repo URL**: `deb [arch=${MS_ARCH}] https://...` → `deb [arch=amd64] https://...`
+- **Apt repo signed-by**: `deb [signed-by=${SIGNING_FILE}] ...` → `deb [signed-by=/etc/apt/trusted.gpg.d/signing-file-test.gpg] ...`
 - **Package name**: `doesnotexist-${MS_ARCH}` → `doesnotexist-amd64`
 
 ## Validation

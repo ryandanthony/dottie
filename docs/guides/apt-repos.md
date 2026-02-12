@@ -144,11 +144,30 @@ repo: "deb [arch=${MS_ARCH}] https://download.docker.com/linux/${ID} ${VERSION_C
 
 This automatically resolves to the correct values for your system (e.g., `noble` on 24.04, `jammy` on 22.04).
 
+## Supported Variables
+
+All architecture and OS release variables are available in `repo`, `key_url`, and `packages` fields:
+
 | Variable | Example Value | Description |
 |----------|--------------|-------------|
 | `${VERSION_CODENAME}` | `noble` | Ubuntu/Debian release codename |
 | `${MS_ARCH}` | `amd64` | Debian-style architecture |
 | `${ID}` | `ubuntu` | OS identifier |
+| `${ARCH}` | `x86_64` | Raw architecture |
+| `${VERSION_ID}` | `24.04` | OS version number |
+| `${ID_LIKE}` | `debian` | Parent distribution family |
+| `${SIGNING_FILE}` | `/etc/apt/trusted.gpg.d/<name>.gpg` | GPG key path (deferred, resolved at install time) |
+
+The `${SIGNING_FILE}` variable is a special **deferred variable** — it resolves at install time to the path where dottie stores the GPG key for the repository. Use it when a repository requires a `signed-by` clause:
+
+```yaml
+aptRepos:
+  - name: typora
+    key_url: https://typora.io/linux/public-key.asc
+    repo: "deb [signed-by=${SIGNING_FILE}] https://downloads.typora.io/linux ./"
+    packages:
+      - typora
+```
 
 See the [Variables reference](../configuration/variables.md) for the full list of available variables.
 

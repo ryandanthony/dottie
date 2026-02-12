@@ -82,6 +82,20 @@ else
 fi
 
 # ============================================================
+# Test 3a: SIGNING_FILE deferred variable validates without error
+# ============================================================
+echo "  - Test 3a: SIGNING_FILE deferred variable passes validation..."
+# ${SIGNING_FILE} should be allowed through config load (deferred) without error
+# If validation failed (Test 1), we wouldn't get here, but explicitly check the
+# validate output doesn't mention SIGNING_FILE as unresolvable
+if echo "$validate_output" | grep -qi "SIGNING_FILE.*unresolvable"; then
+    echo "  FAIL: SIGNING_FILE was reported as unresolvable during validation"
+    echo "  Output: $validate_output"
+    exit 1
+fi
+echo "  PASS: SIGNING_FILE deferred variable accepted during validation"
+
+# ============================================================
 # Test 4: Actual link creates symlinks from resolved paths
 # ============================================================
 echo "  - Test 4: Symlink creation with resolved variable paths..."

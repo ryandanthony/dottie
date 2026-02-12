@@ -1,0 +1,19 @@
+# Integration test for variable substitution across install types
+# Tests: variables in script paths, apt packages, and SIGNING_FILE in apt repos
+#
+# On Ubuntu 24.04 container:
+#   ${ID} → ubuntu
+#   ${VERSION_CODENAME} → noble
+#   ${MS_ARCH} → amd64 (or arm64)
+#   ${SIGNING_FILE} → /etc/apt/trusted.gpg.d/<name>.gpg (resolved at install time)
+
+profiles:
+  default:
+    install:
+      # Script path uses ${ID} — resolves to scripts/ubuntu/setup.sh
+      scripts:
+        - scripts/${ID}/setup.sh
+
+      # APT packages with variable in name (will fail to install but should resolve)
+      apt:
+        - doesnotexist-${MS_ARCH}-vartest

@@ -493,6 +493,127 @@ public class VariableResolverTests
 
     #endregion
 
+    #region ResolveConfiguration Tests - Scripts
+
+    [Fact]
+    public void ResolveConfiguration_ScriptsWithVariables_ResolvesAllVariables()
+    {
+        // Arrange
+        var config = new DottieConfiguration
+        {
+            Profiles = new Dictionary<string, ConfigProfile>
+            {
+                ["default"] = new ConfigProfile
+                {
+                    Install = new InstallBlock
+                    {
+                        Scripts =
+                        [
+                            "scripts/${VERSION_CODENAME}/setup.sh",
+                            "scripts/${ID}/install-${MS_ARCH}.sh",
+                        ],
+                    },
+                },
+            },
+        };
+
+        // Act
+        var result = VariableResolver.ResolveConfiguration(config, SampleVariables);
+
+        // Assert
+        result.HasErrors.Should().BeFalse();
+        var scripts = result.Configuration.Profiles["default"].Install!.Scripts;
+        scripts[0].Should().Be("scripts/noble/setup.sh");
+        scripts[1].Should().Be("scripts/ubuntu/install-amd64.sh");
+    }
+
+    [Fact]
+    public void ResolveConfiguration_ScriptsWithNoVariables_OutputEqualsInput()
+    {
+        // Arrange
+        var config = new DottieConfiguration
+        {
+            Profiles = new Dictionary<string, ConfigProfile>
+            {
+                ["default"] = new ConfigProfile
+                {
+                    Install = new InstallBlock
+                    {
+                        Scripts = ["scripts/setup.sh", "scripts/configure.sh"],
+                    },
+                },
+            },
+        };
+
+        // Act
+        var result = VariableResolver.ResolveConfiguration(config, SampleVariables);
+
+        // Assert
+        result.HasErrors.Should().BeFalse();
+        var scripts = result.Configuration.Profiles["default"].Install!.Scripts;
+        scripts.Should().BeEquivalentTo(["scripts/setup.sh", "scripts/configure.sh"]);
+    }
+
+    [Fact]
+    public void ResolveConfiguration_ScriptsWithUnknownVariable_ReportsError()
+    {
+        // Arrange
+        var config = new DottieConfiguration
+        {
+            Profiles = new Dictionary<string, ConfigProfile>
+            {
+                ["default"] = new ConfigProfile
+                {
+                    Install = new InstallBlock
+                    {
+                        Scripts = ["scripts/${UNKNOWN_VAR}/setup.sh"],
+                    },
+                },
+            },
+        };
+
+        // Act
+        var result = VariableResolver.ResolveConfiguration(config, SampleVariables);
+
+        // Assert
+        result.HasErrors.Should().BeTrue();
+        result.Errors.Should().ContainSingle(e => e.VariableName == "UNKNOWN_VAR");
+    }
+
+    #endregion
+
+    #region ResolveConfiguration Tests - Apt Packages
+
+    [Fact]
+    public void ResolveConfiguration_AptPackagesWithVariables_ResolvesAllVariables()
+    {
+        // Arrange
+        var config = new DottieConfiguration
+        {
+            Profiles = new Dictionary<string, ConfigProfile>
+            {
+                ["default"] = new ConfigProfile
+                {
+                    Install = new InstallBlock
+                    {
+                        Apt = ["linux-headers-${ARCH}", "build-essential"],
+                    },
+                },
+            },
+        };
+
+        // Act
+        var result = VariableResolver.ResolveConfiguration(config, SampleVariables);
+
+        // Assert
+        result.HasErrors.Should().BeFalse();
+        var apt = result.Configuration.Profiles["default"].Install!.Apt;
+        apt[0].Should().Be("linux-headers-x86_64");
+        apt[1].Should().Be("build-essential");
+    }
+
+    #endregion
+
     #region Performance (T043)
 
     [Fact]

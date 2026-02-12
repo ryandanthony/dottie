@@ -44,6 +44,21 @@ github:
 | `${ARCH}` | `x86_64` | `aarch64` |
 | `${MS_ARCH}` | `amd64` | `arm64` |
 
+## Supported Variables
+
+The `asset` and `binary` fields support [variable substitution](../configuration/variables.md). All architecture and OS release variables are available:
+
+| Variable | Example Value | Resolved |
+|----------|--------------|----------|
+| `${ARCH}` | `x86_64` | Config load |
+| `${MS_ARCH}` | `amd64` | Config load |
+| `${VERSION_CODENAME}` | `noble` | Config load |
+| `${ID}` | `ubuntu` | Config load |
+| `${VERSION_ID}` | `24.04` | Config load |
+| `${RELEASE_VERSION}` | `14.1.0` | Install time (deferred) |
+
+`${RELEASE_VERSION}` is a **deferred variable** — it stays as a literal token during config loading and is resolved per-item at install time, once dottie knows the actual release version from the GitHub API (or from the pinned `version` field). The leading `v` is stripped (e.g., tag `v14.1.0` → value `14.1.0`).
+
 ## Version Pinning
 
 By default, dottie downloads the latest release. Pin to a specific version:

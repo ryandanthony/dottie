@@ -85,13 +85,14 @@ install:
 
 ## Deferred Variables
 
-Some variables are resolved later during installation rather than at configuration load time:
+Some variables are resolved later during installation rather than at configuration load time. They are left as literal `${...}` tokens during config loading and resolved per-item when that installer runs.
 
-| Variable | Resolved during | Description |
-|----------|----------------|-------------|
-| `${RELEASE_VERSION}` | GitHub release install | The resolved release version (latest or pinned), with leading `v` stripped |
+| Variable | Applies to | Resolved during | Description |
+|----------|-----------|----------------|-------------|
+| `${RELEASE_VERSION}` | `install.github` | GitHub release install | The resolved release version (latest or pinned), with leading `v` stripped |
+| `${SIGNING_FILE}` | `install.aptRepos` | APT repo install | Path to the GPG key file (`/etc/apt/trusted.gpg.d/<name>.gpg`) |
 
-### Example
+### RELEASE_VERSION
 
 ```yaml
 install:
@@ -108,17 +109,39 @@ install:
 
 When `version` is specified, `${RELEASE_VERSION}` resolves to that value. Otherwise, it resolves to the latest release tag from GitHub (with any leading `v` removed).
 
+### SIGNING_FILE
+
+Some APT repositories require a `signed-by` clause pointing to the GPG key. Use `${SIGNING_FILE}` to reference the key path that dottie manages:
+
+```yaml
+install:
+  aptRepos:
+    - name: typora
+      key_url: https://typora.io/linux/public-key.asc
+      repo: "deb [signed-by=${SIGNING_FILE}] https://downloads.typora.io/linux ./"
+      packages:
+        - typora
+```
+
+This resolves to `deb [signed-by=/etc/apt/trusted.gpg.d/typora.gpg] https://downloads.typora.io/linux ./` at install time.
+
 ## Where Variables Can Be Used
+
+Variables are resolved at **config load time** unless noted as deferred.
 
 | Config Section | Fields | Supported Variables |
 |---------------|--------|-------------------|
 | `dotfiles` | `source`, `target` | Architecture, OS release |
 | `install.github` | `asset`, `binary` | Architecture, OS release, `${RELEASE_VERSION}` (deferred) |
-| `install.aptRepos` | `repo`, `key_url`, `packages` | Architecture, OS release |
-| `install.apt` | — | Not currently supported |
-| `install.scripts` | — | Not currently supported |
+| `install.aptRepos` | `repo`, `key_url`, `packages` | Architecture, OS release, `${SIGNING_FILE}` (deferred) |
+| `install.apt` | package names | Architecture, OS release |
+| `install.scripts` | script paths | Architecture, OS release |
 | `install.fonts` | — | Not currently supported |
 | `install.snaps` | — | Not currently supported |
+
+:::tip
+Most install types support all architecture and OS release variables. You can use `${VERSION_CODENAME}`, `${ID}`, `${ARCH}`, `${MS_ARCH}`, etc. anywhere a variable is supported.
+:::
 
 ## Resolution Order
 
@@ -160,6 +183,12 @@ profiles:
             - docker-ce
             - docker-ce-cli
 
+        - name: typora
+          key_url: https://typora.io/linux/public-key.asc
+          repo: "deb [signed-by=${SIGNING_FILE}] https://downloads.typora.io/linux ./"
+          packages:
+            - typora
+
       github:
         - repo: BurntSushi/ripgrep
           asset: ripgrep-${RELEASE_VERSION}-${ARCH}-unknown-linux-musl.tar.gz
@@ -172,4 +201,7 @@ profiles:
         - repo: jgraph/drawio-desktop
           asset: drawio-${MS_ARCH}-${RELEASE_VERSION}.deb
           type: deb
+
+      scripts:
+        - scripts/${ID}/post-install.sh
 ```

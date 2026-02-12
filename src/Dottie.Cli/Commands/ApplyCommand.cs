@@ -266,6 +266,13 @@ public sealed class ApplyCommand : AsyncCommand<ApplyCommandSettings>
         }
 
         var installerItems = InstallerProgressHelper.GetInstallerItems(profile.Install);
+        var itemNames = InstallerProgressHelper.GetAllItemNames(profile.Install);
+
+        // Show the first item name before starting
+        if (itemNames.Count > 0)
+        {
+            task.Description = $"[green]Installing {itemNames.Peek()}[/]";
+        }
 
         foreach (var item in installerItems)
         {
@@ -274,9 +281,14 @@ public sealed class ApplyCommand : AsyncCommand<ApplyCommandSettings>
                 continue;
             }
 
-            task.Description = $"[green]Installing {item.Name}[/]";
-
-            var installerResults = await ExecuteInstallerAsync(item.Installer, profile.Install, context, () => task.Increment(1));
+            var installerResults = await ExecuteInstallerAsync(item.Installer, profile.Install, context, () =>
+            {
+                task.Increment(1);
+                if (itemNames.TryDequeue(out _) && itemNames.TryPeek(out var nextName))
+                {
+                    task.Description = $"[green]Installing {nextName}[/]";
+                }
+            });
             results.AddRange(installerResults);
         }
 

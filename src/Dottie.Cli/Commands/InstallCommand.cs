@@ -175,6 +175,13 @@ public sealed class InstallCommand : AsyncCommand<InstallCommandSettings>
             {
                 var task = ctx.AddTask("[green]Installing software[/]", maxValue: totalItems);
                 var installerItems = InstallerProgressHelper.GetInstallerItems(installBlock);
+                var itemNames = InstallerProgressHelper.GetAllItemNames(installBlock);
+
+                // Show the first item name before starting
+                if (itemNames.Count > 0)
+                {
+                    task.Description = $"[green]Installing {itemNames.Peek()}[/]";
+                }
 
                 foreach (var item in installerItems)
                 {
@@ -183,8 +190,14 @@ public sealed class InstallCommand : AsyncCommand<InstallCommandSettings>
                         continue;
                     }
 
-                    task.Description = $"[green]Installing {item.Name}[/]";
-                    var installerResults = await ExecuteInstallerAsync(item.Installer, installBlock, context, () => task.Increment(1));
+                    var installerResults = await ExecuteInstallerAsync(item.Installer, installBlock, context, () =>
+                    {
+                        task.Increment(1);
+                        if (itemNames.TryDequeue(out _) && itemNames.TryPeek(out var nextName))
+                        {
+                            task.Description = $"[green]Installing {nextName}[/]";
+                        }
+                    });
                     results.AddRange(installerResults);
                 }
 

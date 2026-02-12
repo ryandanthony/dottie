@@ -55,4 +55,56 @@ internal static class InstallerProgressHelper
             (Installer: (IInstallSource)new SnapPackageInstaller(), Name: "Snap packages", Count: installBlock.Snaps.Count),
         ];
     }
+
+    /// <summary>
+    /// Gets a flat queue of all individual item display names in processing order.
+    /// This matches the order that installers process items, so names can be
+    /// dequeued in the <c>onItemComplete</c> callback to show per-item progress.
+    /// </summary>
+    /// <param name="installBlock">The install block to extract item names from.</param>
+    /// <returns>A queue of display names in installation processing order.</returns>
+    internal static Queue<string> GetAllItemNames(InstallBlock installBlock)
+    {
+        ArgumentNullException.ThrowIfNull(installBlock);
+
+        var names = new Queue<string>();
+
+        // GitHub releases
+        foreach (var item in installBlock.Github)
+        {
+            names.Enqueue(item.Binary ?? item.Repo);
+        }
+
+        // APT packages
+        foreach (var item in installBlock.Apt)
+        {
+            names.Enqueue(item);
+        }
+
+        // APT repositories (each repo is one item)
+        foreach (var item in installBlock.AptRepos)
+        {
+            names.Enqueue(item.Name);
+        }
+
+        // Scripts
+        foreach (var item in installBlock.Scripts)
+        {
+            names.Enqueue(item);
+        }
+
+        // Fonts
+        foreach (var item in installBlock.Fonts)
+        {
+            names.Enqueue(item.Name);
+        }
+
+        // Snap packages
+        foreach (var item in installBlock.Snaps)
+        {
+            names.Enqueue(item.Name);
+        }
+
+        return names;
+    }
 }

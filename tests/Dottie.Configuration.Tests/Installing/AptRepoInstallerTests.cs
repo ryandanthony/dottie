@@ -219,6 +219,7 @@ public class AptRepoInstallerTests
 
         var fakeRunner = new FakeProcessRunner()
             .WithSuccessResult() // Add GPG key
+            .WithSuccessResult() // Remove conflicting .sources file
             .WithSuccessResult() // Add source
             .WithSuccessResult(); // Install package
 
@@ -261,6 +262,7 @@ public class AptRepoInstallerTests
 
         var fakeRunner = new FakeProcessRunner()
             .WithSuccessResult() // Add GPG key
+            .WithSuccessResult() // Remove conflicting .sources file
             .WithSuccessResult() // Add source
             .WithSuccessResult(); // Install package
 
@@ -302,6 +304,7 @@ public class AptRepoInstallerTests
 
         var fakeRunner = new FakeProcessRunner()
             .WithSuccessResult() // Add GPG key
+            .WithSuccessResult() // Remove conflicting .sources file
             .WithSuccessResult() // Add source
             .WithSuccessResult() // Install package 1
             .WithSuccessResult(); // Install package 2
@@ -426,6 +429,7 @@ public class AptRepoInstallerTests
 
         var fakeRunner = new FakeProcessRunner()
             .WithSuccessResult() // Add GPG key succeeds
+            .WithSuccessResult() // Remove conflicting .sources file
             .WithFailureResult(1, "Permission denied"); // Add source fails
 
         var installer = new AptRepoInstaller(mockDownloader.Object, fakeRunner);
@@ -468,6 +472,7 @@ public class AptRepoInstallerTests
 
         var fakeRunner = new FakeProcessRunner()
             .WithSuccessResult() // Add GPG key
+            .WithSuccessResult() // Remove conflicting .sources file
             .WithSuccessResult() // Add source
             .WithSuccessResult() // apt-get update
             .WithFailureResult(100, "Package not found"); // Install fails
@@ -512,6 +517,7 @@ public class AptRepoInstallerTests
 
         var fakeRunner = new FakeProcessRunner()
             .WithSuccessResult() // Add GPG key
+            .WithSuccessResult() // Remove conflicting .sources file
             .WithSuccessResult() // Add source
             .WithSuccessResult(); // apt-get update
 
@@ -538,7 +544,7 @@ public class AptRepoInstallerTests
         results.Should().HaveCount(1);
         results.First().Status.Should().Be(InstallStatus.Success);
         results.First().ItemName.Should().Be("testrepo");
-        fakeRunner.CallCount.Should().Be(3); // GPG key, source, and apt-get update
+        fakeRunner.CallCount.Should().Be(4); // GPG key, remove conflicting source, source, and apt-get update
     }
 
     /// <summary>
@@ -556,9 +562,11 @@ public class AptRepoInstallerTests
 
         var fakeRunner = new FakeProcessRunner()
             .WithSuccessResult() // Repo1: Add GPG key
+            .WithSuccessResult() // Repo1: Remove conflicting .sources file
             .WithSuccessResult() // Repo1: Add source
             .WithSuccessResult() // Repo1: Install pkg
             .WithSuccessResult() // Repo2: Add GPG key
+            .WithSuccessResult() // Repo2: Remove conflicting .sources file
             .WithSuccessResult() // Repo2: Add source
             .WithSuccessResult(); // Repo2: Install pkg
 
@@ -591,6 +599,53 @@ public class AptRepoInstallerTests
         // Assert
         results.Should().HaveCount(4); // 2 repos + 2 packages
         results.Select(r => r.ItemName).Should().Contain(new[] { "repo1", "repo2", "pkg1", "pkg2" });
+    }
+
+    /// <summary>
+    /// Verifies that dottie removes a conflicting DEB822 .sources file before writing
+    /// the legacy .list file, preventing APT "configured multiple times" warnings.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the result of the asynchronous operation.</returns>
+    [Fact]
+    public async Task InstallAsync_WithSudo_RemovesConflictingSourcesFileBeforeWritingListAsync()
+    {
+        // Arrange
+        var mockDownloader = new Mock<HttpDownloader>();
+        mockDownloader
+            .Setup(d => d.DownloadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new byte[] { 0x01, 0x02, 0x03 });
+
+        var fakeRunner = new FakeProcessRunner()
+            .WithSuccessResult() // Add GPG key
+            .WithSuccessResult() // Remove conflicting .sources file
+            .WithSuccessResult() // Add .list source
+            .WithSuccessResult() // apt-get update
+            .WithSuccessResult(); // Install package
+
+        var installer = new AptRepoInstaller(mockDownloader.Object, fakeRunner);
+        var installBlock = new InstallBlock
+        {
+            AptRepos = new List<AptRepoItem>
+            {
+                new AptRepoItem
+                {
+                    Name = "vscode",
+                    Repo = "deb [arch=amd64,arm64] https://packages.microsoft.com/repos/vscode stable main",
+                    KeyUrl = "https://packages.microsoft.com/keys/microsoft.asc",
+                    Packages = new List<string> { "code" }
+                }
+            },
+        };
+        var context = new InstallContext { RepoRoot = "/repo", HasSudo = true };
+
+        // Act
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
+
+        // Assert
+        results.Should().NotBeEmpty();
+        fakeRunner.Calls.Should().Contain(c =>
+            c.FileName == "bash" &&
+            c.Arguments.Contains("rm -f /etc/apt/sources.list.d/vscode.sources"));
     }
 
     [Fact]

@@ -161,6 +161,14 @@ public class AptRepoInstaller : IInstallSource
         var sourcesPath = $"/etc/apt/sources.list.d/{repo.Name}.list";
         try
         {
+            // Remove any conflicting .sources file (DEB822 format) to avoid
+            // "Target ... is configured multiple times" warnings from APT.
+            var conflictingPath = $"/etc/apt/sources.list.d/{repo.Name}.sources";
+            await _processRunner.RunAsync(
+                "bash",
+                $"-c \"sudo rm -f {conflictingPath}\"",
+                cancellationToken: cancellationToken);
+
             var addSourceResult = await _processRunner.RunAsync(
                 "bash",
                 $"-c \"echo '{repo.Repo}' | sudo tee {sourcesPath} > /dev/null\"",

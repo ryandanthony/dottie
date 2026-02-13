@@ -1,0 +1,21 @@
+# Integration test: multiple binaries from the same GitHub repository
+# Verifies that profile inheritance preserves both entries when
+# two items share the same repo but target different binaries.
+
+profiles:
+  default:
+    install:
+      github:
+        - repo: ahmetb/kubectx
+          asset: "kubectx_v${RELEASE_VERSION}_linux_${ARCH}.tar.gz"
+          binary: kubectx
+
+        - repo: ahmetb/kubectx
+          asset: "kubens_v${RELEASE_VERSION}_linux_${ARCH}.tar.gz"
+          binary: kubens
+
+  work:
+    extends: default
+    install:
+      apt:
+        - curl

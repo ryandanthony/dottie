@@ -45,7 +45,7 @@ public class GithubReleaseItemTests
     }
 
     [Fact]
-    public void MergeKey_UsesRepoAsKey()
+    public void MergeKey_UsesRepoAndBinaryAsKey()
     {
         // Arrange
         var item = new GithubReleaseItem
@@ -60,7 +60,51 @@ public class GithubReleaseItemTests
         var mergeKey = mergeKeyProperty?.GetValue(item) as string;
 
         // Assert
-        mergeKey.Should().Be("junegunn/fzf");
+        mergeKey.Should().Be("junegunn/fzf::fzf");
+    }
+
+    [Fact]
+    public void MergeKey_FallsBackToAsset_WhenBinaryIsNull()
+    {
+        // Arrange
+        var item = new GithubReleaseItem
+        {
+            Repo = "jgraph/drawio-desktop",
+            Asset = "drawio-arm64-*.deb",
+        };
+
+        // Act
+        var mergeKeyProperty = typeof(GithubReleaseItem).GetProperty("MergeKey", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var mergeKey = mergeKeyProperty?.GetValue(item) as string;
+
+        // Assert
+        mergeKey.Should().Be("jgraph/drawio-desktop::drawio-arm64-*.deb");
+    }
+
+    [Fact]
+    public void MergeKey_DifferentBinaries_SameRepo_ProduceDifferentKeys()
+    {
+        // Arrange — kubectx/kubens pattern
+        var kubectx = new GithubReleaseItem
+        {
+            Repo = "ahmetb/kubectx",
+            Asset = "kubectx_v0.9.5_linux_x86_64.tar.gz",
+            Binary = "kubectx",
+        };
+        var kubens = new GithubReleaseItem
+        {
+            Repo = "ahmetb/kubectx",
+            Asset = "kubens_v0.9.5_linux_x86_64.tar.gz",
+            Binary = "kubens",
+        };
+
+        // Act
+        var mergeKeyProperty = typeof(GithubReleaseItem).GetProperty("MergeKey", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var key1 = mergeKeyProperty?.GetValue(kubectx) as string;
+        var key2 = mergeKeyProperty?.GetValue(kubens) as string;
+
+        // Assert
+        key1.Should().NotBe(key2);
     }
 
     [Fact]

@@ -128,7 +128,7 @@ public sealed class ProfileMerger
         {
             Apt = MergeLists(parent.Apt, child.Apt),
             Scripts = MergeLists(parent.Scripts, child.Scripts),
-            Github = MergeByKey(parent.Github, child.Github, g => g.Repo),
+            Github = MergeByKey(parent.Github, child.Github, g => g.MergeKey),
             Snaps = MergeByKey(parent.Snaps, child.Snaps, s => s.Name),
             AptRepos = MergeByKey(parent.AptRepos, child.AptRepos, a => a.Name),
             Fonts = MergeByKey(parent.Fonts, child.Fonts, f => f.Name),

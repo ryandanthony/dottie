@@ -55,6 +55,7 @@ public sealed record GithubReleaseItem
 
     /// <summary>
     /// Gets the unique identifier for merging during profile inheritance.
+    /// Combines repo and binary name so multiple assets from the same repo are preserved.
     /// </summary>
-    internal string MergeKey => Repo;
+    internal string MergeKey => $"{Repo}::{Binary ?? Asset}";
 }

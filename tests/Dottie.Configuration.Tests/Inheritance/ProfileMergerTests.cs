@@ -472,6 +472,7 @@ profiles:
       github:
         - repo: jgraph/drawio-desktop
           asset: ""drawio-arm64-*.deb""
+          binary: drawio
           type: deb
 ";
         var loader = new ConfigurationLoader();
@@ -493,6 +494,96 @@ profiles:
         github[0].Repo.Should().Be("jgraph/drawio-desktop");
         github[0].Type.Should().Be(Dottie.Configuration.Models.InstallBlocks.GithubReleaseAssetType.Deb);
         github[0].Asset.Should().Contain(".deb");
+    }
+
+    [Fact]
+    public void Resolve_GithubMultipleBinariesFromSameRepo_BothPreserved()
+    {
+        // Arrange — two entries from same repo with different binaries (kubectx/kubens pattern)
+        var yaml = @"
+profiles:
+  default:
+    install:
+      github:
+        - repo: ahmetb/kubectx
+          asset: ""kubectx_v${RELEASE_VERSION}_linux_${ARCH}.tar.gz""
+          binary: kubectx
+        - repo: ahmetb/kubectx
+          asset: ""kubens_v${RELEASE_VERSION}_linux_${ARCH}.tar.gz""
+          binary: kubens
+  work:
+    extends: default
+    install:
+      apt:
+        - kubectl
+";
+        var loader = new ConfigurationLoader();
+        var loadResult = loader.LoadFromString(yaml);
+        loadResult.IsSuccess.Should().BeTrue("fixture should load successfully");
+
+        var merger = new ProfileMerger(loadResult.Configuration!);
+
+        // Act
+        var result = merger.Resolve("work");
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Profile.Should().NotBeNull();
+        var github = result.Profile!.Install!.Github;
+
+        // Both entries from the same repo should be preserved
+        github.Should().HaveCount(2);
+        github.Should().Contain(g => string.Equals(g.Binary, "kubectx", StringComparison.Ordinal));
+        github.Should().Contain(g => string.Equals(g.Binary, "kubens", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Resolve_GithubMultipleBinariesFromSameRepo_ChildCanOverrideOne()
+    {
+        // Arrange — parent has kubectx+kubens, child overrides kubens asset
+        var yaml = @"
+profiles:
+  default:
+    install:
+      github:
+        - repo: ahmetb/kubectx
+          asset: ""kubectx_v${RELEASE_VERSION}_linux_${ARCH}.tar.gz""
+          binary: kubectx
+        - repo: ahmetb/kubectx
+          asset: ""kubens_v${RELEASE_VERSION}_linux_${ARCH}.tar.gz""
+          binary: kubens
+  work:
+    extends: default
+    install:
+      github:
+        - repo: ahmetb/kubectx
+          asset: ""kubens_v0.9.5_linux_amd64.tar.gz""
+          binary: kubens
+          version: ""0.9.5""
+";
+        var loader = new ConfigurationLoader();
+        var loadResult = loader.LoadFromString(yaml);
+        loadResult.IsSuccess.Should().BeTrue("fixture should load successfully");
+
+        var merger = new ProfileMerger(loadResult.Configuration!);
+
+        // Act
+        var result = merger.Resolve("work");
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Profile.Should().NotBeNull();
+        var github = result.Profile!.Install!.Github;
+
+        // Both binaries preserved, but kubens overridden by child
+        github.Should().HaveCount(2);
+
+        var kubectx = github.Single(g => string.Equals(g.Binary, "kubectx", StringComparison.Ordinal));
+        kubectx.Asset.Should().Contain("${RELEASE_VERSION}"); // still parent's
+
+        var kubens = github.Single(g => string.Equals(g.Binary, "kubens", StringComparison.Ordinal));
+        kubens.Version.Should().Be("0.9.5"); // child's override
+        kubens.Asset.Should().Contain("0.9.5"); // child's pinned asset
     }
 
     #endregion

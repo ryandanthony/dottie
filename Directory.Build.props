@@ -22,8 +22,8 @@
     <PackageReference Include="FestinaLente.CodeStandards" Version="*" />
   </ItemGroup>
 
-  <!-- StyleCop configuration -->
+  <!-- StyleCop configuration - our stylecop.json; NuGet package copy removed in Directory.Build.targets -->
   <ItemGroup>
-    <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json" Link="stylecop.json" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json" />
   </ItemGroup>
 </Project>

@@ -329,6 +329,7 @@ public sealed class ApplyCommand : AsyncCommand<ApplyCommandSettings>
             RepoRoot = repoRoot,
             HasSudo = sudoChecker.IsSudoAvailable(),
             DryRun = false,
+            UpdateExisting = true,
         };
     }
 

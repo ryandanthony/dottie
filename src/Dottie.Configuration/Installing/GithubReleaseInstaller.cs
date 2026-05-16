@@ -9,6 +9,7 @@ using Dottie.Configuration.Models.InstallBlocks;
 using Dottie.Configuration.Utilities;
 using Flurl.Http;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -26,6 +27,12 @@ public class GithubReleaseInstaller : IInstallSource
     private const int HttpSuccessMin = 200;
     private const int HttpSuccessMax = 300;
     private const int RequestTimeoutSeconds = 10;
+    private const int MajorVersionPartIndex = 0;
+    private const int MinorVersionPartIndex = 1;
+    private const int PatchVersionPartIndex = 2;
+    private const int MinimumSemanticVersionParts = 2;
+    private const int MaximumSemanticVersionParts = 3;
+    private static readonly Regex VersionRegex = new(@"[vV]?(?<version>\d+\.\d+(?:\.\d+)?(?:-[a-zA-Z0-9.-]+)?)", RegexOptions.Compiled | RegexOptions.ExplicitCapture, TimeSpan.FromSeconds(1));
 
     private readonly HttpDownloader _downloader;
     private readonly ArchiveExtractor _extractor;
@@ -95,19 +102,74 @@ public class GithubReleaseInstaller : IInstallSource
     {
         var binaryName = item.Binary ?? item.Repo;
 
-        // Check if binary is already installed (idempotency)
-        var installedCheck = await CheckBinaryInstalledAsync(binaryName, context, cancellationToken);
-        if (installedCheck != null)
+        if (!context.UpdateExisting)
         {
-            return installedCheck;
+            // Check if binary is already installed (idempotency)
+            var installedCheck = await CheckBinaryInstalledAsync(binaryName, context, cancellationToken);
+            if (installedCheck != null)
+            {
+                return installedCheck;
+            }
+
+            if (context.DryRun)
+            {
+                return await ValidateReleaseExistsAsync(item, cancellationToken);
+            }
+
+            return await DownloadAndInstallReleaseAsync(item, context, cancellationToken);
         }
 
-        if (context.DryRun)
+        return await InstallOrUpdateBinaryReleaseAsync(item, context, binaryName, cancellationToken);
+    }
+
+    private async Task<InstallResult> InstallOrUpdateBinaryReleaseAsync(
+        GithubReleaseItem item,
+        InstallContext context,
+        string binaryName,
+        CancellationToken cancellationToken)
+    {
+        var release = await GetGithubReleaseAsync(item, cancellationToken);
+        if (release == null)
         {
-            return await ValidateReleaseExistsAsync(item, cancellationToken);
+            return InstallResult.Failed(binaryName, SourceType, $"GitHub release not found (API returned null): {item.Repo}@{item.Version ?? LatestVersion}");
         }
 
-        return await DownloadAndInstallReleaseAsync(item, context, cancellationToken);
+        var resolvedItem = ResolveReleaseVersion(item, release);
+        var targetVersion = GetTargetVersion(item, release);
+        var installedBinary = await FindInstalledBinaryAsync(binaryName, context, cancellationToken);
+        if (installedBinary is { } existingBinary)
+        {
+            var installedVersion = await GetBinaryVersionAsync(existingBinary.Path, cancellationToken);
+            if (ShouldSkipExistingInstall(installedVersion, targetVersion, item.Version is not null))
+            {
+                return InstallResult.Skipped(binaryName, SourceType, BuildUpToDateMessage(existingBinary.Path, installedVersion, targetVersion));
+            }
+
+            if (context.DryRun)
+            {
+                return CreateDryRunUpdateResult(binaryName, installedVersion, targetVersion);
+            }
+            else
+            {
+                // Continue with the normal download/install flow when an update is required.
+            }
+        }
+        else if (context.DryRun)
+        {
+            return InstallResult.Success(binaryName, SourceType, message: $"GitHub release {item.Repo}@{targetVersion ?? LatestVersion} would be installed");
+        }
+        else
+        {
+            // No existing binary was found, so continue with a fresh install.
+        }
+
+        var matchingAsset = FindMatchingAsset(release, resolvedItem.Asset);
+        if (matchingAsset == null)
+        {
+            return InstallResult.Failed(resolvedItem.Binary ?? resolvedItem.Repo, SourceType, $"No asset matching pattern '{resolvedItem.Asset}' in release {item.Repo}@{item.Version ?? LatestVersion}");
+        }
+
+        return await DownloadAndExtractAssetAsync(resolvedItem, matchingAsset, context, cancellationToken);
     }
 
     private async Task<InstallResult> InstallDebReleaseItemAsync(GithubReleaseItem item, InstallContext context, CancellationToken cancellationToken)
@@ -399,7 +461,6 @@ public class GithubReleaseInstaller : IInstallSource
 
     private async Task<InstallResult> DownloadAndInstallDebAsync(GithubReleaseItem item, InstallContext context, CancellationToken cancellationToken)
     {
-        _ = context; // Used for future extensions
         var itemName = item.Repo;
 
         var release = await GetGithubReleaseAsync(item, cancellationToken);
@@ -423,10 +484,15 @@ public class GithubReleaseInstaller : IInstallSource
             return InstallResult.Failed(itemName, SourceType, "Asset does not appear to be a .deb package");
         }
 
-        return await InstallDebPackageAsync(item, matchingAsset, cancellationToken);
+        return await InstallDebPackageAsync(item, matchingAsset, context, GetTargetVersion(item, release), cancellationToken);
     }
 
-    private async Task<InstallResult> InstallDebPackageAsync(GithubReleaseItem item, GithubAsset asset, CancellationToken cancellationToken)
+    private async Task<InstallResult> InstallDebPackageAsync(
+        GithubReleaseItem item,
+        GithubAsset asset,
+        InstallContext context,
+        string? targetVersion,
+        CancellationToken cancellationToken)
     {
         var itemName = item.Repo;
         var tempDir = Path.Combine(Path.GetTempPath(), $"dottie-deb-{Guid.NewGuid():N}");
@@ -453,11 +519,15 @@ public class GithubReleaseInstaller : IInstallSource
             var dpkgDeb = await _processRunner.RunAsync("dpkg-deb", $"--showformat='${{Package}}' -W \"{debPath}\"", cancellationToken: cancellationToken);
             var packageName = dpkgDeb.StandardOutput.Trim().Trim('\'');
 
-            // Check if already installed (idempotency)
-            var dpkgStatus = await _processRunner.RunAsync("dpkg", $"-s {packageName}", cancellationToken: cancellationToken);
-            if (dpkgStatus.ExitCode == 0)
+            // Check if already installed (idempotency / upgrades)
+            var installedVersionResult = await _processRunner.RunAsync("dpkg-query", $"-W -f='${{Version}}' {packageName}", cancellationToken: cancellationToken);
+            if (installedVersionResult.ExitCode == 0)
             {
-                return InstallResult.Skipped(itemName, SourceType, $"{item.Repo}: package '{packageName}' already installed");
+                var installedVersion = installedVersionResult.StandardOutput.Trim().Trim('\'');
+                if (!context.UpdateExisting || ShouldSkipExistingInstall(installedVersion, targetVersion, item.Version is not null))
+                {
+                    return InstallResult.Skipped(itemName, SourceType, $"{item.Repo}: package '{packageName}' is already up to date");
+                }
             }
 
             // Install the .deb package
@@ -480,6 +550,170 @@ public class GithubReleaseInstaller : IInstallSource
         {
             TryDeleteDirectory(tempDir);
         }
+    }
+
+    private async Task<InstalledBinaryInfo?> FindInstalledBinaryAsync(string binaryName, InstallContext context, CancellationToken cancellationToken)
+    {
+        var binPath = Path.Combine(context.BinDirectory, binaryName);
+        if (File.Exists(binPath))
+        {
+            return new InstalledBinaryInfo(binPath);
+        }
+
+        if (OperatingSystem.IsWindows())
+        {
+            var exePath = binPath + ".exe";
+            if (File.Exists(exePath))
+            {
+                return new InstalledBinaryInfo(exePath);
+            }
+        }
+
+        var pathCheck = await CheckPathForBinaryAsync(binaryName, cancellationToken);
+        return pathCheck is null ? null : new InstalledBinaryInfo(pathCheck);
+    }
+
+    private async Task<string?> GetBinaryVersionAsync(string binaryPath, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await _processRunner.RunAsync(binaryPath, "--version", cancellationToken: cancellationToken);
+            if (!result.Success || string.IsNullOrWhiteSpace(result.StandardOutput))
+            {
+                return null;
+            }
+
+            var firstLine = result.StandardOutput
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                .FirstOrDefault();
+
+            if (string.IsNullOrWhiteSpace(firstLine))
+            {
+                return null;
+            }
+
+            var match = VersionRegex.Match(firstLine.Trim());
+            return match.Success ? match.Groups["version"].Value : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string? GetTargetVersion(GithubReleaseItem item, GithubRelease release)
+    {
+        if (!string.IsNullOrWhiteSpace(release.TagName))
+        {
+            return release.TagName;
+        }
+
+        return string.IsNullOrWhiteSpace(item.Version) ? null : item.Version;
+    }
+
+    private static bool ShouldSkipExistingInstall(string? installedVersion, string? targetVersion, bool isPinnedVersion)
+    {
+        if (string.IsNullOrWhiteSpace(installedVersion) || string.IsNullOrWhiteSpace(targetVersion))
+        {
+            return false;
+        }
+
+        if (VersionTextEquals(installedVersion, targetVersion))
+        {
+            return true;
+        }
+
+        if (!TryCompareSemanticVersions(installedVersion, targetVersion, out var comparison))
+        {
+            return false;
+        }
+
+        return isPinnedVersion ? comparison == 0 : comparison >= 0;
+    }
+
+    private static string BuildUpToDateMessage(string installedPath, string? installedVersion, string? targetVersion)
+    {
+        if (!string.IsNullOrWhiteSpace(installedVersion))
+        {
+            return $"Already up to date at {installedPath} ({installedVersion})";
+        }
+
+        if (!string.IsNullOrWhiteSpace(targetVersion))
+        {
+            return $"Already up to date at {installedPath} ({NormalizeVersionText(targetVersion)})";
+        }
+
+        return $"Already up to date at {installedPath}";
+    }
+
+    private static InstallResult CreateDryRunUpdateResult(string binaryName, string? installedVersion, string? targetVersion)
+    {
+        if (!string.IsNullOrWhiteSpace(installedVersion) && !string.IsNullOrWhiteSpace(targetVersion))
+        {
+            return InstallResult.Success(binaryName, InstallSourceType.GithubRelease, message: $"Would update from {installedVersion} to {NormalizeVersionText(targetVersion)}");
+        }
+
+        return InstallResult.Success(binaryName, InstallSourceType.GithubRelease, message: "Would update installed binary");
+    }
+
+    private static bool VersionTextEquals(string left, string right)
+        => string.Equals(NormalizeVersionText(left), NormalizeVersionText(right), StringComparison.OrdinalIgnoreCase);
+
+    private static string NormalizeVersionText(string version)
+        => version.Trim().TrimStart('v', 'V');
+
+    private static bool TryCompareSemanticVersions(string left, string right, out int comparison)
+    {
+        comparison = 0;
+
+        if (!TryParseSemanticVersion(left, out var leftVersion) || !TryParseSemanticVersion(right, out var rightVersion))
+        {
+            return false;
+        }
+
+        comparison = leftVersion.CompareSemanticVersion(rightVersion);
+        return true;
+    }
+
+    private static bool TryParseSemanticVersion(string value, out SemanticVersion version)
+    {
+        version = default;
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        var normalized = NormalizeVersionText(value);
+        var plusIndex = normalized.IndexOf('+', StringComparison.Ordinal);
+        if (plusIndex >= 0)
+        {
+            normalized = normalized[..plusIndex];
+        }
+
+        var dashIndex = normalized.IndexOf('-', StringComparison.Ordinal);
+        var prerelease = dashIndex >= 0 ? normalized[(dashIndex + 1)..] : null;
+        var core = dashIndex >= 0 ? normalized[..dashIndex] : normalized;
+        var parts = core.Split('.');
+        if (parts.Length is < MinimumSemanticVersionParts or > MaximumSemanticVersionParts)
+        {
+            return false;
+        }
+
+        if (!int.TryParse(parts[MajorVersionPartIndex], NumberStyles.None, CultureInfo.InvariantCulture, out var major) ||
+            !int.TryParse(parts[MinorVersionPartIndex], NumberStyles.None, CultureInfo.InvariantCulture, out var minor))
+        {
+            return false;
+        }
+
+        var patch = 0;
+        if (parts.Length == MaximumSemanticVersionParts &&
+            !int.TryParse(parts[PatchVersionPartIndex], NumberStyles.None, CultureInfo.InvariantCulture, out patch))
+        {
+            return false;
+        }
+
+        version = new SemanticVersion(major, minor, patch, prerelease);
+        return true;
     }
 
     private static string BuildReleaseUrl(string repo, string? version)
@@ -604,6 +838,100 @@ public class GithubReleaseInstaller : IInstallSource
         }
 
         return null;
+    }
+
+    private readonly record struct InstalledBinaryInfo(string Path);
+
+    private readonly record struct SemanticVersion(int Major, int Minor, int Patch, string? Prerelease)
+    {
+        public int CompareSemanticVersion(SemanticVersion other)
+        {
+            var major = Major.CompareTo(other.Major);
+            if (major != 0)
+            {
+                return major;
+            }
+
+            var minor = Minor.CompareTo(other.Minor);
+            if (minor != 0)
+            {
+                return minor;
+            }
+
+            var patch = Patch.CompareTo(other.Patch);
+            if (patch != 0)
+            {
+                return patch;
+            }
+
+            return ComparePrerelease(Prerelease, other.Prerelease);
+        }
+
+        private static int ComparePrerelease(string? left, string? right)
+        {
+            if (string.IsNullOrEmpty(left) && string.IsNullOrEmpty(right))
+            {
+                return 0;
+            }
+
+            if (string.IsNullOrEmpty(left))
+            {
+                return 1;
+            }
+
+            if (string.IsNullOrEmpty(right))
+            {
+                return -1;
+            }
+
+            var leftParts = left.Split('.');
+            var rightParts = right.Split('.');
+            var length = Math.Max(leftParts.Length, rightParts.Length);
+
+            for (var i = 0; i < length; i++)
+            {
+                if (i >= leftParts.Length)
+                {
+                    return -1;
+                }
+
+                if (i >= rightParts.Length)
+                {
+                    return 1;
+                }
+
+                var partComparison = ComparePrereleasePart(leftParts[i], rightParts[i]);
+                if (partComparison != 0)
+                {
+                    return partComparison;
+                }
+            }
+
+            return 0;
+        }
+
+        private static int ComparePrereleasePart(string left, string right)
+        {
+            var leftNumeric = int.TryParse(left, NumberStyles.None, CultureInfo.InvariantCulture, out var leftValue);
+            var rightNumeric = int.TryParse(right, NumberStyles.None, CultureInfo.InvariantCulture, out var rightValue);
+
+            if (leftNumeric && rightNumeric)
+            {
+                return leftValue.CompareTo(rightValue);
+            }
+
+            if (leftNumeric)
+            {
+                return -1;
+            }
+
+            if (rightNumeric)
+            {
+                return 1;
+            }
+
+            return string.Compare(left, right, StringComparison.OrdinalIgnoreCase);
+        }
     }
 
     // GitHub API response models

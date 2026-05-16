@@ -68,15 +68,11 @@ public class SnapPackageInstaller : IInstallSource
         {
             try
             {
-                var arguments = $"snap install {snap.Name}";
-                if (snap.Classic)
-                {
-                    arguments += " --classic";
-                }
+                var arguments = await BuildSnapCommandArgumentsAsync(snap, context.UpdateExisting, cancellationToken);
 
                 var processResult = await _processRunner.RunAsync("sudo", arguments, cancellationToken: cancellationToken);
 
-                results.Add(processResult.Success ? InstallResult.Success(snap.Name, SourceType) : InstallResult.Failed(snap.Name, SourceType, $"snap install failed with exit code {processResult.ExitCode}"));
+                results.Add(processResult.Success ? InstallResult.Success(snap.Name, SourceType) : InstallResult.Failed(snap.Name, SourceType, $"snap command failed with exit code {processResult.ExitCode}"));
             }
             catch (Exception ex)
             {
@@ -87,5 +83,27 @@ public class SnapPackageInstaller : IInstallSource
         }
 
         return results;
+    }
+
+    private async Task<string> BuildSnapCommandArgumentsAsync(SnapItem snap, bool updateExisting, CancellationToken cancellationToken)
+    {
+        if (updateExisting && await IsSnapInstalledAsync(snap.Name, cancellationToken))
+        {
+            return $"snap refresh {snap.Name}";
+        }
+
+        var arguments = $"snap install {snap.Name}";
+        if (snap.Classic)
+        {
+            arguments += " --classic";
+        }
+
+        return arguments;
+    }
+
+    private async Task<bool> IsSnapInstalledAsync(string snapName, CancellationToken cancellationToken)
+    {
+        var result = await _processRunner.RunAsync("snap", $"list {snapName}", cancellationToken: cancellationToken);
+        return result.ExitCode == 0;
     }
 }

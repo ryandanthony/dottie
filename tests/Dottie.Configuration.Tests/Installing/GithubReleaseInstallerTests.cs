@@ -1423,7 +1423,7 @@ public class GithubReleaseInstallerTests : IDisposable
         var fakeRunner = new FakeProcessRunner()
             .WithResult(ProcessResult.Succeeded("/usr/bin/dpkg")) // which dpkg
             .WithResult(ProcessResult.Succeeded("drawio"))         // dpkg-deb -W
-            .WithResult(ProcessResult.Succeeded("Status: install ok installed")); // dpkg -s → installed!
+            .WithResult(ProcessResult.Succeeded("1.0.0"));         // dpkg-query → installed version
 
         var installer = new GithubReleaseInstaller(mockDownloader.Object, fakeRunner);
         var installBlock = new InstallBlock
@@ -1446,7 +1446,7 @@ public class GithubReleaseInstallerTests : IDisposable
         // Assert
         results.Should().HaveCount(1);
         results.First().Status.Should().Be(InstallStatus.Skipped);
-        results.First().Message.Should().Contain("already installed");
+        results.First().Message.Should().Contain("already up to date");
 
         // Verify dpkg -i was NOT called
         fakeRunner.Calls.Should().NotContain(c => c.FileName == "sudo" && c.Arguments.Contains("dpkg -i"));
@@ -1477,7 +1477,7 @@ public class GithubReleaseInstallerTests : IDisposable
         var fakeRunner = new FakeProcessRunner()
             .WithResult(ProcessResult.Succeeded("/usr/bin/dpkg")) // which dpkg
             .WithResult(ProcessResult.Succeeded("app"))            // dpkg-deb -W
-            .WithResult(ProcessResult.Failed(1, "not installed"))  // dpkg -s → NOT installed
+            .WithResult(ProcessResult.Failed(1, "not installed"))  // dpkg-query → NOT installed
             .WithResult(ProcessResult.Succeeded())                 // sudo dpkg -i
             .WithResult(ProcessResult.Succeeded());                // sudo apt-get install -f -y
 
@@ -1729,7 +1729,7 @@ public class GithubReleaseInstallerTests : IDisposable
         var fakeRunner = new FakeProcessRunner()
             .WithResult(ProcessResult.Succeeded("/usr/bin/dpkg")) // which dpkg
             .WithResult(ProcessResult.Succeeded("app"))            // dpkg-deb -W
-            .WithResult(ProcessResult.Failed(1, "not installed"))  // dpkg -s
+            .WithResult(ProcessResult.Failed(1, "not installed"))  // dpkg-query
             .WithResult(ProcessResult.Failed(1, "dpkg: error processing archive")); // dpkg -i fails
 
         var installer = new GithubReleaseInstaller(mockDownloader.Object, fakeRunner);
@@ -1781,7 +1781,7 @@ public class GithubReleaseInstallerTests : IDisposable
         var fakeRunner = new FakeProcessRunner()
             .WithResult(ProcessResult.Succeeded("/usr/bin/dpkg")) // which dpkg
             .WithResult(ProcessResult.Succeeded("app"))            // dpkg-deb -W
-            .WithResult(ProcessResult.Failed(1, "not installed"))  // dpkg -s
+            .WithResult(ProcessResult.Failed(1, "not installed"))  // dpkg-query
             .WithResult(ProcessResult.Succeeded())                 // dpkg -i succeeds
             .WithResult(ProcessResult.Failed(1, "unmet dependencies")); // apt-get install -f fails
 
@@ -1807,6 +1807,190 @@ public class GithubReleaseInstallerTests : IDisposable
         results.Should().HaveCount(1);
         results.First().Status.Should().Be(InstallStatus.Failed);
         results.First().Message.Should().Contain("Dependency resolution failed");
+    }
+
+    [Fact]
+    public async Task InstallAsync_WithUpdateExistingAndOutdatedManagedBinary_AttemptsUpgradeAsync()
+    {
+        // Arrange
+        _httpTest = new HttpTest();
+        _httpTest.RespondWithJson(new
+        {
+            tag_name = "v2.0.0",
+            assets = new[]
+            {
+                new { name = "app-linux-amd64.tar.gz", browser_download_url = "https://example.com/app.tar.gz" },
+            },
+        });
+
+        var tempBinDir = Path.Combine(Path.GetTempPath(), $"dottie-test-bin-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempBinDir);
+
+        try
+        {
+            await File.WriteAllTextAsync(Path.Combine(tempBinDir, "mybin"), "binary content");
+
+            var mockDownloader = new Mock<HttpDownloader>();
+            mockDownloader
+                .Setup(d => d.DownloadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new HttpRequestException("download triggered"));
+
+            var processRunner = new FakeProcessRunner()
+                .WithResult(ProcessResult.Succeeded("v1.0.0")); // mybin --version
+
+            var installer = new GithubReleaseInstaller(mockDownloader.Object, processRunner);
+            var installBlock = new InstallBlock
+            {
+                Github = new List<GithubReleaseItem>
+                {
+                    new()
+                    {
+                        Repo = "owner/repo",
+                        Asset = "app-linux-amd64.tar.gz",
+                        Binary = "mybin",
+                    },
+                },
+            };
+            var context = new InstallContext
+            {
+                RepoRoot = "/repo",
+                BinDirectory = tempBinDir,
+                UpdateExisting = true,
+            };
+
+            // Act
+            var results = await installer.InstallAsync(installBlock, context, null);
+
+            // Assert
+            results.Should().HaveCount(1);
+            results.First().Status.Should().Be(InstallStatus.Failed);
+            results.First().Message.Should().Contain("download triggered");
+        }
+        finally
+        {
+            if (Directory.Exists(tempBinDir))
+            {
+                Directory.Delete(tempBinDir, true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task InstallAsync_WithUpdateExistingAndCurrentManagedBinary_SkipsUpgradeAsync()
+    {
+        // Arrange
+        _httpTest = new HttpTest();
+        _httpTest.RespondWithJson(new
+        {
+            tag_name = "v2.0.0",
+            assets = new[]
+            {
+                new { name = "app-linux-amd64.tar.gz", browser_download_url = "https://example.com/app.tar.gz" },
+            },
+        });
+
+        var tempBinDir = Path.Combine(Path.GetTempPath(), $"dottie-test-bin-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempBinDir);
+
+        try
+        {
+            await File.WriteAllTextAsync(Path.Combine(tempBinDir, "mybin"), "binary content");
+
+            var mockDownloader = new Mock<HttpDownloader>();
+            var processRunner = new FakeProcessRunner()
+                .WithResult(ProcessResult.Succeeded("v2.0.0")); // mybin --version
+
+            var installer = new GithubReleaseInstaller(mockDownloader.Object, processRunner);
+            var installBlock = new InstallBlock
+            {
+                Github = new List<GithubReleaseItem>
+                {
+                    new()
+                    {
+                        Repo = "owner/repo",
+                        Asset = "app-linux-amd64.tar.gz",
+                        Binary = "mybin",
+                    },
+                },
+            };
+            var context = new InstallContext
+            {
+                RepoRoot = "/repo",
+                BinDirectory = tempBinDir,
+                UpdateExisting = true,
+            };
+
+            // Act
+            var results = await installer.InstallAsync(installBlock, context, null);
+
+            // Assert
+            results.Should().HaveCount(1);
+            results.First().Status.Should().Be(InstallStatus.Skipped);
+            results.First().Message.Should().Contain("Already up to date");
+            mockDownloader.Verify(d => d.DownloadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+        finally
+        {
+            if (Directory.Exists(tempBinDir))
+            {
+                Directory.Delete(tempBinDir, true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task InstallSingleItem_TypeDeb_WithUpdateExistingAndOutdatedPackage_ReinstallsAsync()
+    {
+        // Arrange
+        _httpTest = new HttpTest();
+        _httpTest.RespondWithJson(new
+        {
+            tag_name = "v2.0.0",
+            assets = new[]
+            {
+                new { name = "app.deb", browser_download_url = "https://example.com/app.deb" },
+            },
+        });
+
+        var mockDownloader = new Mock<HttpDownloader>();
+        mockDownloader
+            .Setup(d => d.DownloadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new byte[] { 0xDE, 0xB0 });
+
+        var fakeRunner = new FakeProcessRunner()
+            .WithResult(ProcessResult.Succeeded("/usr/bin/dpkg")) // which dpkg
+            .WithResult(ProcessResult.Succeeded("app"))            // dpkg-deb -W
+            .WithResult(ProcessResult.Succeeded("1.0.0"))          // dpkg-query
+            .WithResult(ProcessResult.Succeeded())                 // sudo dpkg -i
+            .WithResult(ProcessResult.Succeeded());                // sudo apt-get install -f -y
+
+        var installer = new GithubReleaseInstaller(mockDownloader.Object, fakeRunner);
+        var installBlock = new InstallBlock
+        {
+            Github = new List<GithubReleaseItem>
+            {
+                new()
+                {
+                    Repo = "owner/app",
+                    Asset = "app.deb",
+                    Type = GithubReleaseAssetType.Deb,
+                },
+            },
+        };
+        var context = new InstallContext
+        {
+            RepoRoot = "/repo",
+            HasSudo = true,
+            UpdateExisting = true,
+        };
+
+        // Act
+        var results = await installer.InstallAsync(installBlock, context, null);
+
+        // Assert
+        results.Should().HaveCount(1);
+        results.First().Status.Should().Be(InstallStatus.Success);
+        fakeRunner.Calls.Should().Contain(c => c.FileName == "sudo" && c.Arguments.Contains("dpkg -i"));
     }
 
     #endregion

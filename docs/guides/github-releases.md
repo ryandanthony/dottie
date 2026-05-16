@@ -154,13 +154,15 @@ The binary is extracted and placed in `~/bin/`.
 
 ## Idempotency
 
-dottie checks if the binary already exists in `~/bin/` before downloading:
+dottie treats repeated runs as safe, but it now upgrades managed binaries when it can tell a newer release is available:
 
 ```
-⊘ rg Skipped (GithubRelease) - Already installed in ~/bin/
+⊘ rg Skipped (GithubRelease) - Already up to date at ~/bin/rg (14.1.0)
 ```
 
-To reinstall, manually remove the binary first:
+If dottie can compare the installed and target versions, it skips binaries that are already current and upgrades ones that are older. If the item is pinned with `version`, dottie keeps that exact version.
+
+To force a reinstall of the same version, manually remove the binary first:
 
 ```bash
 rm ~/bin/rg

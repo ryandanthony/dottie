@@ -128,6 +128,7 @@ public sealed class InstallCommand : AsyncCommand<InstallCommandSettings>
             RepoRoot = repoRoot,
             HasSudo = sudoChecker.IsSudoAvailable(),
             DryRun = settings.DryRun,
+            UpdateExisting = true,
         };
     }
 

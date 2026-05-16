@@ -64,4 +64,12 @@ public sealed record InstallContext
     /// True if this is a dry run; otherwise, false.
     /// </value>
     public bool DryRun { get; init; }
+
+    /// <summary>
+    /// Gets a value indicating whether installers should update existing managed applications when possible.
+    /// </summary>
+    /// <value>
+    /// True to upgrade existing applications to the configured or latest version when supported; otherwise, false.
+    /// </value>
+    public bool UpdateExisting { get; init; }
 }

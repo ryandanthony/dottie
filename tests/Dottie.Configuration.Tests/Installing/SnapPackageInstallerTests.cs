@@ -451,6 +451,39 @@ public class SnapPackageInstallerTests
         fakeRunner.Calls[0].Arguments.Should().NotContain("--classic");
     }
 
+    [Fact]
+    public async Task InstallAsync_WithUpdateExisting_RefreshesInstalledSnapAsync()
+    {
+        // Arrange
+        var fakeRunner = new FakeProcessRunner()
+            .WithSuccessResult() // snap list vlc
+            .WithSuccessResult(); // sudo snap refresh vlc
+        var installer = new SnapPackageInstaller(fakeRunner);
+        var installBlock = new InstallBlock
+        {
+            Snaps = new List<SnapItem>
+            {
+                new() { Name = "vlc", Classic = false }
+            },
+        };
+        var context = new InstallContext
+        {
+            RepoRoot = "/repo",
+            HasSudo = true,
+            UpdateExisting = true,
+        };
+
+        // Act
+        var results = await installer.InstallAsync(installBlock, context, null, CancellationToken.None);
+
+        // Assert
+        results.Should().HaveCount(1);
+        results.First().Status.Should().Be(InstallStatus.Success);
+        fakeRunner.Calls.Should().Contain(c => c.FileName == "snap" && c.Arguments == "list vlc");
+        fakeRunner.Calls.Should().Contain(c => c.FileName == "sudo" && c.Arguments == "snap refresh vlc");
+        fakeRunner.Calls.Should().NotContain(c => c.FileName == "sudo" && c.Arguments == "snap install vlc");
+    }
+
     /// <summary>
     ///
     /// </summary>

@@ -27,13 +27,13 @@ This command is currently in development. Documentation will be updated when the
 | `--dry-run` | `-d` | Preview changes without applying |
 | `--force` | `-f` | Backup existing files and overwrite conflicts |
 
-## Planned Behavior
+## Behavior
 
 The `apply` command will:
 
 1. Validate the configuration
 2. Create all dotfile symlinks (like `link`)
-3. Install all software packages (like `install`)
+3. Install or update all configured software (like `install`)
 
 This is equivalent to running:
 
@@ -42,6 +42,8 @@ This is equivalent to running:
 > dottie link --profile <profile>
 > dottie install --profile <profile>
 ```
+
+When `apply` reaches the installation phase, it uses the same upgrade behavior as `install`, including updating managed GitHub-release binaries and refreshing installed snap packages.
 
 ## Current Workaround
 

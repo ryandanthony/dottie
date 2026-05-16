@@ -60,9 +60,15 @@ dottie installs components in a specific order to handle dependencies correctly:
 5. **Fonts** — Installed to `~/.local/share/fonts/`
 6. **Snap Packages** — Snap store applications
 
-## Idempotency
+## Upgrade Behavior
 
-Already-installed tools are automatically detected and skipped. Running `dottie install` multiple times is safe and efficient.
+Running `dottie install` is safe to repeat, but it is no longer strictly install-once:
+
+- GitHub release binaries in your managed install set are upgraded to the configured version, or to the latest release when the item is not pinned.
+- Snap packages are refreshed when they are already installed.
+- APT-based installs continue to rely on the package manager to pull the newest candidate version.
+
+Version comparisons use semantic-version style matching when dottie can determine both the installed and target versions cleanly.
 
 ## Output Examples
 
@@ -83,7 +89,7 @@ Installation Summary:
 ```
 Dry Run Mode: Previewing installation without making changes
 ✓ rg Success (GithubRelease) - GitHub release BurntSushi/ripgrep@latest would be installed
-⊘ fd Skipped (GithubRelease) - Already installed in ~/bin/
+✓ fd Success (GithubRelease) - Would update from 9.0.0 to 10.0.0
 
 Installation Summary:
   ✓ Succeeded: 1

@@ -370,8 +370,11 @@ public class GithubReleaseInstallerTests : IDisposable
         // Arrange
         _httpTest = new HttpTest();
         _httpTest
-            .RespondWith(status: 200) // First item succeeds
-            .RespondWith(status: 404); // Second item not found
+            .ForCallsTo("https://api.github.com/repos/owner/exists/releases/latest")
+            .RespondWith(status: 200);
+        _httpTest
+            .ForCallsTo("https://api.github.com/repos/owner/notexists/releases/latest")
+            .RespondWith(status: 404);
 
         var installer = new GithubReleaseInstaller();
         var installBlock = new InstallBlock

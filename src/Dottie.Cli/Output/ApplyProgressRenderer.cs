@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Dottie.Cli.Commands;
 using Dottie.Cli.Models;
 using Dottie.Configuration.Inheritance;
 using Dottie.Configuration.Installing;
@@ -262,13 +263,17 @@ public sealed class ApplyProgressRenderer : IApplyProgressRenderer
         // Group by source type
         var grouped = installPhase.Results
             .GroupBy(r => r.SourceType)
-            .OrderBy(g => g.Key);
+            .OrderBy(g => InstallerProgressHelper.GetSourceTypeOrder(g.Key));
 
         foreach (var group in grouped)
         {
             RenderInstallGroup(group);
         }
 
+        AnsiConsole.MarkupLine($"  Progress: [bold]{installPhase.CompletedCount}/{installPhase.TotalCount}[/] complete ([bold]{installPhase.CompletionPercentage}%[/])");
+        AnsiConsole.MarkupLine($"  [green]✓ Installed/Updated:[/] {installPhase.InstalledCount}");
+        AnsiConsole.MarkupLine($"  [yellow]○ Already current:[/] {installPhase.SkippedCount}");
+        AnsiConsole.MarkupLine($"  [blue]→ Left to fix:[/] {installPhase.RemainingCount}");
         AnsiConsole.WriteLine();
     }
 
@@ -322,10 +327,12 @@ public sealed class ApplyProgressRenderer : IApplyProgressRenderer
         var skippedCount = linkSkipped + installSkipped;
         var failedCount = linkFailed + installFailed;
 
+        AnsiConsole.MarkupLine($"  Progress: [bold]{result.CompletedOperationCount}/{result.TotalOperationCount}[/] complete ([bold]{result.CompletionPercentage}%[/])");
         AnsiConsole.MarkupLine($"  Total: {totalOperations} operations");
         AnsiConsole.MarkupLine($"    [green]✓[/] Success: {successCount}");
         AnsiConsole.MarkupLine($"    [yellow]○[/] Skipped: {skippedCount}");
         AnsiConsole.MarkupLine($"    [red]✗[/] Failed: {failedCount}");
+        AnsiConsole.MarkupLine($"    [blue]→[/] Left: {result.RemainingOperationCount}");
 
         AnsiConsole.WriteLine();
 
@@ -343,14 +350,5 @@ public sealed class ApplyProgressRenderer : IApplyProgressRenderer
         }
     }
 
-    private static string GetSourceTypeName(InstallSourceType sourceType) => sourceType switch
-    {
-        InstallSourceType.GithubRelease => "GitHub Releases",
-        InstallSourceType.AptPackage => "APT Packages",
-        InstallSourceType.AptRepo => "APT Repositories",
-        InstallSourceType.Script => "Shell Scripts",
-        InstallSourceType.Font => "Fonts",
-        InstallSourceType.SnapPackage => "Snap Packages",
-        _ => "Other",
-    };
+    private static string GetSourceTypeName(InstallSourceType sourceType) => InstallerProgressHelper.GetSourceTypeName(sourceType);
 }

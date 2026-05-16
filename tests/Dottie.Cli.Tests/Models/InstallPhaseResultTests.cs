@@ -101,4 +101,28 @@ public sealed class InstallPhaseResultTests
         // Assert
         result.Results.Should().BeEmpty();
     }
+
+    [Fact]
+    public void SummaryProperties_WithMixedResults_ReturnExpectedCounts()
+    {
+        // Arrange
+        var result = InstallPhaseResult.Executed(
+        [
+            InstallResult.Success("package1", InstallSourceType.AptPackage),
+            InstallResult.Success("package2", InstallSourceType.GithubRelease),
+            InstallResult.Skipped("package3", InstallSourceType.Script, "Already current"),
+            InstallResult.Warning("package4", InstallSourceType.Font, "Needs attention"),
+            InstallResult.Failed("package5", InstallSourceType.SnapPackage, "Failed"),
+        ]);
+
+        // Assert
+        result.TotalCount.Should().Be(5);
+        result.InstalledCount.Should().Be(2);
+        result.SkippedCount.Should().Be(1);
+        result.CompletedCount.Should().Be(3);
+        result.WarningCount.Should().Be(1);
+        result.FailedCount.Should().Be(1);
+        result.RemainingCount.Should().Be(2);
+        result.CompletionPercentage.Should().Be(60);
+    }
 }

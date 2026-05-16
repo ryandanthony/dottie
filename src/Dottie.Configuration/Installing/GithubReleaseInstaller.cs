@@ -63,29 +63,42 @@ public class GithubReleaseInstaller : IInstallSource
 
         ArgumentNullException.ThrowIfNull(context);
 
-        var results = new List<InstallResult>();
-
         if (installBlock.Github == null || installBlock.Github.Count == 0)
         {
-            return results;
+            return [];
         }
 
-        foreach (var item in installBlock.Github)
-        {
-            try
-            {
-                var result = await InstallGithubReleaseItemAsync(item, context, cancellationToken);
-                results.Add(result);
-            }
-            catch (Exception ex)
-            {
-                results.Add(InstallResult.Failed(item.Binary ?? item.Repo, SourceType, $"Failed to install from {item.Repo}: {ex.Message}"));
-            }
+        var installTasks = installBlock.Github
+            .Select((item, index) => InstallReleaseItemAsync(item, index, context, onItemComplete, cancellationToken))
+            .ToArray();
 
+        var results = await Task.WhenAll(installTasks);
+        return results
+            .OrderBy(result => result.Index)
+            .Select(result => result.InstallResult)
+            .ToList();
+    }
+
+    private async Task<IndexedInstallResult> InstallReleaseItemAsync(
+        GithubReleaseItem item,
+        int index,
+        InstallContext context,
+        Action? onItemComplete,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await InstallGithubReleaseItemAsync(item, context, cancellationToken);
+            return new IndexedInstallResult(index, result);
+        }
+        catch (Exception ex)
+        {
+            return new IndexedInstallResult(index, InstallResult.Failed(item.Binary ?? item.Repo, SourceType, $"Failed to install from {item.Repo}: {ex.Message}"));
+        }
+        finally
+        {
             onItemComplete?.Invoke();
         }
-
-        return results;
     }
 
     private async Task<InstallResult> InstallGithubReleaseItemAsync(GithubReleaseItem item, InstallContext context, CancellationToken cancellationToken)
@@ -841,6 +854,7 @@ public class GithubReleaseInstaller : IInstallSource
     }
 
     private readonly record struct InstalledBinaryInfo(string Path);
+    private readonly record struct IndexedInstallResult(int Index, InstallResult InstallResult);
 
     private readonly record struct SemanticVersion(int Major, int Minor, int Patch, string? Prerelease)
     {

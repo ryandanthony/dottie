@@ -64,15 +64,33 @@ public class ScriptRunner : IInstallSource
 
     private async Task<List<InstallResult>> ExecuteScriptsAsync(IReadOnlyList<string> scripts, InstallContext context, Action? onItemComplete, CancellationToken cancellationToken)
     {
-        var results = new List<InstallResult>();
-        foreach (var scriptPath in scripts)
+        var executionTasks = scripts
+            .Select((scriptPath, index) => ExecuteScriptAsync(scriptPath, index, context, onItemComplete, cancellationToken))
+            .ToArray();
+
+        var results = await Task.WhenAll(executionTasks);
+        return results
+            .OrderBy(result => result.Index)
+            .Select(result => result.InstallResult)
+            .ToList();
+    }
+
+    private async Task<IndexedInstallResult> ExecuteScriptAsync(
+        string scriptPath,
+        int index,
+        InstallContext context,
+        Action? onItemComplete,
+        CancellationToken cancellationToken)
+    {
+        try
         {
             var result = await ExecuteSingleScriptAsync(scriptPath, context, cancellationToken);
-            results.Add(result);
+            return new IndexedInstallResult(index, result);
+        }
+        finally
+        {
             onItemComplete?.Invoke();
         }
-
-        return results;
     }
 
     private async Task<InstallResult> ExecuteSingleScriptAsync(string scriptPath, InstallContext context, CancellationToken cancellationToken)
@@ -105,4 +123,6 @@ public class ScriptRunner : IInstallSource
             return InstallResult.Failed(scriptPath, SourceType, $"Exception during script execution: {ex.Message}");
         }
     }
+
+    private readonly record struct IndexedInstallResult(int Index, InstallResult InstallResult);
 }

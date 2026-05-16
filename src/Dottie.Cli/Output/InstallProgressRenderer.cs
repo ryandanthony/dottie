@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using Dottie.Cli.Models;
 using Dottie.Configuration.Installing;
 using Spectre.Console;
 
@@ -59,31 +60,23 @@ public sealed class InstallProgressRenderer : IInstallProgressRenderer
             RenderProgress(result);
         }
 
-        var succeeded = resultList.Count(r => r.Status == InstallStatus.Success);
-        var failed = resultList.Count(r => r.Status == InstallStatus.Failed);
-        var skipped = resultList.Count(r => r.Status == InstallStatus.Skipped);
-        var warnings = resultList.Count(r => r.Status == InstallStatus.Warning);
+        var summary = InstallPhaseResult.Executed(resultList);
 
         AnsiConsole.WriteLine();
         AnsiConsole.MarkupLine("[bold]Installation Summary:[/]");
-        if (succeeded > 0)
+        AnsiConsole.MarkupLine($"  Progress: [bold]{summary.CompletedCount}/{summary.TotalCount}[/] complete ([bold]{summary.CompletionPercentage}%[/])");
+        AnsiConsole.MarkupLine($"  [green]✓ Installed/Updated:[/] {summary.InstalledCount}");
+        AnsiConsole.MarkupLine($"  [yellow]⊘ Already current:[/] {summary.SkippedCount}");
+        AnsiConsole.MarkupLine($"  [blue]→ Left to fix:[/] {summary.RemainingCount}");
+
+        if (summary.FailedCount > 0)
         {
-            AnsiConsole.MarkupLine($"  [green]✓ Succeeded:[/] {succeeded}");
+            AnsiConsole.MarkupLine($"  [red]✗ Failed:[/] {summary.FailedCount}");
         }
 
-        if (failed > 0)
+        if (summary.WarningCount > 0)
         {
-            AnsiConsole.MarkupLine($"  [red]✗ Failed:[/] {failed}");
-        }
-
-        if (skipped > 0)
-        {
-            AnsiConsole.MarkupLine($"  [yellow]⊘ Skipped:[/] {skipped}");
-        }
-
-        if (warnings > 0)
-        {
-            AnsiConsole.MarkupLine($"  [yellow]⚠ Warnings:[/] {warnings}");
+            AnsiConsole.MarkupLine($"  [yellow]⚠ Warnings:[/] {summary.WarningCount}");
         }
     }
 

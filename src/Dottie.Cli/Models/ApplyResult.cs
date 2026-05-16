@@ -11,6 +11,8 @@ namespace Dottie.Cli.Models;
 /// </summary>
 public sealed class ApplyResult
 {
+    private const int FullCompletionPercentage = 100;
+
     /// <summary>
     /// Gets the result of the link phase.
     /// </summary>
@@ -37,4 +39,54 @@ public sealed class ApplyResult
         !LinkPhase.WasBlocked &&
         !LinkPhase.HasFailures &&
         !InstallPhase.HasFailures;
+
+    /// <summary>
+    /// Gets the total number of operations attempted across link and install phases.
+    /// </summary>
+    public int TotalOperationCount
+    {
+        get
+        {
+            var linkResult = LinkPhase.ExecutionResult?.LinkResult;
+            var linkTotal = (linkResult?.SuccessfulLinks.Count ?? 0)
+                + (linkResult?.SkippedLinks.Count ?? 0)
+                + (linkResult?.FailedLinks.Count ?? 0);
+
+            return linkTotal + InstallPhase.TotalCount;
+        }
+    }
+
+    /// <summary>
+    /// Gets the number of operations completed successfully or skipped as already handled.
+    /// </summary>
+    public int CompletedOperationCount
+    {
+        get
+        {
+            var linkResult = LinkPhase.ExecutionResult?.LinkResult;
+            var linkCompleted = (linkResult?.SuccessfulLinks.Count ?? 0)
+                + (linkResult?.SkippedLinks.Count ?? 0);
+
+            return linkCompleted + InstallPhase.CompletedCount;
+        }
+    }
+
+    /// <summary>
+    /// Gets the number of operations still left unresolved.
+    /// </summary>
+    public int RemainingOperationCount
+    {
+        get
+        {
+            var linkFailed = LinkPhase.ExecutionResult?.LinkResult?.FailedLinks.Count ?? 0;
+            return linkFailed + InstallPhase.RemainingCount;
+        }
+    }
+
+    /// <summary>
+    /// Gets the overall completion percentage across link and install phases.
+    /// </summary>
+    public int CompletionPercentage => TotalOperationCount == 0
+        ? FullCompletionPercentage
+        : (int)Math.Round((double)CompletedOperationCount * FullCompletionPercentage / TotalOperationCount, MidpointRounding.AwayFromZero);
 }

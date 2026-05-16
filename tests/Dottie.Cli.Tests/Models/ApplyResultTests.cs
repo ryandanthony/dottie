@@ -123,4 +123,37 @@ public sealed class ApplyResultTests
         // Act & Assert
         result.OverallSuccess.Should().BeTrue();
     }
+
+    [Fact]
+    public void CompletionSummary_WithMixedLinkAndInstallResults_ReturnsExpectedValues()
+    {
+        // Arrange
+        var entry = new DotfileEntry { Source = "bashrc", Target = "~/.bashrc" };
+        var successLink = LinkResult.Success(entry, "/home/user/.bashrc");
+        var skippedLink = LinkResult.Skipped(entry, "/home/user/.bashrc");
+        var failedLink = LinkResult.Failure(entry, "/home/user/.bashrc", "Permission denied");
+        var linkOpResult = new LinkOperationResult
+        {
+            SuccessfulLinks = [successLink],
+            SkippedLinks = [skippedLink],
+            FailedLinks = [failedLink],
+        };
+        var linkExecution = LinkExecutionResult.Completed(linkOpResult, []);
+
+        var result = new ApplyResult
+        {
+            LinkPhase = LinkPhaseResult.Executed(linkExecution),
+            InstallPhase = InstallPhaseResult.Executed(
+            [
+                InstallResult.Success("test-package", InstallSourceType.AptPackage),
+                InstallResult.Warning("warn-package", InstallSourceType.Font, "Warning"),
+            ]),
+        };
+
+        // Assert
+        result.TotalOperationCount.Should().Be(5);
+        result.CompletedOperationCount.Should().Be(3);
+        result.RemainingOperationCount.Should().Be(2);
+        result.CompletionPercentage.Should().Be(60);
+    }
 }

@@ -58,16 +58,35 @@ public class FontInstaller : IInstallSource
             return failedResults;
         }
 
-        var results = new List<InstallResult>();
-        foreach (var font in installBlock.Fonts)
-        {
-            var result = await InstallSingleFontAsync(font, context.FontDirectory, cancellationToken);
-            results.Add(result);
-            onItemComplete?.Invoke();
-        }
+        var installTasks = installBlock.Fonts
+            .Select((font, index) => InstallFontAsync(font, index, context.FontDirectory, onItemComplete, cancellationToken))
+            .ToArray();
+
+        var results = (await Task.WhenAll(installTasks))
+            .OrderBy(result => result.Index)
+            .Select(result => result.InstallResult)
+            .ToList();
 
         await RefreshFontCacheIfNeededAsync(results, cancellationToken);
         return results;
+    }
+
+    private async Task<IndexedInstallResult> InstallFontAsync(
+        FontItem font,
+        int index,
+        string fontDirectory,
+        Action? onItemComplete,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await InstallSingleFontAsync(font, fontDirectory, cancellationToken);
+            return new IndexedInstallResult(index, result);
+        }
+        finally
+        {
+            onItemComplete?.Invoke();
+        }
     }
 
     private static bool TryEnsureFontDirectory(string fontDirectory, out string? error)
@@ -180,4 +199,6 @@ public class FontInstaller : IInstallSource
             }
         }
     }
+
+    private readonly record struct IndexedInstallResult(int Index, InstallResult InstallResult);
 }

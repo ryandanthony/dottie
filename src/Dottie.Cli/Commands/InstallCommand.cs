@@ -10,7 +10,6 @@ using Dottie.Configuration.Inheritance;
 using Dottie.Configuration.Installing;
 using Dottie.Configuration.Installing.Utilities;
 using Dottie.Configuration.Models;
-using Dottie.Configuration.Models.InstallBlocks;
 using Dottie.Configuration.Parsing;
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -93,7 +92,7 @@ public sealed class InstallCommand : AsyncCommand<InstallCommandSettings>
             AnsiConsole.MarkupLine("[yellow]Dry Run Mode:[/] Previewing installation without making changes");
         }
 
-        var results = await RunInstallersWithProgressAsync(resolveResult.Profile.Install, contextInfo);
+        var results = await InstallExecutionCoordinator.RunAsync(resolveResult.Profile.Install, contextInfo);
 
         return RenderResultsAndGetExitCode(results);
     }
@@ -130,120 +129,6 @@ public sealed class InstallCommand : AsyncCommand<InstallCommandSettings>
             DryRun = settings.DryRun,
             UpdateExisting = true,
         };
-    }
-
-    private static async Task<List<InstallResult>> RunInstallersWithProgressAsync(InstallBlock installBlock, InstallContext context)
-    {
-        var totalItems = InstallerProgressHelper.GetTotalItemCount(installBlock);
-        if (totalItems == 0)
-        {
-            return [];
-        }
-
-        var results = new List<InstallResult>();
-
-        try
-        {
-            await ExecuteInstallersWithProgressAsync(installBlock, context, totalItems, results);
-        }
-        catch (InvalidOperationException)
-        {
-            // Progress display not allowed (e.g., in test environment)
-            await ExecuteInstallersWithoutProgressAsync(installBlock, context, results);
-        }
-
-        AnsiConsole.WriteLine();
-
-        return results;
-    }
-
-    private static async Task ExecuteInstallersWithProgressAsync(
-        InstallBlock installBlock,
-        InstallContext context,
-        int totalItems,
-        List<InstallResult> results)
-    {
-        await AnsiConsole.Progress()
-            .AutoClear(false)
-            .HideCompleted(false)
-            .Columns(
-                new TaskDescriptionColumn(),
-                new ProgressBarColumn(),
-                new PercentageColumn(),
-                new ElapsedTimeColumn(),
-                new SpinnerColumn())
-            .StartAsync(async ctx =>
-            {
-                var task = ctx.AddTask("[green]Installing software[/]", maxValue: totalItems);
-                var installerItems = InstallerProgressHelper.GetInstallerItems(installBlock);
-                var itemNames = InstallerProgressHelper.GetAllItemNames(installBlock);
-
-                // Show the first item name before starting
-                if (itemNames.Count > 0)
-                {
-                    task.Description = $"[green]Installing {itemNames.Peek()}[/]";
-                }
-
-                foreach (var item in installerItems)
-                {
-                    if (item.Count == 0)
-                    {
-                        continue;
-                    }
-
-                    var installerResults = await ExecuteInstallerAsync(item.Installer, installBlock, context, () =>
-                    {
-                        task.Increment(1);
-                        if (itemNames.TryDequeue(out _) && itemNames.TryPeek(out var nextName))
-                        {
-                            task.Description = $"[green]Installing {nextName}[/]";
-                        }
-                    });
-                    results.AddRange(installerResults);
-                }
-
-                task.Description = "[green]Installation complete[/]";
-            });
-    }
-
-    private static async Task ExecuteInstallersWithoutProgressAsync(
-        InstallBlock installBlock,
-        InstallContext context,
-        List<InstallResult> results)
-    {
-        var installerItems = InstallerProgressHelper.GetInstallerItems(installBlock);
-
-        foreach (var item in installerItems)
-        {
-            if (item.Count == 0)
-            {
-                continue;
-            }
-
-            var installerResults = await ExecuteInstallerAsync(item.Installer, installBlock, context, null);
-            results.AddRange(installerResults);
-        }
-    }
-
-    private static async Task<IEnumerable<InstallResult>> ExecuteInstallerAsync(IInstallSource installer, InstallBlock installBlock, InstallContext context, Action? onItemComplete)
-    {
-        try
-        {
-            return installer.SourceType switch
-            {
-                InstallSourceType.GithubRelease => await ((GithubReleaseInstaller)installer).InstallAsync(installBlock, context, onItemComplete),
-                InstallSourceType.AptPackage => await ((AptPackageInstaller)installer).InstallAsync(installBlock, context, onItemComplete),
-                InstallSourceType.AptRepo => await ((AptRepoInstaller)installer).InstallAsync(installBlock, context, onItemComplete),
-                InstallSourceType.Script => await ((ScriptRunner)installer).InstallAsync(installBlock, context, onItemComplete),
-                InstallSourceType.Font => await ((FontInstaller)installer).InstallAsync(installBlock, context, onItemComplete),
-                InstallSourceType.SnapPackage => await ((SnapPackageInstaller)installer).InstallAsync(installBlock, context, onItemComplete),
-                _ => [],
-            };
-        }
-        catch (Exception ex)
-        {
-            return [InstallResult.Failed("unknown", InstallSourceType.GithubRelease, $"Installer error: {ex.Message}")];
-        }
     }
 
     private static int RenderResultsAndGetExitCode(List<InstallResult> results)

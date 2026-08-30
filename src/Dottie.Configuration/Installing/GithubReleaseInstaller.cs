@@ -38,6 +38,7 @@ public class GithubReleaseInstaller : IInstallSource
     private readonly ArchiveExtractor _extractor;
     private readonly IProcessRunner _processRunner;
     private readonly string? _githubToken;
+    private readonly RateLimitRetryPolicy _rateLimitPolicy;
 
     /// <inheritdoc/>
     public InstallSourceType SourceType => InstallSourceType.GithubRelease;
@@ -48,12 +49,14 @@ public class GithubReleaseInstaller : IInstallSource
     /// </summary>
     /// <param name="downloader">HTTP downloader for fetching release assets. If null, a default instance is created.</param>
     /// <param name="processRunner">Process runner for executing system commands. If null, a default instance is created.</param>
-    public GithubReleaseInstaller(HttpDownloader? downloader = null, IProcessRunner? processRunner = null)
+    /// <param name="rateLimitPolicy">Retry policy applied to GitHub API calls on HTTP 429. If null, a default instance is created.</param>
+    public GithubReleaseInstaller(HttpDownloader? downloader = null, IProcessRunner? processRunner = null, RateLimitRetryPolicy? rateLimitPolicy = null)
     {
         _downloader = downloader ?? new HttpDownloader();
         _extractor = new ArchiveExtractor();
         _processRunner = processRunner ?? new ProcessRunner();
         _githubToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
+        _rateLimitPolicy = rateLimitPolicy ?? new RateLimitRetryPolicy();
     }
 
     /// <inheritdoc/>
@@ -280,8 +283,7 @@ public class GithubReleaseInstaller : IInstallSource
 
         try
         {
-            var request = BuildGithubRequest(releaseUrl);
-            var response = await request.HeadAsync(cancellationToken: cancellationToken);
+            var response = await SendGithubRequestAsync(releaseUrl, HttpMethod.Head, cancellationToken);
 
             return response.StatusCode >= HttpSuccessMin && response.StatusCode < HttpSuccessMax
                 ? InstallResult.Success(itemName, SourceType, message: $"GitHub release {item.Repo}@{versionDisplay} would be installed")
@@ -459,8 +461,7 @@ public class GithubReleaseInstaller : IInstallSource
 
         try
         {
-            var request = BuildGithubRequest(releaseUrl);
-            var response = await request.HeadAsync(cancellationToken: cancellationToken);
+            var response = await SendGithubRequestAsync(releaseUrl, HttpMethod.Head, cancellationToken);
 
             return response.StatusCode >= HttpSuccessMin && response.StatusCode < HttpSuccessMax
                 ? InstallResult.Skipped(itemName, SourceType, $"{item.Repo}: would be installed via dpkg")
@@ -738,9 +739,12 @@ public class GithubReleaseInstaller : IInstallSource
 
     private IFlurlRequest BuildGithubRequest(string url)
     {
+        // AllowAnyHttpStatus so a 429 (or 404) returns a response the retry
+        // policy can inspect for backoff headers, rather than throwing.
         var request = url
             .WithHeader("User-Agent", "dottie-dotfiles/1.0")
-            .WithTimeout(TimeSpan.FromSeconds(RequestTimeoutSeconds));
+            .WithTimeout(TimeSpan.FromSeconds(RequestTimeoutSeconds))
+            .AllowAnyHttpStatus();
 
         if (!string.IsNullOrEmpty(_githubToken))
         {
@@ -748,6 +752,22 @@ public class GithubReleaseInstaller : IInstallSource
         }
 
         return request;
+    }
+
+    /// <summary>
+    /// Sends a GitHub API request through the shared <see cref="RateLimitRetryPolicy"/>,
+    /// retrying on HTTP 429 with a header-driven backoff.
+    /// </summary>
+    /// <param name="url">The GitHub API URL.</param>
+    /// <param name="method">HTTP method (defaults to GET).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The final response (possibly a non-success status).</returns>
+    private Task<IFlurlResponse> SendGithubRequestAsync(string url, HttpMethod? method, CancellationToken cancellationToken)
+    {
+        var verb = method ?? HttpMethod.Get;
+        return _rateLimitPolicy.ExecuteAsync(
+            ct => BuildGithubRequest(url).SendAsync(verb, cancellationToken: ct),
+            cancellationToken);
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Using JsonDocument for safe parsing")]
@@ -759,16 +779,16 @@ public class GithubReleaseInstaller : IInstallSource
 
         try
         {
-            var request = url
-                .WithHeader("User-Agent", "dottie-dotfiles/1.0")
-                .WithTimeout(TimeSpan.FromSeconds(RequestTimeoutSeconds));
+            var response = await SendGithubRequestAsync(url, HttpMethod.Get, cancellationToken);
 
-            if (!string.IsNullOrEmpty(_githubToken))
+            if (response.StatusCode < HttpSuccessMin || response.StatusCode >= HttpSuccessMax)
             {
-                request = request.WithOAuthBearerToken(_githubToken);
+                // Non-success after any 429 backoff retries were exhausted.
+                System.Diagnostics.Debug.WriteLine($"GitHub API returned HTTP {response.StatusCode} for {url}");
+                return null;
             }
 
-            var responseBody = await request.GetStringAsync();
+            var responseBody = await response.GetStringAsync();
             return ParseGithubReleaseResponse(responseBody);
         }
         catch (HttpRequestException ex)

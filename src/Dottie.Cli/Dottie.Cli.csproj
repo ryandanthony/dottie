@@ -33,6 +33,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Expose internal types (e.g. LiveInstallRenderer, IInstallProgressObserver) to the test project. -->
+    <InternalsVisibleTo Include="Dottie.Cli.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <TrimmerRootDescriptor Include="TrimmerRoots.xml" />
   </ItemGroup>
 

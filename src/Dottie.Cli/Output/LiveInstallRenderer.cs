@@ -39,10 +39,20 @@ internal sealed class LiveInstallRenderer : IInstallProgressObserver
     private readonly List<InstallResult> _results = [];
     private readonly Dictionary<string, PlanProgress> _plans = [];
     private readonly List<string> _planOrder = [];
+    private readonly IAnsiConsole _console;
 
     private LiveDisplayContext? _ctx;
     private int _overallCompleted;
     private int _overallTotal;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LiveInstallRenderer"/> class.
+    /// </summary>
+    /// <param name="console">Console to render into; defaults to <see cref="AnsiConsole.Console"/>. Injected for testing.</param>
+    internal LiveInstallRenderer(IAnsiConsole? console = null)
+    {
+        _console = console ?? AnsiConsole.Console;
+    }
 
     /// <summary>
     /// The install work to run inside the live session, given this renderer as observer.
@@ -61,7 +71,7 @@ internal sealed class LiveInstallRenderer : IInstallProgressObserver
         ArgumentNullException.ThrowIfNull(work);
 
         List<InstallResult> results = [];
-        await AnsiConsole.Live(BuildLayout())
+        await _console.Live(BuildLayout())
             .AutoClear(false)
             .Overflow(VerticalOverflow.Ellipsis)
             .StartAsync(async ctx =>

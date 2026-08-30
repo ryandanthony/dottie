@@ -31,7 +31,7 @@ public class SnapPackageInstaller : IInstallSource
     public InstallSourceType SourceType => InstallSourceType.SnapPackage;
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, Action<InstallResult>? onItemComplete, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, IInstallItemReporter? reporter, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(installBlock);
 
@@ -54,12 +54,17 @@ public class SnapPackageInstaller : IInstallSource
         // If sudo is not available, return warning results
         if (!context.HasSudo)
         {
+            // Not a simple projection: each iteration also fires reporter
+            // start/complete callbacks, so a LINQ Select would drop those effects.
+#pragma warning disable S3267
             foreach (var snap in installBlock.Snaps)
             {
+                reporter?.ItemStarted(snap.Name, SourceType);
                 var warning = InstallResult.Warning(snap.Name, SourceType, "Sudo required to install snap packages");
                 results.Add(warning);
-                onItemComplete?.Invoke(warning);
+                reporter?.ItemCompleted(warning);
             }
+#pragma warning restore S3267
 
             return results;
         }
@@ -67,6 +72,7 @@ public class SnapPackageInstaller : IInstallSource
         // Install each snap package
         foreach (var snap in installBlock.Snaps)
         {
+            reporter?.ItemStarted(snap.Name, SourceType);
             InstallResult result;
             try
             {
@@ -82,7 +88,7 @@ public class SnapPackageInstaller : IInstallSource
             }
 
             results.Add(result);
-            onItemComplete?.Invoke(result);
+            reporter?.ItemCompleted(result);
         }
 
         return results;

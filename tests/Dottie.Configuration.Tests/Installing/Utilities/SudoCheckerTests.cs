@@ -1,6 +1,7 @@
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
 using Dottie.Configuration.Installing.Utilities;
+using Dottie.Configuration.Models.InstallBlocks;
 using FluentAssertions;
 using System.Runtime.InteropServices;
 
@@ -129,6 +130,73 @@ public class SudoCheckerTests
     }
 
     private static bool IsLinux() => RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+
+    [Fact]
+    public void RequiresSudo_WithNullInstallBlock_ReturnsFalse()
+    {
+        SudoChecker.RequiresSudo(null).Should().BeFalse();
+    }
+
+    [Fact]
+    public void RequiresSudo_WithNoPrivilegedItems_ReturnsFalse()
+    {
+        var installBlock = new InstallBlock
+        {
+            Github = [new GithubReleaseItem { Repo = "owner/repo", Asset = "a", Binary = "b" }],
+        };
+
+        SudoChecker.RequiresSudo(installBlock).Should().BeFalse();
+    }
+
+    [Fact]
+    public void RequiresSudo_WithAptPackages_ReturnsTrue()
+    {
+        var installBlock = new InstallBlock { Apt = ["git"] };
+
+        SudoChecker.RequiresSudo(installBlock).Should().BeTrue();
+    }
+
+    [Fact]
+    public void RequiresSudo_WithSnapPackages_ReturnsTrue()
+    {
+        var installBlock = new InstallBlock { Snaps = [new SnapItem { Name = "code" }] };
+
+        SudoChecker.RequiresSudo(installBlock).Should().BeTrue();
+    }
+
+    [Fact]
+    public void RequiresSudo_WithAptRepos_ReturnsTrue()
+    {
+        var installBlock = new InstallBlock
+        {
+            AptRepos = [new AptRepoItem { Name = "docker", KeyUrl = "https://x/key", Repo = "deb https://x stable main", Packages = ["docker-ce"] }],
+        };
+
+        SudoChecker.RequiresSudo(installBlock).Should().BeTrue();
+    }
+
+    [Fact]
+    public void HasCachedCredentials_WhenSudoSucceedsNonInteractively_ReturnsTrue()
+    {
+        if (!IsLinux() && !RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            return; // Non-Unix always returns false regardless of the runner.
+        }
+
+        var mockRunner = new FakeProcessRunner(new ProcessResult(0, string.Empty, string.Empty));
+        var checker = new SudoChecker(mockRunner);
+
+        checker.HasCachedCredentials().Should().BeTrue();
+    }
+
+    [Fact]
+    public void HasCachedCredentials_WhenSudoRequiresPassword_ReturnsFalse()
+    {
+        var mockRunner = new FakeProcessRunner(new ProcessResult(1, string.Empty, "sudo: a password is required"));
+        var checker = new SudoChecker(mockRunner);
+
+        checker.HasCachedCredentials().Should().BeFalse();
+    }
 
     /// <summary>
     /// A simple fake process runner for testing.

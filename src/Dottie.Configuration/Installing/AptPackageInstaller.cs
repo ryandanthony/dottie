@@ -31,7 +31,7 @@ public class AptPackageInstaller : IInstallSource
     public InstallSourceType SourceType => InstallSourceType.AptPackage;
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, Action<InstallResult>? onItemComplete, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, IInstallItemReporter? reporter, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(installBlock);
         ArgumentNullException.ThrowIfNull(context);
@@ -43,26 +43,27 @@ public class AptPackageInstaller : IInstallSource
 
         if (!context.HasSudo)
         {
-            return CreateSudoRequiredWarnings(installBlock.Apt.AsReadOnly(), onItemComplete);
+            return CreateSudoRequiredWarnings(installBlock.Apt.AsReadOnly(), reporter);
         }
 
-        return await ExecutePackageInstallationAsync(installBlock.Apt.AsReadOnly(), onItemComplete, cancellationToken);
+        return await ExecutePackageInstallationAsync(installBlock.Apt.AsReadOnly(), reporter, cancellationToken);
     }
 
-    private List<InstallResult> CreateSudoRequiredWarnings(IReadOnlyList<string> packages, Action<InstallResult>? onItemComplete)
+    private List<InstallResult> CreateSudoRequiredWarnings(IReadOnlyList<string> packages, IInstallItemReporter? reporter)
     {
         var results = new List<InstallResult>();
         foreach (var package in packages)
         {
+            reporter?.ItemStarted(package, SourceType);
             var result = InstallResult.Warning(package, SourceType, "Sudo required to install APT packages");
             results.Add(result);
-            onItemComplete?.Invoke(result);
+            reporter?.ItemCompleted(result);
         }
 
         return results;
     }
 
-    private async Task<List<InstallResult>> ExecutePackageInstallationAsync(IReadOnlyList<string> packages, Action<InstallResult>? onItemComplete, CancellationToken cancellationToken)
+    private async Task<List<InstallResult>> ExecutePackageInstallationAsync(IReadOnlyList<string> packages, IInstallItemReporter? reporter, CancellationToken cancellationToken)
     {
         var results = new List<InstallResult>();
 
@@ -73,12 +74,13 @@ public class AptPackageInstaller : IInstallSource
 
             foreach (var package in packages)
             {
+                reporter?.ItemStarted(package, SourceType);
                 var installResult = await _processRunner.RunAsync("sudo", $"apt-get install -y {package}", cancellationToken: cancellationToken);
                 var result = installResult.Success
                     ? InstallResult.Success(package, SourceType)
                     : InstallResult.Failed(package, SourceType, $"apt-get install failed with exit code {installResult.ExitCode}");
                 results.Add(result);
-                onItemComplete?.Invoke(result);
+                reporter?.ItemCompleted(result);
             }
         }
         catch (Exception ex)
@@ -87,7 +89,7 @@ public class AptPackageInstaller : IInstallSource
             {
                 var result = InstallResult.Failed(package, SourceType, $"Exception during installation: {ex.Message}");
                 results.Add(result);
-                onItemComplete?.Invoke(result);
+                reporter?.ItemCompleted(result);
             }
         }
 

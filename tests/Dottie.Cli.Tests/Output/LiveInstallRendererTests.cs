@@ -121,14 +121,16 @@ public sealed class LiveInstallRendererTests : IDisposable
 
     /// <summary>
     /// When more results arrive than the visible window, the header reports the
-    /// total and the truncation, and the newest result stays visible.
+    /// total and the truncation, and the newest result stays visible. Uses a
+    /// short console so the height-scaled window is smaller than the result count.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
     [Fact]
     public async Task RunAsync_WithManyResults_ShowsTailWindowAsync()
     {
+        _console.Profile.Height = 20; // Small window forces truncation.
         var renderer = new LiveInstallRenderer(_console);
-        const int count = 25;
+        const int count = 40;
 
         await renderer.RunAsync(observer =>
         {
@@ -146,7 +148,7 @@ public sealed class LiveInstallRendererTests : IDisposable
         // Header shows the running total and that older rows are hidden.
         output.Should().Contain($"{count} total");
         // The most recent item is within the visible tail window.
-        output.Should().Contain("pkg-24");
+        output.Should().Contain("pkg-39");
     }
 
     /// <summary>
@@ -164,6 +166,38 @@ public sealed class LiveInstallRendererTests : IDisposable
     }
 
     /// <summary>
+    /// A started-but-not-finished item shows a "Running" line; once its result
+    /// arrives the running line is replaced by the completed status.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
+    [Fact]
+    public async Task RunAsync_ShowsRunningItemThenCompletesAsync()
+    {
+        var renderer = new LiveInstallRenderer(_console);
+        string? outputWhileRunning = null;
+
+        await renderer.RunAsync(observer =>
+        {
+            observer.OnStart(["Scripts"], [1], 1);
+            observer.OnItemStarted("setup.sh", InstallSourceType.Script);
+            outputWhileRunning = _console.Output;
+
+            observer.OnItemProgress("Scripts", 1, 1);
+            observer.OnResult(InstallResult.Success("setup.sh", InstallSourceType.Script));
+            return Task.FromResult(new List<InstallResult>());
+        });
+
+        // While running, the item appears with the Running label.
+        outputWhileRunning.Should().NotBeNull();
+        outputWhileRunning!.Should().Contain("Running");
+        outputWhileRunning.Should().Contain("setup.sh");
+
+        // After completion the final frame shows the Installed status.
+        _console.Output.Should().Contain("Installed");
+        _console.Output.Should().Contain("setup.sh");
+    }
+
+    /// <summary>
     /// Observer arguments are validated.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
@@ -177,6 +211,7 @@ public sealed class LiveInstallRendererTests : IDisposable
             FluentActions.Invoking(() => observer.OnStart(null!, [], 0)).Should().Throw<ArgumentNullException>();
             FluentActions.Invoking(() => observer.OnStart([], null!, 0)).Should().Throw<ArgumentNullException>();
             FluentActions.Invoking(() => observer.OnItemProgress(null!, 0, 0)).Should().Throw<ArgumentNullException>();
+            FluentActions.Invoking(() => observer.OnItemStarted(null!, InstallSourceType.Script)).Should().Throw<ArgumentNullException>();
             FluentActions.Invoking(() => observer.OnResult(null!)).Should().Throw<ArgumentNullException>();
             return Task.FromResult(new List<InstallResult>());
         });

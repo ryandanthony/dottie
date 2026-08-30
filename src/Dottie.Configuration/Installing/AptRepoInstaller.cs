@@ -35,7 +35,7 @@ public class AptRepoInstaller : IInstallSource
     }
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, Action<InstallResult>? onItemComplete, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, IInstallItemReporter? reporter, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(installBlock);
         ArgumentNullException.ThrowIfNull(context);
@@ -47,36 +47,38 @@ public class AptRepoInstaller : IInstallSource
 
         if (!context.HasSudo)
         {
-            return CreateSudoRequiredWarnings(installBlock.AptRepos.AsReadOnly(), onItemComplete);
+            return CreateSudoRequiredWarnings(installBlock.AptRepos.AsReadOnly(), reporter);
         }
 
         var results = new List<InstallResult>();
         foreach (var repo in installBlock.AptRepos)
         {
+            reporter?.ItemStarted(repo.Name, SourceType);
             var repoResults = await ConfigureRepositoryAsync(repo, cancellationToken);
             results.AddRange(repoResults);
             foreach (var repoResult in repoResults)
             {
-                onItemComplete?.Invoke(repoResult);
+                reporter?.ItemCompleted(repoResult);
             }
         }
 
         return results;
     }
 
-    private List<InstallResult> CreateSudoRequiredWarnings(IReadOnlyList<AptRepoItem> repos, Action<InstallResult>? onItemComplete)
+    private List<InstallResult> CreateSudoRequiredWarnings(IReadOnlyList<AptRepoItem> repos, IInstallItemReporter? reporter)
     {
         var results = new List<InstallResult>();
         foreach (var repo in repos)
         {
+            reporter?.ItemStarted(repo.Name, SourceType);
             var repoWarning = InstallResult.Warning(repo.Name, SourceType, "Sudo required to add APT repositories");
             results.Add(repoWarning);
-            onItemComplete?.Invoke(repoWarning);
+            reporter?.ItemCompleted(repoWarning);
             foreach (var package in repo.Packages ?? [])
             {
                 var packageWarning = InstallResult.Warning(package, SourceType, "Sudo required to install packages from APT repositories");
                 results.Add(packageWarning);
-                onItemComplete?.Invoke(packageWarning);
+                reporter?.ItemCompleted(packageWarning);
             }
         }
 

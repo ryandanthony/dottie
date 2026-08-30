@@ -36,7 +36,7 @@ public class FontInstaller : IInstallSource
     }
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, Action<InstallResult>? onItemComplete, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, IInstallItemReporter? reporter, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(installBlock);
         ArgumentNullException.ThrowIfNull(context);
@@ -51,8 +51,9 @@ public class FontInstaller : IInstallSource
             var failedResults = installBlock.Fonts
                 .Select(font =>
                 {
+                    reporter?.ItemStarted(font.Name, SourceType);
                     var result = InstallResult.Failed(font.Name, SourceType, directoryError!);
-                    onItemComplete?.Invoke(result);
+                    reporter?.ItemCompleted(result);
                     return result;
                 })
                 .ToList();
@@ -60,7 +61,7 @@ public class FontInstaller : IInstallSource
         }
 
         var installTasks = installBlock.Fonts
-            .Select((font, index) => InstallFontAsync(font, index, context.FontDirectory, onItemComplete, cancellationToken))
+            .Select((font, index) => InstallFontAsync(font, index, context.FontDirectory, reporter, cancellationToken))
             .ToArray();
 
         var results = (await Task.WhenAll(installTasks))
@@ -76,11 +77,12 @@ public class FontInstaller : IInstallSource
         FontItem font,
         int index,
         string fontDirectory,
-        Action<InstallResult>? onItemComplete,
+        IInstallItemReporter? reporter,
         CancellationToken cancellationToken)
     {
+        reporter?.ItemStarted(font.Name, SourceType);
         var result = await InstallSingleFontAsync(font, fontDirectory, cancellationToken);
-        onItemComplete?.Invoke(result);
+        reporter?.ItemCompleted(result);
         return new IndexedInstallResult(index, result);
     }
 

@@ -67,6 +67,11 @@ public sealed class ApplyCommand : AsyncCommand<ApplyCommandSettings>
             return 0;
         }
 
+        // Prompt for sudo up front, before the full-screen dashboard clears the
+        // terminal. Otherwise the password / fingerprint prompt appears mid-run
+        // underneath the live UI and is easy to miss.
+        PrimeSudoIfNeeded(profile);
+
         // Start from a clean screen so the live progress dashboard is unobscured.
         // Only when interactive; redirected output should not receive clear codes.
         if (AnsiConsole.Profile.Capabilities.Interactive)
@@ -267,5 +272,17 @@ public sealed class ApplyCommand : AsyncCommand<ApplyCommandSettings>
             DryRun = false,
             UpdateExisting = true,
         };
+    }
+
+    /// <summary>
+    /// When the profile installs privileged software (APT/snap) and sudo is
+    /// available but not yet cached, prompts for sudo credentials up front so
+    /// the password / fingerprint prompt is shown before the live dashboard
+    /// takes over the screen.
+    /// </summary>
+    /// <param name="profile">The resolved profile being applied.</param>
+    private static void PrimeSudoIfNeeded(ResolvedProfile profile)
+    {
+        new SudoPrimer().PrimeIfNeeded(profile.Install);
     }
 }

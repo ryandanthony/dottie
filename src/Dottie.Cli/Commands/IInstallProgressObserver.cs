@@ -32,6 +32,13 @@ internal interface IInstallProgressObserver
     void OnItemProgress(string planName, int planCompleted, int overallCompleted);
 
     /// <summary>
+    /// Called when an item begins, so the UI can show what is currently running.
+    /// </summary>
+    /// <param name="itemName">Display name of the item that started.</param>
+    /// <param name="sourceType">The item's install source type.</param>
+    void OnItemStarted(string itemName, InstallSourceType sourceType);
+
+    /// <summary>
     /// Called as soon as each individual item's result is produced, to append it
     /// to the running results list in real time.
     /// </summary>

@@ -31,7 +31,7 @@ public class ScriptRunner : IInstallSource
     public InstallSourceType SourceType => InstallSourceType.Script;
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, Action<InstallResult>? onItemComplete, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, IInstallItemReporter? reporter, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(installBlock);
         ArgumentNullException.ThrowIfNull(context);
@@ -42,30 +42,31 @@ public class ScriptRunner : IInstallSource
         }
 
         return context.DryRun
-            ? ValidateScriptsExist(installBlock.Scripts.AsReadOnly(), context.RepoRoot, onItemComplete)
-            : await ExecuteScriptsAsync(installBlock.Scripts.AsReadOnly(), context, onItemComplete, cancellationToken);
+            ? ValidateScriptsExist(installBlock.Scripts.AsReadOnly(), context.RepoRoot, reporter)
+            : await ExecuteScriptsAsync(installBlock.Scripts.AsReadOnly(), context, reporter, cancellationToken);
     }
 
-    private List<InstallResult> ValidateScriptsExist(IReadOnlyList<string> scripts, string repoRoot, Action<InstallResult>? onItemComplete)
+    private List<InstallResult> ValidateScriptsExist(IReadOnlyList<string> scripts, string repoRoot, IInstallItemReporter? reporter)
     {
         var results = new List<InstallResult>();
         foreach (var scriptPath in scripts)
         {
+            reporter?.ItemStarted(scriptPath, SourceType);
             var fullPath = Path.Combine(repoRoot, scriptPath);
             var result = File.Exists(fullPath)
                 ? InstallResult.Success(scriptPath, SourceType, message: $"Script would be executed: {scriptPath}")
                 : InstallResult.Failed(scriptPath, SourceType, $"Script not found: {scriptPath}");
             results.Add(result);
-            onItemComplete?.Invoke(result);
+            reporter?.ItemCompleted(result);
         }
 
         return results;
     }
 
-    private async Task<List<InstallResult>> ExecuteScriptsAsync(IReadOnlyList<string> scripts, InstallContext context, Action<InstallResult>? onItemComplete, CancellationToken cancellationToken)
+    private async Task<List<InstallResult>> ExecuteScriptsAsync(IReadOnlyList<string> scripts, InstallContext context, IInstallItemReporter? reporter, CancellationToken cancellationToken)
     {
         var executionTasks = scripts
-            .Select((scriptPath, index) => ExecuteScriptAsync(scriptPath, index, context, onItemComplete, cancellationToken))
+            .Select((scriptPath, index) => ExecuteScriptAsync(scriptPath, index, context, reporter, cancellationToken))
             .ToArray();
 
         var results = await Task.WhenAll(executionTasks);
@@ -79,11 +80,12 @@ public class ScriptRunner : IInstallSource
         string scriptPath,
         int index,
         InstallContext context,
-        Action<InstallResult>? onItemComplete,
+        IInstallItemReporter? reporter,
         CancellationToken cancellationToken)
     {
+        reporter?.ItemStarted(scriptPath, SourceType);
         var result = await ExecuteSingleScriptAsync(scriptPath, context, cancellationToken);
-        onItemComplete?.Invoke(result);
+        reporter?.ItemCompleted(result);
         return new IndexedInstallResult(index, result);
     }
 

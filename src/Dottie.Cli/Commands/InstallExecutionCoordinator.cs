@@ -137,22 +137,32 @@ internal static class InstallExecutionCoordinator
         // what distinguishes "already streamed" here.
         var streamed = new HashSet<InstallResult>(ReferenceEqualityComparer.Instance);
 
-        var planResults = await ExecuteInstallerAsync(plan.Installer, installBlock, context, result =>
-        {
-            lock (ProgressUpdateLock)
+        var reporter = new ObserverReporter(
+            onStarted: (itemName, sourceType) =>
             {
-                completed++;
-                var overall = readOverall() + 1;
-                writeOverall(overall);
-                observer.OnItemProgress(plan.Name, completed, overall);
+                lock (ProgressUpdateLock)
+                {
+                    observer.OnItemStarted(itemName, sourceType);
+                }
+            },
+            onCompleted: result =>
+            {
+                lock (ProgressUpdateLock)
+                {
+                    completed++;
+                    var overall = readOverall() + 1;
+                    writeOverall(overall);
+                    observer.OnItemProgress(plan.Name, completed, overall);
 
-                // Stream each result to the live list the moment it is produced,
-                // rather than batching per plan at the end.
-                streamed.Add(result);
-                results.Add(result);
-                observer.OnResult(result);
-            }
-        });
+                    // Stream each result to the live list the moment it is produced,
+                    // rather than batching per plan at the end.
+                    streamed.Add(result);
+                    results.Add(result);
+                    observer.OnResult(result);
+                }
+            });
+
+        var planResults = await ExecuteInstallerAsync(plan.Installer, installBlock, context, reporter);
 
         // Safety net: surface any results the installer returned without a
         // per-item callback (e.g. a whole-installer failure in the catch block).
@@ -279,7 +289,7 @@ internal static class InstallExecutionCoordinator
         var completed = 0;
         var total = plan.Count;
 
-        var planResults = await ExecuteInstallerAsync(plan.Installer, installBlock, context, _ =>
+        var reporter = new ProgressBarReporter(() =>
         {
             lock (ProgressUpdateLock)
             {
@@ -291,6 +301,8 @@ internal static class InstallExecutionCoordinator
             }
         });
 
+        var planResults = await ExecuteInstallerAsync(plan.Installer, installBlock, context, reporter);
+
         foreach (var result in planResults)
         {
             results.Add(result);
@@ -301,18 +313,18 @@ internal static class InstallExecutionCoordinator
         IInstallSource installer,
         InstallBlock installBlock,
         InstallContext context,
-        Action<InstallResult>? onItemComplete)
+        IInstallItemReporter? reporter)
     {
         try
         {
             return installer.SourceType switch
             {
-                InstallSourceType.GithubRelease => await ((GithubReleaseInstaller)installer).InstallAsync(installBlock, context, onItemComplete),
-                InstallSourceType.AptPackage => await ((AptPackageInstaller)installer).InstallAsync(installBlock, context, onItemComplete),
-                InstallSourceType.AptRepo => await ((AptRepoInstaller)installer).InstallAsync(installBlock, context, onItemComplete),
-                InstallSourceType.Script => await ((ScriptRunner)installer).InstallAsync(installBlock, context, onItemComplete),
-                InstallSourceType.Font => await ((FontInstaller)installer).InstallAsync(installBlock, context, onItemComplete),
-                InstallSourceType.SnapPackage => await ((SnapPackageInstaller)installer).InstallAsync(installBlock, context, onItemComplete),
+                InstallSourceType.GithubRelease => await ((GithubReleaseInstaller)installer).InstallAsync(installBlock, context, reporter),
+                InstallSourceType.AptPackage => await ((AptPackageInstaller)installer).InstallAsync(installBlock, context, reporter),
+                InstallSourceType.AptRepo => await ((AptRepoInstaller)installer).InstallAsync(installBlock, context, reporter),
+                InstallSourceType.Script => await ((ScriptRunner)installer).InstallAsync(installBlock, context, reporter),
+                InstallSourceType.Font => await ((FontInstaller)installer).InstallAsync(installBlock, context, reporter),
+                InstallSourceType.SnapPackage => await ((SnapPackageInstaller)installer).InstallAsync(installBlock, context, reporter),
                 _ => [],
             };
         }
@@ -333,4 +345,31 @@ internal static class InstallExecutionCoordinator
 
     private static string CreateOverallDescription(int completed, int total)
         => $"[green]Overall progress[/] [dim][[{completed}/{total}]][/]";
+
+    /// <summary>
+    /// Reporter for the plain <c>Progress()</c> path (<c>dottie install</c>): only
+    /// advances the progress bars on completion; item-start events are ignored.
+    /// </summary>
+    private sealed class ProgressBarReporter(Action onCompleted) : IInstallItemReporter
+    {
+        public void ItemStarted(string itemName, InstallSourceType sourceType)
+        {
+            // The plain progress view has no running-item line; nothing to do.
+        }
+
+        public void ItemCompleted(InstallResult result) => onCompleted();
+    }
+
+    /// <summary>
+    /// Reporter for the live-dashboard path (<c>dottie apply</c>): forwards both
+    /// item-start and item-completion events to the supplied delegates.
+    /// </summary>
+    private sealed class ObserverReporter(
+        Action<string, InstallSourceType> onStarted,
+        Action<InstallResult> onCompleted) : IInstallItemReporter
+    {
+        public void ItemStarted(string itemName, InstallSourceType sourceType) => onStarted(itemName, sourceType);
+
+        public void ItemCompleted(InstallResult result) => onCompleted(result);
+    }
 }

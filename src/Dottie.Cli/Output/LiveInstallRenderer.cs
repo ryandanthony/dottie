@@ -29,16 +29,21 @@ namespace Dottie.Cli.Output;
     Justification = "A live renderer inherently composes several Spectre widgets with the install progress model.")]
 internal sealed class LiveInstallRenderer : IInstallProgressObserver
 {
-    private const int ResultsWindow = 15;
     private const int BarWidth = 30;
     private const int StatusLabelWidth = 9;
     private const int PercentLabelWidth = 3;
     private const int PanelChromeLines = 2;
+    private const int MinResultsWindow = 5;
+    private const int FallbackResultsWindow = 15;
 
     private readonly Lock _sync = new();
     private readonly List<InstallResult> _results = [];
     private readonly Dictionary<string, PlanProgress> _plans = [];
     private readonly List<string> _planOrder = [];
+
+    // Items currently in flight, keyed by display name, in start order. Rendered
+    // as "running" lines beneath the results until each one completes.
+    private readonly List<RunningItem> _running = [];
     private readonly IAnsiConsole _console;
 
     private LiveDisplayContext? _ctx;
@@ -130,6 +135,19 @@ internal sealed class LiveInstallRenderer : IInstallProgressObserver
     }
 
     /// <inheritdoc/>
+    void IInstallProgressObserver.OnItemStarted(string itemName, InstallSourceType sourceType)
+    {
+        ArgumentNullException.ThrowIfNull(itemName);
+
+        lock (_sync)
+        {
+            _running.Add(new RunningItem(itemName, sourceType));
+        }
+
+        Refresh();
+    }
+
+    /// <inheritdoc/>
     void IInstallProgressObserver.OnResult(InstallResult result)
     {
         ArgumentNullException.ThrowIfNull(result);
@@ -137,6 +155,14 @@ internal sealed class LiveInstallRenderer : IInstallProgressObserver
         lock (_sync)
         {
             _results.Add(result);
+
+            // The matching item is no longer running. Remove the first entry with
+            // the same name and source, so repeated names still clear one-for-one.
+            var index = _running.FindIndex(r => string.Equals(r.Name, result.ItemName, StringComparison.Ordinal) && r.SourceType == result.SourceType);
+            if (index >= 0)
+            {
+                _running.RemoveAt(index);
+            }
         }
 
         Refresh();
@@ -165,6 +191,13 @@ internal sealed class LiveInstallRenderer : IInstallProgressObserver
         var source = $"[grey]({InstallerProgressHelper.GetSourceTypeName(result.SourceType)})[/]";
         var message = string.IsNullOrEmpty(result.Message) ? string.Empty : $" [grey]-[/] {Markup.Escape(result.Message)}";
         return new Markup($"[{color}]{icon} {statusText,-StatusLabelWidth}[/] {Markup.Escape(result.ItemName)} {source}{message}");
+    }
+
+    private static IRenderable BuildRunningRow(RunningItem item)
+    {
+        const string RunningLabel = "Running";
+        var source = $"[grey]({InstallerProgressHelper.GetSourceTypeName(item.SourceType)})[/]";
+        return new Markup($"[blue]⟳ {RunningLabel,-StatusLabelWidth}[/] {Markup.Escape(item.Name)} {source}");
     }
 
     private static string RenderBar(int completed, int total, string color)
@@ -241,29 +274,57 @@ internal sealed class LiveInstallRenderer : IInstallProgressObserver
 
     private Panel BuildResultsPanel()
     {
-        IRenderable body;
-        if (_results.Count == 0)
+        var runningRows = _running.ConvertAll(BuildRunningRow);
+
+        // Reserve space for the running lines so they stay visible; the rest of
+        // the window shows the tail of completed results.
+        var resultsWindow = Math.Max(MinResultsWindow, ResultsWindow() - runningRows.Count);
+
+        var rows = new List<IRenderable>();
+        if (_results.Count == 0 && runningRows.Count == 0)
         {
-            body = new Markup("[grey]Waiting for results...[/]");
+            rows.Add(new Markup("[grey]Waiting for results...[/]"));
         }
         else
         {
             // Show the tail so the newest results stay visible (scroll effect).
-            var shown = _results.Count > ResultsWindow
-                ? _results.GetRange(_results.Count - ResultsWindow, ResultsWindow)
+            var shown = _results.Count > resultsWindow
+                ? _results.GetRange(_results.Count - resultsWindow, resultsWindow)
                 : _results;
-            body = new Rows(shown.Select(BuildResultRow));
+            rows.AddRange(shown.Select(BuildResultRow));
+            rows.AddRange(runningRows);
         }
 
-        var hidden = Math.Max(0, _results.Count - ResultsWindow);
+        var hidden = Math.Max(0, _results.Count - resultsWindow);
         var header = hidden > 0
-            ? $"[bold]Results[/] [grey]({_results.Count} total, showing last {ResultsWindow})[/]"
+            ? $"[bold]Results[/] [grey]({_results.Count} total, showing last {resultsWindow})[/]"
             : $"[bold]Results[/] [grey]({_results.Count})[/]";
 
-        return new Panel(body)
+        return new Panel(new Rows(rows))
             .Header(header)
             .Expand()
             .BorderColor(Color.Grey);
+    }
+
+    /// <summary>
+    /// Number of result rows to show, scaled to the current terminal height so a
+    /// tall window shows many more items than a short one. Falls back to a fixed
+    /// window when the height is unknown (e.g. redirected output).
+    /// </summary>
+    /// <returns>The maximum number of result rows to display.</returns>
+    private int ResultsWindow()
+    {
+        var height = _console.Profile.Height;
+        if (height <= 0)
+        {
+            return FallbackResultsWindow;
+        }
+
+        // Total height minus the progress panel and the results panel's own
+        // border + header lines. The remainder is available for result rows.
+        const int ResultsPanelChrome = 3; // top border + header, bottom border.
+        var available = height - ProgressRegionHeight() - ResultsPanelChrome;
+        return Math.Max(MinResultsWindow, available);
     }
 
     private sealed class PlanProgress(int total)
@@ -272,4 +333,9 @@ internal sealed class LiveInstallRenderer : IInstallProgressObserver
 
         internal int Completed { get; set; }
     }
+
+    /// <summary>An install item currently in flight.</summary>
+    /// <param name="Name">Display name of the running item.</param>
+    /// <param name="SourceType">The item's install source type.</param>
+    private readonly record struct RunningItem(string Name, InstallSourceType SourceType);
 }

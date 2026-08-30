@@ -60,7 +60,7 @@ public class GithubReleaseInstaller : IInstallSource
     }
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, Action<InstallResult>? onItemComplete, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, IInstallItemReporter? reporter, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(installBlock);
 
@@ -72,7 +72,7 @@ public class GithubReleaseInstaller : IInstallSource
         }
 
         var installTasks = installBlock.Github
-            .Select((item, index) => InstallReleaseItemAsync(item, index, context, onItemComplete, cancellationToken))
+            .Select((item, index) => InstallReleaseItemAsync(item, index, context, reporter, cancellationToken))
             .ToArray();
 
         var results = await Task.WhenAll(installTasks);
@@ -86,11 +86,12 @@ public class GithubReleaseInstaller : IInstallSource
         GithubReleaseItem item,
         int index,
         InstallContext context,
-        Action<InstallResult>? onItemComplete,
+        IInstallItemReporter? reporter,
         CancellationToken cancellationToken)
     {
+        reporter?.ItemStarted(item.Binary ?? item.Repo, SourceType);
         var result = await ResolveReleaseItemResultAsync(item, context, cancellationToken);
-        onItemComplete?.Invoke(result);
+        reporter?.ItemCompleted(result);
         return new IndexedInstallResult(index, result);
     }
 

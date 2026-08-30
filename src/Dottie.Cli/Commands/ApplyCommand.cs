@@ -67,6 +67,13 @@ public sealed class ApplyCommand : AsyncCommand<ApplyCommandSettings>
             return 0;
         }
 
+        // Start from a clean screen so the live progress dashboard is unobscured.
+        // Only when interactive; redirected output should not receive clear codes.
+        if (AnsiConsole.Profile.Capabilities.Interactive)
+        {
+            AnsiConsole.Clear();
+        }
+
         var result = await ExecuteApplyAsync(profile, repoRoot, settings.Force);
         _renderer.RenderVerboseSummary(result, profileName);
 
@@ -199,8 +206,29 @@ public sealed class ApplyCommand : AsyncCommand<ApplyCommandSettings>
         }
 
         var context = CreateInstallContext(repoRoot);
-        var results = await InstallExecutionCoordinator.RunAsync(profile.Install, context);
-        return InstallPhaseResult.Executed(results);
+
+        // The live dashboard needs an interactive terminal. When output is
+        // redirected (CI, piping, non-TTY), fall back to the plain coordinator
+        // so install still runs and the summary is printed cleanly.
+        if (!AnsiConsole.Profile.Capabilities.Interactive)
+        {
+            var plainResults = await InstallExecutionCoordinator.RunAsync(profile.Install, context);
+            return InstallPhaseResult.Executed(plainResults);
+        }
+
+        try
+        {
+            var liveRenderer = new LiveInstallRenderer();
+            var results = await liveRenderer.RunAsync(observer =>
+                InstallExecutionCoordinator.RunWithObserverAsync(profile.Install, context, observer));
+            return InstallPhaseResult.Executed(results);
+        }
+        catch (InvalidOperationException)
+        {
+            // Live session unavailable; fall back to the non-live path.
+            var results = await InstallExecutionCoordinator.RunAsync(profile.Install, context);
+            return InstallPhaseResult.Executed(results);
+        }
     }
 
     private static LinkPhaseResult ExecuteLinkPhase(ResolvedProfile profile, string repoRoot, bool force, int dotfileCount, ProgressTask task)

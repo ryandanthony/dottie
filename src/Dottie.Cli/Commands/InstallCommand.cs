@@ -30,7 +30,7 @@ namespace Dottie.Cli.Commands;
 public sealed class InstallCommand : AsyncCommand<InstallCommandSettings>
 {
     /// <inheritdoc/>
-    public override async Task<int> ExecuteAsync(CommandContext context, InstallCommandSettings settings)
+    protected override async Task<int> ExecuteAsync(CommandContext context, InstallCommandSettings settings, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(settings);
 

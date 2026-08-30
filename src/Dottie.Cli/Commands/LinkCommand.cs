@@ -18,10 +18,18 @@ namespace Dottie.Cli.Commands;
 /// <summary>
 /// Command to create symbolic links for dotfiles.
 /// </summary>
+/// <remarks>
+/// S1200 is suppressed because CLI command classes inherently coordinate multiple components.
+/// This is an orchestration class that delegates work to specialized linking services.
+/// </remarks>
+[System.Diagnostics.CodeAnalysis.SuppressMessage(
+    "Major Code Smell",
+    "S1200:Classes should not be coupled to too many other classes (Single Responsibility Principle)",
+    Justification = "CLI command classes inherently orchestrate multiple components. This command coordinates linking services.")]
 public sealed class LinkCommand : Command<LinkCommandSettings>
 {
     /// <inheritdoc/>
-    public override int Execute(CommandContext context, LinkCommandSettings settings)
+    protected override int Execute(CommandContext context, LinkCommandSettings settings, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(settings);
 

@@ -43,7 +43,7 @@ public sealed class ApplyCommand : AsyncCommand<ApplyCommandSettings>
     }
 
     /// <inheritdoc/>
-    public override async Task<int> ExecuteAsync(CommandContext context, ApplyCommandSettings settings)
+    protected override async Task<int> ExecuteAsync(CommandContext context, ApplyCommandSettings settings, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(settings);
 

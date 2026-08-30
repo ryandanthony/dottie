@@ -22,7 +22,7 @@ namespace Dottie.Cli.Commands;
 public sealed class StatusCommand : AsyncCommand<StatusCommandSettings>
 {
     /// <inheritdoc/>
-    public override async Task<int> ExecuteAsync(CommandContext context, StatusCommandSettings settings)
+    protected override async Task<int> ExecuteAsync(CommandContext context, StatusCommandSettings settings, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(settings);
 

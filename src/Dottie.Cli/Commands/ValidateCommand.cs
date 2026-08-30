@@ -22,7 +22,7 @@ namespace Dottie.Cli.Commands;
 public sealed class ValidateCommand : Command<ValidateCommandSettings>
 {
     /// <inheritdoc/>
-    public override int Execute(CommandContext context, ValidateCommandSettings settings)
+    protected override int Execute(CommandContext context, ValidateCommandSettings settings, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(settings);
         // Find config file

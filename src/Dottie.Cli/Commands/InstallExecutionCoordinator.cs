@@ -132,7 +132,12 @@ internal static class InstallExecutionCoordinator
     {
         var completed = 0;
 
-        var planResults = await ExecuteInstallerAsync(plan.Installer, installBlock, context, () =>
+        // Reference equality: InstallResult is a record (value equality), and two
+        // distinct items can legitimately produce equal results, so identity is
+        // what distinguishes "already streamed" here.
+        var streamed = new HashSet<InstallResult>(ReferenceEqualityComparer.Instance);
+
+        var planResults = await ExecuteInstallerAsync(plan.Installer, installBlock, context, result =>
         {
             lock (ProgressUpdateLock)
             {
@@ -140,16 +145,26 @@ internal static class InstallExecutionCoordinator
                 var overall = readOverall() + 1;
                 writeOverall(overall);
                 observer.OnItemProgress(plan.Name, completed, overall);
+
+                // Stream each result to the live list the moment it is produced,
+                // rather than batching per plan at the end.
+                streamed.Add(result);
+                results.Add(result);
+                observer.OnResult(result);
             }
         });
 
-        var planResultList = planResults.ToList();
-        foreach (var result in planResultList)
+        // Safety net: surface any results the installer returned without a
+        // per-item callback (e.g. a whole-installer failure in the catch block).
+        var unstreamed = planResults.Where(result => !streamed.Contains(result));
+        lock (ProgressUpdateLock)
         {
-            results.Add(result);
+            foreach (var result in unstreamed)
+            {
+                results.Add(result);
+                observer.OnResult(result);
+            }
         }
-
-        observer.OnResults(planResultList);
     }
 
     private static async Task ExecuteWithProgressAsync(
@@ -264,7 +279,7 @@ internal static class InstallExecutionCoordinator
         var completed = 0;
         var total = plan.Count;
 
-        var planResults = await ExecuteInstallerAsync(plan.Installer, installBlock, context, () =>
+        var planResults = await ExecuteInstallerAsync(plan.Installer, installBlock, context, _ =>
         {
             lock (ProgressUpdateLock)
             {
@@ -286,7 +301,7 @@ internal static class InstallExecutionCoordinator
         IInstallSource installer,
         InstallBlock installBlock,
         InstallContext context,
-        Action? onItemComplete)
+        Action<InstallResult>? onItemComplete)
     {
         try
         {

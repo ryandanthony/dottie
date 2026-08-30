@@ -60,7 +60,7 @@ public class GithubReleaseInstaller : IInstallSource
     }
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, Action? onItemComplete, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, Action<InstallResult>? onItemComplete, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(installBlock);
 
@@ -86,21 +86,26 @@ public class GithubReleaseInstaller : IInstallSource
         GithubReleaseItem item,
         int index,
         InstallContext context,
-        Action? onItemComplete,
+        Action<InstallResult>? onItemComplete,
+        CancellationToken cancellationToken)
+    {
+        var result = await ResolveReleaseItemResultAsync(item, context, cancellationToken);
+        onItemComplete?.Invoke(result);
+        return new IndexedInstallResult(index, result);
+    }
+
+    private async Task<InstallResult> ResolveReleaseItemResultAsync(
+        GithubReleaseItem item,
+        InstallContext context,
         CancellationToken cancellationToken)
     {
         try
         {
-            var result = await InstallGithubReleaseItemAsync(item, context, cancellationToken);
-            return new IndexedInstallResult(index, result);
+            return await InstallGithubReleaseItemAsync(item, context, cancellationToken);
         }
         catch (Exception ex)
         {
-            return new IndexedInstallResult(index, InstallResult.Failed(item.Binary ?? item.Repo, SourceType, $"Failed to install from {item.Repo}: {ex.Message}"));
-        }
-        finally
-        {
-            onItemComplete?.Invoke();
+            return InstallResult.Failed(item.Binary ?? item.Repo, SourceType, $"Failed to install from {item.Repo}: {ex.Message}");
         }
     }
 

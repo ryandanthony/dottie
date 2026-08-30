@@ -32,8 +32,9 @@ internal interface IInstallProgressObserver
     void OnItemProgress(string planName, int planCompleted, int overallCompleted);
 
     /// <summary>
-    /// Called when a plan finishes, delivering its results for the running list.
+    /// Called as soon as each individual item's result is produced, to append it
+    /// to the running results list in real time.
     /// </summary>
-    /// <param name="results">The results produced by the plan.</param>
-    void OnResults(IReadOnlyList<InstallResult> results);
+    /// <param name="result">The result just produced.</param>
+    void OnResult(InstallResult result);
 }

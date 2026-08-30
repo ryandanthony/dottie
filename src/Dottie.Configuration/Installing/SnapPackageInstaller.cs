@@ -31,7 +31,7 @@ public class SnapPackageInstaller : IInstallSource
     public InstallSourceType SourceType => InstallSourceType.SnapPackage;
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, Action? onItemComplete, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, Action<InstallResult>? onItemComplete, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(installBlock);
 
@@ -56,8 +56,9 @@ public class SnapPackageInstaller : IInstallSource
         {
             foreach (var snap in installBlock.Snaps)
             {
-                results.Add(InstallResult.Warning(snap.Name, SourceType, "Sudo required to install snap packages"));
-                onItemComplete?.Invoke();
+                var warning = InstallResult.Warning(snap.Name, SourceType, "Sudo required to install snap packages");
+                results.Add(warning);
+                onItemComplete?.Invoke(warning);
             }
 
             return results;
@@ -66,20 +67,22 @@ public class SnapPackageInstaller : IInstallSource
         // Install each snap package
         foreach (var snap in installBlock.Snaps)
         {
+            InstallResult result;
             try
             {
                 var arguments = await BuildSnapCommandArgumentsAsync(snap, context.UpdateExisting, cancellationToken);
 
                 var processResult = await _processRunner.RunAsync("sudo", arguments, cancellationToken: cancellationToken);
 
-                results.Add(processResult.Success ? InstallResult.Success(snap.Name, SourceType) : InstallResult.Failed(snap.Name, SourceType, $"snap command failed with exit code {processResult.ExitCode}"));
+                result = processResult.Success ? InstallResult.Success(snap.Name, SourceType) : InstallResult.Failed(snap.Name, SourceType, $"snap command failed with exit code {processResult.ExitCode}");
             }
             catch (Exception ex)
             {
-                results.Add(InstallResult.Failed(snap.Name, SourceType, $"Exception during installation: {ex.Message}"));
+                result = InstallResult.Failed(snap.Name, SourceType, $"Exception during installation: {ex.Message}");
             }
 
-            onItemComplete?.Invoke();
+            results.Add(result);
+            onItemComplete?.Invoke(result);
         }
 
         return results;

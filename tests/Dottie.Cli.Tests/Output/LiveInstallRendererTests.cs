@@ -58,7 +58,11 @@ public sealed class LiveInstallRendererTests : IDisposable
         {
             observer.OnStart(["GitHub releases"], [1], 1);
             observer.OnItemProgress("GitHub releases", 1, 1);
-            observer.OnResults(expected);
+            foreach (var result in expected)
+            {
+                observer.OnResult(result);
+            }
+
             return Task.FromResult(expected);
         });
 
@@ -79,9 +83,9 @@ public sealed class LiveInstallRendererTests : IDisposable
         {
             observer.OnStart(["GitHub releases", "Scripts"], [1, 1], 2);
             observer.OnItemProgress("GitHub releases", 1, 1);
-            observer.OnResults([InstallResult.Success("rg", InstallSourceType.GithubRelease)]);
+            observer.OnResult(InstallResult.Success("rg", InstallSourceType.GithubRelease));
             observer.OnItemProgress("Scripts", 1, 2);
-            observer.OnResults([InstallResult.Failed("setup.sh", InstallSourceType.Script, "exit 1")]);
+            observer.OnResult(InstallResult.Failed("setup.sh", InstallSourceType.Script, "exit 1"));
             return Task.FromResult(new List<InstallResult>());
         });
 
@@ -132,7 +136,7 @@ public sealed class LiveInstallRendererTests : IDisposable
             for (var i = 0; i < count; i++)
             {
                 observer.OnItemProgress("APT packages", i + 1, i + 1);
-                observer.OnResults([InstallResult.Success($"pkg-{i:D2}", InstallSourceType.AptPackage)]);
+                observer.OnResult(InstallResult.Success($"pkg-{i:D2}", InstallSourceType.AptPackage));
             }
 
             return Task.FromResult(new List<InstallResult>());
@@ -173,7 +177,7 @@ public sealed class LiveInstallRendererTests : IDisposable
             FluentActions.Invoking(() => observer.OnStart(null!, [], 0)).Should().Throw<ArgumentNullException>();
             FluentActions.Invoking(() => observer.OnStart([], null!, 0)).Should().Throw<ArgumentNullException>();
             FluentActions.Invoking(() => observer.OnItemProgress(null!, 0, 0)).Should().Throw<ArgumentNullException>();
-            FluentActions.Invoking(() => observer.OnResults(null!)).Should().Throw<ArgumentNullException>();
+            FluentActions.Invoking(() => observer.OnResult(null!)).Should().Throw<ArgumentNullException>();
             return Task.FromResult(new List<InstallResult>());
         });
     }

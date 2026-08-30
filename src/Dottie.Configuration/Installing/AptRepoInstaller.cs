@@ -35,7 +35,7 @@ public class AptRepoInstaller : IInstallSource
     }
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, Action? onItemComplete, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, Action<InstallResult>? onItemComplete, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(installBlock);
         ArgumentNullException.ThrowIfNull(context);
@@ -55,24 +55,29 @@ public class AptRepoInstaller : IInstallSource
         {
             var repoResults = await ConfigureRepositoryAsync(repo, cancellationToken);
             results.AddRange(repoResults);
-            onItemComplete?.Invoke();
+            foreach (var repoResult in repoResults)
+            {
+                onItemComplete?.Invoke(repoResult);
+            }
         }
 
         return results;
     }
 
-    private List<InstallResult> CreateSudoRequiredWarnings(IReadOnlyList<AptRepoItem> repos, Action? onItemComplete)
+    private List<InstallResult> CreateSudoRequiredWarnings(IReadOnlyList<AptRepoItem> repos, Action<InstallResult>? onItemComplete)
     {
         var results = new List<InstallResult>();
         foreach (var repo in repos)
         {
-            results.Add(InstallResult.Warning(repo.Name, SourceType, "Sudo required to add APT repositories"));
+            var repoWarning = InstallResult.Warning(repo.Name, SourceType, "Sudo required to add APT repositories");
+            results.Add(repoWarning);
+            onItemComplete?.Invoke(repoWarning);
             foreach (var package in repo.Packages ?? [])
             {
-                results.Add(InstallResult.Warning(package, SourceType, "Sudo required to install packages from APT repositories"));
+                var packageWarning = InstallResult.Warning(package, SourceType, "Sudo required to install packages from APT repositories");
+                results.Add(packageWarning);
+                onItemComplete?.Invoke(packageWarning);
             }
-
-            onItemComplete?.Invoke();
         }
 
         return results;

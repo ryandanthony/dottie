@@ -31,7 +31,7 @@ public class ScriptRunner : IInstallSource
     public InstallSourceType SourceType => InstallSourceType.Script;
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, Action? onItemComplete, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, Action<InstallResult>? onItemComplete, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(installBlock);
         ArgumentNullException.ThrowIfNull(context);
@@ -46,7 +46,7 @@ public class ScriptRunner : IInstallSource
             : await ExecuteScriptsAsync(installBlock.Scripts.AsReadOnly(), context, onItemComplete, cancellationToken);
     }
 
-    private List<InstallResult> ValidateScriptsExist(IReadOnlyList<string> scripts, string repoRoot, Action? onItemComplete)
+    private List<InstallResult> ValidateScriptsExist(IReadOnlyList<string> scripts, string repoRoot, Action<InstallResult>? onItemComplete)
     {
         var results = new List<InstallResult>();
         foreach (var scriptPath in scripts)
@@ -56,13 +56,13 @@ public class ScriptRunner : IInstallSource
                 ? InstallResult.Success(scriptPath, SourceType, message: $"Script would be executed: {scriptPath}")
                 : InstallResult.Failed(scriptPath, SourceType, $"Script not found: {scriptPath}");
             results.Add(result);
-            onItemComplete?.Invoke();
+            onItemComplete?.Invoke(result);
         }
 
         return results;
     }
 
-    private async Task<List<InstallResult>> ExecuteScriptsAsync(IReadOnlyList<string> scripts, InstallContext context, Action? onItemComplete, CancellationToken cancellationToken)
+    private async Task<List<InstallResult>> ExecuteScriptsAsync(IReadOnlyList<string> scripts, InstallContext context, Action<InstallResult>? onItemComplete, CancellationToken cancellationToken)
     {
         var executionTasks = scripts
             .Select((scriptPath, index) => ExecuteScriptAsync(scriptPath, index, context, onItemComplete, cancellationToken))
@@ -79,18 +79,12 @@ public class ScriptRunner : IInstallSource
         string scriptPath,
         int index,
         InstallContext context,
-        Action? onItemComplete,
+        Action<InstallResult>? onItemComplete,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var result = await ExecuteSingleScriptAsync(scriptPath, context, cancellationToken);
-            return new IndexedInstallResult(index, result);
-        }
-        finally
-        {
-            onItemComplete?.Invoke();
-        }
+        var result = await ExecuteSingleScriptAsync(scriptPath, context, cancellationToken);
+        onItemComplete?.Invoke(result);
+        return new IndexedInstallResult(index, result);
     }
 
     private async Task<InstallResult> ExecuteSingleScriptAsync(string scriptPath, InstallContext context, CancellationToken cancellationToken)

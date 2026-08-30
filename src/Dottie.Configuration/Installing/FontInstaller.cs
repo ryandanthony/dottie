@@ -36,7 +36,7 @@ public class FontInstaller : IInstallSource
     }
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, Action? onItemComplete, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<InstallResult>> InstallAsync(InstallBlock installBlock, InstallContext context, Action<InstallResult>? onItemComplete, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(installBlock);
         ArgumentNullException.ThrowIfNull(context);
@@ -51,8 +51,9 @@ public class FontInstaller : IInstallSource
             var failedResults = installBlock.Fonts
                 .Select(font =>
                 {
-                    onItemComplete?.Invoke();
-                    return InstallResult.Failed(font.Name, SourceType, directoryError!);
+                    var result = InstallResult.Failed(font.Name, SourceType, directoryError!);
+                    onItemComplete?.Invoke(result);
+                    return result;
                 })
                 .ToList();
             return failedResults;
@@ -75,18 +76,12 @@ public class FontInstaller : IInstallSource
         FontItem font,
         int index,
         string fontDirectory,
-        Action? onItemComplete,
+        Action<InstallResult>? onItemComplete,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var result = await InstallSingleFontAsync(font, fontDirectory, cancellationToken);
-            return new IndexedInstallResult(index, result);
-        }
-        finally
-        {
-            onItemComplete?.Invoke();
-        }
+        var result = await InstallSingleFontAsync(font, fontDirectory, cancellationToken);
+        onItemComplete?.Invoke(result);
+        return new IndexedInstallResult(index, result);
     }
 
     private static bool TryEnsureFontDirectory(string fontDirectory, out string? error)

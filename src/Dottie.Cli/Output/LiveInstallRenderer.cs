@@ -130,13 +130,13 @@ internal sealed class LiveInstallRenderer : IInstallProgressObserver
     }
 
     /// <inheritdoc/>
-    void IInstallProgressObserver.OnResults(IReadOnlyList<InstallResult> results)
+    void IInstallProgressObserver.OnResult(InstallResult result)
     {
-        ArgumentNullException.ThrowIfNull(results);
+        ArgumentNullException.ThrowIfNull(result);
 
         lock (_sync)
         {
-            _results.AddRange(results);
+            _results.Add(result);
         }
 
         Refresh();
@@ -218,13 +218,19 @@ internal sealed class LiveInstallRenderer : IInstallProgressObserver
         foreach (var name in _planOrder)
         {
             var plan = _plans[name];
+
+            // A plan can emit more result callbacks than its item count (e.g. an
+            // apt repo yields key/source/update/package results for one repo), so
+            // clamp the displayed count to the total to avoid "[6/2]".
+            var shownCompleted = Math.Min(plan.Completed, plan.Total);
             grid.AddRow(
-                new Markup($"[blue]{Markup.Escape(name)}[/] [grey][[{plan.Completed}/{plan.Total}]][/]"),
+                new Markup($"[blue]{Markup.Escape(name)}[/] [grey][[{shownCompleted}/{plan.Total}]][/]"),
                 new Markup(RenderBar(plan.Completed, plan.Total, "blue")));
         }
 
+        var shownOverall = Math.Min(_overallCompleted, _overallTotal);
         grid.AddRow(
-            new Markup($"[green]Overall[/] [grey][[{_overallCompleted}/{_overallTotal}]][/]"),
+            new Markup($"[green]Overall[/] [grey][[{shownOverall}/{_overallTotal}]][/]"),
             new Markup(RenderBar(_overallCompleted, _overallTotal, "green")));
 
         return new Panel(grid)

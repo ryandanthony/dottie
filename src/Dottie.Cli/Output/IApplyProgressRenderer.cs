@@ -29,6 +29,15 @@ public interface IApplyProgressRenderer
     void RenderVerboseSummary(ApplyResult result, string profileName);
 
     /// <summary>
+    /// Renders only failures. Prints nothing when the apply fully succeeded, since
+    /// the live dashboard already showed the per-item results; otherwise lists the
+    /// link and install errors so they are easy to spot at the end.
+    /// </summary>
+    /// <param name="result">The aggregated apply result.</param>
+    /// <param name="profileName">The name of the applied profile.</param>
+    void RenderErrorsOnly(ApplyResult result, string profileName);
+
+    /// <summary>
     /// Renders an error message.
     /// </summary>
     /// <param name="message">The error message to display.</param>

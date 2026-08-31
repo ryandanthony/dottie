@@ -16,6 +16,10 @@ namespace Dottie.Cli.Output;
 /// <summary>
 /// Default implementation of apply progress rendering using Spectre.Console.
 /// </summary>
+[System.Diagnostics.CodeAnalysis.SuppressMessage(
+    "Major Code Smell",
+    "S1200:Classes should not be coupled to too many other classes (Single Responsibility Principle)",
+    Justification = "A progress renderer inherently composes many Spectre widgets and result/phase model types.")]
 public sealed class ApplyProgressRenderer : IApplyProgressRenderer
 {
     /// <inheritdoc/>
@@ -49,6 +53,75 @@ public sealed class ApplyProgressRenderer : IApplyProgressRenderer
         }
 
         RenderOverallSummary(result);
+    }
+
+    /// <inheritdoc/>
+    public void RenderErrorsOnly(ApplyResult result, string profileName)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+
+        if (result.OverallSuccess)
+        {
+            // Everything succeeded and the live dashboard already showed it.
+            // Print nothing so the terminal stays clean.
+            return;
+        }
+
+        AnsiConsole.WriteLine();
+        AnsiConsole.Write(new Rule($"[red]Apply Failed: {profileName}[/]"));
+        AnsiConsole.WriteLine();
+
+        RenderLinkFailures(result.LinkPhase);
+        RenderInstallFailures(result.InstallPhase);
+    }
+
+    private static void RenderLinkFailures(LinkPhaseResult linkPhase)
+    {
+        if (linkPhase.WasBlocked)
+        {
+            AnsiConsole.MarkupLine("[red]✗ Linking blocked by conflicts (use --force to override):[/]");
+            var conflicts = linkPhase.ExecutionResult?.ConflictResult?.Conflicts;
+            if (conflicts != null)
+            {
+                foreach (var conflict in conflicts)
+                {
+                    AnsiConsole.MarkupLine($"    [red]✗[/] {Markup.Escape(conflict.Entry.Target)}");
+                }
+            }
+
+            AnsiConsole.WriteLine();
+        }
+
+        var failedLinks = linkPhase.ExecutionResult?.LinkResult?.FailedLinks;
+        if (failedLinks is { Count: > 0 })
+        {
+            AnsiConsole.MarkupLine("[red]✗ Failed links:[/]");
+            foreach (var fail in failedLinks)
+            {
+                AnsiConsole.MarkupLine($"    [red]✗[/] {Markup.Escape(fail.ExpandedTargetPath)}: {Markup.Escape(fail.Error ?? "Unknown error")}");
+            }
+
+            AnsiConsole.WriteLine();
+        }
+    }
+
+    private static void RenderInstallFailures(InstallPhaseResult installPhase)
+    {
+        var failures = installPhase.Results.Where(r => r.Status == InstallStatus.Failed).ToList();
+        if (failures.Count == 0)
+        {
+            return;
+        }
+
+        AnsiConsole.MarkupLine("[red]✗ Failed installs:[/]");
+        foreach (var failure in failures)
+        {
+            var source = InstallerProgressHelper.GetSourceTypeName(failure.SourceType);
+            var message = string.IsNullOrEmpty(failure.Message) ? "Unknown error" : failure.Message;
+            AnsiConsole.MarkupLine($"    [red]✗[/] {Markup.Escape(failure.ItemName)} [dim]({source})[/]: {Markup.Escape(message)}");
+        }
+
+        AnsiConsole.WriteLine();
     }
 
     /// <inheritdoc/>

@@ -80,7 +80,18 @@ public sealed class ApplyCommand : AsyncCommand<ApplyCommandSettings>
         }
 
         var result = await ExecuteApplyAsync(profile, repoRoot, settings.Force);
-        _renderer.RenderVerboseSummary(result, profileName);
+
+        // The interactive run already showed every item live, so only surface
+        // failures at the end. Non-interactive/redirected output never saw the
+        // live dashboard, so keep the full summary there.
+        if (AnsiConsole.Profile.Capabilities.Interactive)
+        {
+            _renderer.RenderErrorsOnly(result, profileName);
+        }
+        else
+        {
+            _renderer.RenderVerboseSummary(result, profileName);
+        }
 
         return result.OverallSuccess ? 0 : 1;
     }

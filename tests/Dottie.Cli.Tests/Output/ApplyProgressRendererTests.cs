@@ -12,6 +12,7 @@ using Dottie.Configuration.Linking;
 using Dottie.Configuration.Models;
 using Dottie.Configuration.Models.InstallBlocks;
 using FluentAssertions;
+using Spectre.Console;
 using Xunit;
 
 namespace Dottie.Cli.Tests.Output;
@@ -501,5 +502,112 @@ public sealed class ApplyProgressRendererTests
 
         // Assert
         act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void RenderErrorsOnly_WhenSuccessful_PrintsNothing()
+    {
+        // Arrange
+        var original = AnsiConsole.Console;
+        var console = new Spectre.Console.Testing.TestConsole();
+        AnsiConsole.Console = console;
+        try
+        {
+            var result = new ApplyResult
+            {
+                LinkPhase = LinkPhaseResult.NotExecuted(),
+                InstallPhase = InstallPhaseResult.Executed([
+                    InstallResult.Success("curl", InstallSourceType.AptPackage),
+                ]),
+            };
+
+            // Act
+            _renderer.RenderErrorsOnly(result, "default");
+
+            // Assert - nothing printed because everything succeeded.
+            console.Output.Should().BeEmpty();
+        }
+        finally
+        {
+            AnsiConsole.Console = original;
+        }
+    }
+
+    [Fact]
+    public void RenderErrorsOnly_WithInstallFailures_PrintsOnlyFailures()
+    {
+        // Arrange
+        var original = AnsiConsole.Console;
+        var console = new Spectre.Console.Testing.TestConsole();
+        AnsiConsole.Console = console;
+        try
+        {
+            var result = new ApplyResult
+            {
+                LinkPhase = LinkPhaseResult.NotExecuted(),
+                InstallPhase = InstallPhaseResult.Executed([
+                    InstallResult.Success("curl", InstallSourceType.AptPackage),
+                    InstallResult.Failed("plasmazones", InstallSourceType.Script, "exit code 1"),
+                ]),
+            };
+
+            // Act
+            _renderer.RenderErrorsOnly(result, "dev");
+
+            // Assert - the failing item and its message appear; the successful one does not.
+            var output = console.Output;
+            output.Should().Contain("Apply Failed");
+            output.Should().Contain("plasmazones");
+            output.Should().Contain("exit code 1");
+            output.Should().NotContain("curl");
+        }
+        finally
+        {
+            AnsiConsole.Console = original;
+        }
+    }
+
+    [Fact]
+    public void RenderErrorsOnly_WithBlockedLinkPhase_PrintsConflicts()
+    {
+        // Arrange
+        var original = AnsiConsole.Console;
+        var console = new Spectre.Console.Testing.TestConsole();
+        AnsiConsole.Console = console;
+        try
+        {
+            var entry = new DotfileEntry { Source = "bashrc", Target = "~/.bashrc" };
+            var conflict = new Conflict
+            {
+                Entry = entry,
+                TargetPath = "/home/user/.bashrc",
+                Type = ConflictType.File,
+            };
+            var conflictResult = new ConflictResult
+            {
+                Conflicts = [conflict],
+                SafeEntries = [],
+                AlreadyLinked = [],
+            };
+            var linkExecution = LinkExecutionResult.Blocked(conflictResult);
+
+            var result = new ApplyResult
+            {
+                LinkPhase = LinkPhaseResult.Blocked(linkExecution),
+                InstallPhase = InstallPhaseResult.NotExecuted(),
+            };
+
+            // Act
+            _renderer.RenderErrorsOnly(result, "dev");
+
+            // Assert
+            var output = console.Output;
+            output.Should().Contain("blocked by conflicts");
+            output.Should().Contain("~/.bashrc");
+        }
+        finally
+        {
+            AnsiConsole.Console = original;
+        }
     }
 }
